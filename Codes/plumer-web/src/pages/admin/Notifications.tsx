@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { sendEmail, EmailTemplate, EmailData, EmailResponse } from '../../utils/emailService';
+import { sendEmail } from '../../utils/emailService';
+import type { EmailTemplate, EmailData } from '../../utils/emailService';
 
 // Types
 type NotificationTemplate = {
@@ -21,7 +22,8 @@ type NotificationLog = {
 };
 
 const Notifications: React.FC = () => {
-  const { supabase } = useAuth();
+  // Using supabase from AuthContext
+  const { supabase: _ } = useAuth();
   const [loading, setLoading] = useState(false);
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
   const [logs, setLogs] = useState<NotificationLog[]>([]);

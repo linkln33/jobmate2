@@ -7,6 +7,8 @@ type AuthContextType = {
   user: User | null;
   supabase: SupabaseClient;
   signIn: (email: string, password: string) => Promise<{ error: any | null }>;
+  signInWithGoogle: () => Promise<{ error: any | null }>;
+  signInWithFacebook: () => Promise<{ error: any | null }>;
   signOut: () => Promise<void>;
   loading: boolean;
 };
@@ -64,6 +66,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Sign in with Google function
+  const signInWithGoogle = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/admin`,
+        },
+      });
+      return { error };
+    } catch (error) {
+      console.error('Google sign in error:', error);
+      return { error: { message: 'Failed to connect to Google authentication service' } };
+    }
+  };
+
+  // Sign in with Facebook function
+  const signInWithFacebook = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: `${window.location.origin}/admin`,
+        },
+      });
+      return { error };
+    } catch (error) {
+      console.error('Facebook sign in error:', error);
+      return { error: { message: 'Failed to connect to Facebook authentication service' } };
+    }
+  };
+
   // Sign out function
   const signOut = async () => {    
     try {
@@ -79,6 +113,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     supabase,
     signIn,
+    signInWithGoogle,
+    signInWithFacebook,
     signOut,
     loading,
   };

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,12 +49,18 @@ const Header = () => {
                 <li><a href="#how-it-works" className="block text-dark hover:text-primary" onClick={toggleMenu}>How It Works</a></li>
                 <li><a href="#testimonials" className="block text-dark hover:text-primary" onClick={toggleMenu}>Testimonials</a></li>
                 <li><a href="#contact" className="block text-dark hover:text-primary" onClick={toggleMenu}>Contact</a></li>
+                <li><Link to="/admin/login" className="block text-orange-500 font-medium hover:text-orange-600" onClick={toggleMenu}>Login</Link></li>
               </ul>
             </nav>
           </div>
         )}
 
-        <a href="#booking" className="hidden md:block btn btn-primary">Book Now</a>
+        <div className="hidden md:flex items-center space-x-4">
+          <Link to="/admin/login" className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-medium transition-colors">
+            Login
+          </Link>
+          <a href="#booking" className="px-4 py-2 bg-primary hover:bg-primary-dark text-white rounded-md font-medium transition-colors">Book Now</a>
+        </div>
       </div>
     </header>
   );

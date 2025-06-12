@@ -110,7 +110,8 @@ const TaskMap: React.FC = () => {
   const { supabase } = useAuth();
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [loading, setLoading] = useState(true);
+  // State for loading status
+  const [isLoading, setLoading] = useState(true);
 
   // Load Google Maps API
   const { isLoaded } = useJsApiLoader({
@@ -179,73 +180,73 @@ const TaskMap: React.FC = () => {
       </div>
       
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {!isLoaded ? (
-          <div className="flex items-center justify-center h-[500px] bg-gray-100">
-            <div className="text-gray-500">Loading map...</div>
-          </div>
-        ) : (
-          <div className="relative">
-            <GoogleMap
-              mapContainerStyle={containerStyle}
-              center={defaultCenter}
-              zoom={12}
-              options={{
-                streetViewControl: false,
-                mapTypeControl: false,
-                fullscreenControl: false,
-              }}
-            >
-              {tasks.map((task) => (
-                <PulsingMarker 
-                  key={task.id} 
-                  position={task.location}
-                  task={task}
-                />
-              ))}
-            </GoogleMap>
-            
-            {/* Task info panel */}
-            {selectedTask && (
-              <div className="absolute bottom-4 left-4 right-4 bg-white p-4 rounded-lg shadow-lg max-w-md">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-medium text-gray-900">{selectedTask.title}</h3>
-                  <button 
-                    onClick={() => setSelectedTask(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-                <div className="mt-2 text-sm text-gray-600">
-                  <p>{selectedTask.description}</p>
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div>
-                      <span className="block text-xs text-gray-500">Address</span>
-                      <span>{selectedTask.address}</span>
-                    </div>
-                    <div>
-                      <span className="block text-xs text-gray-500">Time</span>
-                      <span>{selectedTask.time}</span>
-                    </div>
-                  </div>
-                  <div className="mt-3">
-                    <span className="inline-block px-2 py-1 text-xs rounded-full 
-                      ${selectedTask.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                        selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
-                        'bg-green-100 text-green-800'}"
+        <div className="h-96 w-full relative">
+          {isLoading && <div className="absolute inset-0 flex items-center justify-center bg-gray-100 bg-opacity-75 z-10">Loading map...</div>}
+          {isLoaded && (
+            <>
+              <GoogleMap
+                mapContainerStyle={containerStyle}
+                center={defaultCenter}
+                zoom={12}
+                options={{
+                  streetViewControl: false,
+                  mapTypeControl: false,
+                  fullscreenControl: false,
+                }}
+                onLoad={() => setLoading(false)}
+              >
+                {tasks.map((task) => (
+                  <PulsingMarker 
+                    key={task.id} 
+                    position={task.location}
+                    task={task}
+                  />
+                ))}
+              </GoogleMap>
+              
+              {/* Task info panel */}
+              {selectedTask && (
+                <div className="absolute bottom-4 left-4 right-4 bg-white p-4 rounded-lg shadow-lg max-w-md">
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-medium text-gray-900">{selectedTask.title}</h3>
+                    <button 
+                      onClick={() => setSelectedTask(null)}
+                      className="text-gray-400 hover:text-gray-600"
                     >
-                      {selectedTask.status === 'pending' ? 'Pending' : 
-                       selectedTask.status === 'in-progress' ? 'In Progress' : 
-                       'Completed'}
-                    </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div className="mt-2 text-sm text-gray-600">
+                    <p>{selectedTask.description}</p>
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      <div>
+                        <span className="block text-xs text-gray-500">Address</span>
+                        <span>{selectedTask.address}</span>
+                      </div>
+                      <div>
+                        <span className="block text-xs text-gray-500">Time</span>
+                        <span>{selectedTask.time}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3">
+                      <span className={`inline-block px-2 py-1 text-xs rounded-full 
+                        ${selectedTask.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+                          selectedTask.status === 'in-progress' ? 'bg-blue-100 text-blue-800' : 
+                          'bg-green-100 text-green-800'}`}
+                      >
+                        {selectedTask.status === 'pending' ? 'Pending' : 
+                         selectedTask.status === 'in-progress' ? 'In Progress' : 
+                         'Completed'}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
+              )}
+            </>
+          )}
+        </div>
       </div>
       
       <div className="mt-4 text-sm text-gray-500">

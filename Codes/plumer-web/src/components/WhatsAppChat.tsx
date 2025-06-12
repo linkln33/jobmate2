@@ -17,7 +17,7 @@ const WhatsAppChat: React.FC<WhatsAppChatProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [hasAutoOpened, setHasAutoOpened] = useState(false);
-  const [businessInfo, setBusinessInfo] = useState({
+  const [businessInfo] = useState({
     name: 'Plumer Services',
     status: 'Typically replies within an hour',
     avatar: '/images/logo.png',

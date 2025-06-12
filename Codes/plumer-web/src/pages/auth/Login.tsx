@@ -5,6 +5,19 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '../../contexts/AuthContext';
 
+// Social login icons
+const GoogleIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512" className="w-5 h-5">
+    <path d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z" />
+  </svg>
+);
+
+const FacebookIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" className="w-5 h-5">
+    <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z" />
+  </svg>
+);
+
 // Form validation schema
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -14,9 +27,10 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
-  const { signIn } = useAuth();
+  const { signIn, signInWithGoogle, signInWithFacebook } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [socialLoading, setSocialLoading] = useState<'google' | 'facebook' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -44,6 +58,42 @@ const Login: React.FC = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setSocialLoading('google');
+    setError(null);
+    
+    try {
+      const { error } = await signInWithGoogle();
+      if (error) {
+        setError(error.message);
+      }
+      // No need to navigate - OAuth will redirect automatically
+    } catch (err) {
+      setError('Failed to connect with Google. Please try again.');
+      console.error(err);
+    } finally {
+      setSocialLoading(null);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setSocialLoading('facebook');
+    setError(null);
+    
+    try {
+      const { error } = await signInWithFacebook();
+      if (error) {
+        setError(error.message);
+      }
+      // No need to navigate - OAuth will redirect automatically
+    } catch (err) {
+      setError('Failed to connect with Facebook. Please try again.');
+      console.error(err);
+    } finally {
+      setSocialLoading(null);
     }
   };
 
@@ -115,6 +165,60 @@ const Login: React.FC = () => {
             <a href="/" className="text-sm text-primary hover:underline">
               Back to Homepage
             </a>
+          </div>
+
+          <div className="flex items-center justify-between">
+            <div className="text-sm">
+              <a href="#" className="font-medium text-primary hover:text-primary-dark">
+                Forgot your password?
+              </a>
+            </div>
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-100 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={loading || socialLoading !== null}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              <span className="sr-only">Sign in with Google</span>
+              {socialLoading === 'google' ? (
+                <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <GoogleIcon />
+              )}
+              <span className="ml-2">Google</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleFacebookLogin}
+              disabled={loading || socialLoading !== null}
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            >
+              <span className="sr-only">Sign in with Facebook</span>
+              {socialLoading === 'facebook' ? (
+                <svg className="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : (
+                <FacebookIcon />
+              )}
+              <span className="ml-2">Facebook</span>
+            </button>
           </div>
         </form>
       </div>

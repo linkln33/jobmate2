@@ -23,7 +23,7 @@ const serviceSchema = z.object({
   price: z.coerce.number().min(0, 'Price must be a positive number'),
   price_type: z.enum(['fixed', 'starting_at', 'hourly']),
   image_url: z.string().optional(),
-  is_featured: z.boolean().default(false),
+  is_featured: z.boolean(),
 });
 
 type ServiceFormValues = z.infer<typeof serviceSchema>;
@@ -45,7 +45,7 @@ const Services: React.FC = () => {
     setValue,
     formState: { errors },
   } = useForm<ServiceFormValues>({
-    resolver: zodResolver(serviceSchema),
+    resolver: zodResolver(serviceSchema) as any, // Type assertion to fix resolver compatibility
     defaultValues: {
       name: '',
       description: '',
@@ -93,7 +93,7 @@ const Services: React.FC = () => {
   }, [supabase]);
 
   // Handle form submission for creating/updating a service
-  const onSubmit = async (data: ServiceFormValues) => {
+  const onSubmit = async (data: ServiceFormValues): Promise<void> => {
     try {
       if (isEditing && currentServiceId) {
         // Update existing service
@@ -219,7 +219,7 @@ const Services: React.FC = () => {
         </div>
         
         <div className="p-6">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Service Name */}
               <div>
