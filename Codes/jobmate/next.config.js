@@ -8,6 +8,7 @@ const nextConfig = {
       'images.unsplash.com',
       'lh3.googleusercontent.com',
     ],
+    // Keep this for Netlify compatibility
     unoptimized: true,
   },
   experimental: {
@@ -24,8 +25,8 @@ const nextConfig = {
     // number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 5,
   },
-  // Output static files for Netlify
-  output: 'export',
+  // Disable static export to use Netlify's Next.js plugin
+  // output: 'export',
 };
 
 module.exports = nextConfig;
