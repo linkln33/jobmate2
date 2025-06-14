@@ -9,8 +9,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Bell, MapPin, Calendar, BarChart } from 'lucide-react';
-import { Sidebar } from '@/components/layout/sidebar';
-import { MobileNav } from '@/components/layout/mobile-nav';
+import { MainLayout } from '@/components/layout/main-layout';
 import { Badge } from '@/components/ui/badge';
 
 // Define the type for the dashboard context
@@ -27,23 +26,13 @@ export function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [localLoading, setLocalLoading] = useState(true);
   
-  // Debug logs
   useEffect(() => {
-    console.log('Dashboard Page - Auth State:', { isAuthenticated, isLoading, user });
-  }, [isAuthenticated, isLoading, user]);
-  
-  useEffect(() => {
-    // Give the auth context a moment to initialize
-    const timer = setTimeout(() => {
-      setLocalLoading(false);
-      
-      if (!isLoading && !isAuthenticated) {
-        console.log('Redirecting to login page');
-        router.push('/login');
-      }
-    }, 1000);
+    // Initialize immediately without artificial delay
+    setLocalLoading(false);
     
-    return () => clearTimeout(timer);
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login');
+    }
   }, [isLoading, isAuthenticated, router]);
 
   if (isLoading || localLoading) {
@@ -81,17 +70,10 @@ export function DashboardPage() {
   });
 
   return (
-    <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Sidebar for desktop */}
-      <Sidebar />
-      
-      {/* Main content */}
-      <div className="flex-1 p-4 md:p-6 md:ml-64">
-        {/* Mobile Navigation */}
-        <MobileNav />
-        
+    <MainLayout>
+      <div className="p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
         {/* Dashboard Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm gap-4">
+        <div className="hidden md:flex flex-col md:flex-row justify-between items-start md:items-center mb-8 bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm gap-4">
           <div>
             <p className="text-gray-500 dark:text-gray-400">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -164,6 +146,6 @@ export function DashboardPage() {
           </DashboardContext.Provider>
         </div>
       </div>
-    </div>
+    </MainLayout>
   );
 }

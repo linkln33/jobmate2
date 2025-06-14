@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,7 +16,10 @@ import {
   Wallet,
   MapPin,
   Bell,
-  Wrench
+  Wrench,
+  Shield,
+  Share2,
+  BarChart
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,9 +27,39 @@ import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 export function MobileNav() {
+  // Add animation keyframes to the document
+  useEffect(() => {
+    // Add custom animation styles to the document head
+    const style = document.createElement('style');
+    style.innerHTML = `
+      @keyframes slideDown {
+        from { transform: translateY(-100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      
+      @keyframes slideUp {
+        from { transform: translateY(0); opacity: 1; }
+        to { transform: translateY(-100%); opacity: 0; }
+      }
+      
+      .animate-slide-down {
+        animation: slideDown 0.3s ease forwards;
+      }
+      
+      .animate-slide-up {
+        animation: slideUp 0.3s ease forwards;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [menuAnimation, setMenuAnimation] = useState('menu-closed');
   
   // Define the type for navigation items
   type NavItem = {
@@ -47,7 +80,7 @@ export function MobileNav() {
           icon: <Home className="h-5 w-5" /> 
         },
         { 
-          href: "/search", 
+          href: "/marketplace", 
           label: "Marketplace", 
           icon: <Wrench className="h-5 w-5" /> 
         },
@@ -74,7 +107,7 @@ export function MobileNav() {
         badge: null
       },
       { 
-        href: "/search", 
+        href: "/marketplace", 
         label: "Marketplace", 
         icon: <Wrench className="h-5 w-5" />,
         badge: null
@@ -110,6 +143,24 @@ export function MobileNav() {
         badge: null
       },
       { 
+        href: "/verifications", 
+        label: "Verifications", 
+        icon: <Shield className="h-5 w-5" />,
+        badge: null
+      },
+      { 
+        href: "/social-connections", 
+        label: "Social Media", 
+        icon: <Share2 className="h-5 w-5" />,
+        badge: null
+      },
+      { 
+        href: "/insights", 
+        label: "Insights & Stats", 
+        icon: <BarChart className="h-5 w-5" />,
+        badge: null
+      },
+      { 
         href: "/settings", 
         label: "Settings", 
         icon: <Settings className="h-5 w-5" />,
@@ -123,14 +174,36 @@ export function MobileNav() {
   const navItems = getNavItems();
   
   const toggleMenu = () => {
-    setIsOpen(!isOpen);
+    if (isOpen) {
+      setMenuAnimation('menu-closing');
+      setTimeout(() => {
+        setIsOpen(false);
+        setMenuAnimation('menu-closed');
+      }, 300);
+    } else {
+      setIsOpen(true);
+      setMenuAnimation('menu-opening');
+    }
   };
+  
+  useEffect(() => {
+    // Prevent body scrolling when menu is open
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
   
   return (
     <div className="md:hidden">
       {/* Mobile Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-background">
-        <Link href="/" className="flex items-center">
+        <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center">
           <span className="text-xl font-bold text-brand-500">JobMate</span>
         </Link>
         
@@ -154,7 +227,7 @@ export function MobileNav() {
       
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="fixed inset-0 bg-background z-50 pt-16">
+        <div className={`fixed inset-0 bg-background/90 backdrop-blur-sm z-50 pt-16 transition-all duration-300 ${menuAnimation === 'menu-opening' ? 'animate-slide-down' : menuAnimation === 'menu-closing' ? 'animate-slide-up' : ''}`}>
           {/* User profile section */}
           {isAuthenticated && user && (
             <div className="flex items-center space-x-3 p-4 border-b border-border">
@@ -204,7 +277,7 @@ export function MobileNav() {
           
           {/* Bottom actions */}
           {isAuthenticated && (
-            <div className="border-t border-border p-4 absolute bottom-0 left-0 right-0 bg-background">
+            <div className="border-t border-border p-4 absolute bottom-0 left-0 right-0 bg-background/90 backdrop-blur-sm">
               <Button 
                 variant="ghost" 
                 className="w-full justify-start"

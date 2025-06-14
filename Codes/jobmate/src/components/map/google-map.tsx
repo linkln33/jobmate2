@@ -226,10 +226,8 @@ export function GoogleMap({
       
       script.onload = () => {
         console.log('Google Maps script loaded successfully');
-        // Wait a moment for the components to be registered
-        setTimeout(() => {
-          initializeMap();
-        }, 500);
+        // Initialize map immediately without delay
+        initializeMap();
       };
       
       // Add the script to the document
