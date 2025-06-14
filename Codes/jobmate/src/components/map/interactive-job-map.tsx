@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { GoogleMap, LoadScript, Marker, InfoWindow, MarkerClusterer } from '@react-google-maps/api';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { GoogleMap, LoadScript, Marker, InfoWindow, MarkerClusterer, OverlayView } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, AlertCircle, Clock } from 'lucide-react';
+import { getJobIconName } from '@/utils/category-icons';
 
 import { Job } from '@/types/job';
 
@@ -38,6 +39,7 @@ export function InteractiveJobMap({
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [center, setCenter] = useState(defaultCenter);
+  const [mapLoaded, setMapLoaded] = useState(false);
   
   // Reference to track if component is mounted
   const isMounted = useRef(true);
@@ -48,91 +50,97 @@ export function InteractiveJobMap({
       const job = jobs.find(j => j.id.toString() === selectedJobId.toString());
       if (job) {
         setSelectedJob(job);
-        // Center map on selected job
         setCenter({ lat: job.lat, lng: job.lng });
       }
     }
   }, [selectedJobId, jobs]);
   
-  // Cleanup on unmount
+  // Clean up on unmount
   useEffect(() => {
+    // Set mounted flag
+    isMounted.current = true;
+    
     return () => {
       isMounted.current = false;
+      // Clean up Google Maps instances
+      if (map && typeof google !== 'undefined') {
+        // Remove event listeners and clean up
+        google.maps.event.clearInstanceListeners(map);
+      }
     };
-  }, []);
+  }, [map]);
 
   // Handle map load
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
+    setMapLoaded(true);
+    console.log('Google Maps loaded successfully');
   }, []);
 
   // Handle map unmount
   const onUnmount = useCallback(() => {
+    if (map && typeof google !== 'undefined') {
+      google.maps.event.clearInstanceListeners(map);
+    }
     setMap(null);
-  }, []);
+    setMapLoaded(false);
+    console.log('Google Maps unmounted');
+  }, [map]);
 
   // Handle marker click
   const handleMarkerClick = (job: Job) => {
     setSelectedJob(job);
-    setCenter({ lat: job.lat, lng: job.lng });
-    
-    if (onJobSelect) {
-      onJobSelect(job);
-    }
+    if (onJobSelect) onJobSelect(job);
   };
 
-  // Get marker icon based on job status and urgency
+  // Get marker icon based on job status, urgency, and category
   const getMarkerIcon = (job: Job) => {
-    // Base SVG path for marker
-    const getMarkerSvg = (fillColor: string, scale = 1.5) => {
-      return {
-        path: 'M12,2C8.13,2,5,5.13,5,9c0,5.25,7,13,7,13s7-7.75,7-13C19,5.13,15.87,2,12,2z M12,11.5c-1.38,0-2.5-1.12-2.5-2.5s1.12-2.5,2.5-2.5s2.5,1.12,2.5,2.5S13.38,11.5,12,11.5z',
-        fillColor,
-        fillOpacity: 1,
-        strokeWeight: 1.5,
-        strokeColor: '#ffffff',
-        scale,
-        anchor: new google.maps.Point(12, 22),
-      };
-    };
-
-    // Determine color and size based on status and urgency
-    let fillColor = '#9333ea'; // Default purple
+    // Determine color based on status and urgency
+    let fillColor = '#9333ea'; // default purple
     let scale = 1.5;
     
-    // Status-based coloring
+    // If job is selected, make it slightly larger
+    if (selectedJob && selectedJob.id === job.id) {
+      scale = 1.8;
+    }
+    
     switch(job.status.toLowerCase()) {
-      case 'completed':
-        fillColor = '#4ade80'; // Green for completed
-        break;
-      case 'in_progress':
-        fillColor = '#3b82f6'; // Blue for in progress
-        break;
-      case 'accepted':
-        fillColor = '#60a5fa'; // Light blue for accepted
-        break;
+      case 'completed': 
+        fillColor = '#4ade80'; // green
+        break; 
+      case 'in_progress': 
+        fillColor = '#3b82f6'; // blue
+        break; 
+      case 'accepted': 
+        fillColor = '#60a5fa'; // light blue
+        break; 
       case 'new':
-        // For new jobs, color is determined by urgency
         switch(job.urgency.toLowerCase()) {
-          case 'high':
-            fillColor = '#ef4444'; // Red for high urgency
-            scale = 1.8; // Slightly larger for high urgency
+          case 'high': 
+            fillColor = '#ef4444'; // red
             break;
-          case 'medium':
-            fillColor = '#f97316'; // Orange for medium urgency
+          case 'medium': 
+            fillColor = '#f97316'; // orange
             break;
-          case 'low':
-            fillColor = '#10b981'; // Teal for low urgency
+          case 'low': 
+            fillColor = '#10b981'; // teal
             break;
-          default:
-            fillColor = '#9333ea'; // Default purple
+          default: 
+            fillColor = '#9333ea'; // purple default
         }
         break;
-      default:
+      default: 
         fillColor = '#9333ea'; // Default purple
     }
     
-    return getMarkerSvg(fillColor, scale);
+    // Create a simple colored SVG for the marker
+    const encodedSvg = encodeURIComponent(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
+        <path fill="${fillColor}" stroke="white" stroke-width="1" d="M12,0C7.6,0,3,3.4,3,9c0,5.3,8,13.4,8.3,13.7c0.6,0.6,1.7,0.6,2.3,0c0.4-0.4,8.3-8.4,8.3-13.7C22,3.4,16.4,0,12,0z M12,12 c-1.7,0-3-1.3-3-3s1.3-3,3-3s3,1.3,3,3S13.7,12,12,12z"/>
+      </svg>
+    `);
+    
+    return `data:image/svg+xml;charset=UTF-8,${encodedSvg}`;
   };
 
   // Get status color for badges
@@ -157,98 +165,119 @@ export function InteractiveJobMap({
   };
 
   return (
-    <LoadScript 
-      googleMapsApiKey={apiKey} 
-      loadingElement={
-        <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500 mb-4"></div>
-            <p className="text-lg font-medium">Loading Google Maps...</p>
-          </div>
-        </div>
-      }
-    >
-      <GoogleMap
-        mapContainerStyle={mapContainerStyle}
-        center={center}
-        zoom={defaultZoom}
-        onLoad={onLoad}
-        onUnmount={onUnmount}
-        options={{
-          fullscreenControl: false,
-          streetViewControl: false,
-          mapTypeControl: false,
-          zoomControl: true,
-          styles: [
-            {
-              featureType: 'poi',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            }
-          ]
-        }}
+    <div className="relative w-full h-full">
+      <LoadScript 
+        googleMapsApiKey={apiKey} 
+        loadingElement={<div className="h-full w-full" />}
+        onLoad={() => console.log('Script loaded successfully')}
+        onError={(error) => console.error('Error loading Google Maps script:', error)}
       >
-        {/* Cluster markers when they are close together */}
-        <MarkerClusterer averageCenter enableRetinaIcons gridSize={60}>
-          {(clusterer) => (
-            <div>
-              {jobs.map((job) => (
-                <Marker
-                  key={job.id}
-                  position={{ lat: job.lat, lng: job.lng }}
-                  onClick={() => handleMarkerClick(job)}
-                  icon={getMarkerIcon(job)}
-                  animation={selectedJob?.id === job.id ? google.maps.Animation.BOUNCE : undefined}
-                  clusterer={clusterer}
-                />
-              ))}
-            </div>
-          )}
-        </MarkerClusterer>
+        <GoogleMap
+          mapContainerStyle={mapContainerStyle}
+          center={center}
+          zoom={defaultZoom}
+          onLoad={onLoad}
+          onUnmount={onUnmount}
+          options={{
+            fullscreenControl: false,
+            streetViewControl: false,
+            mapTypeControl: false,
+            zoomControl: true,
+            styles: [
+              {
+                featureType: 'poi',
+                elementType: 'labels',
+                stylers: [{ visibility: 'off' }]
+              }
+            ]
+          }}
+        >
+          {/* Cluster markers when they are close together */}
+          <MarkerClusterer averageCenter enableRetinaIcons gridSize={60}>
+            {(clusterer) => (
+              <div>
+                {jobs.map((job) => (
+                  <Marker
+                    key={job.id}
+                    position={{ lat: job.lat, lng: job.lng }}
+                    onClick={() => handleMarkerClick(job)}
+                    icon={getMarkerIcon(job)}
+                    clusterer={clusterer}
+                  />
+                ))}
+              </div>
+            )}
+          </MarkerClusterer>
 
-        {/* Show info window for selected job */}
-        {selectedJob && (
-          <InfoWindow
-            position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
-            onCloseClick={() => setSelectedJob(null)}
-            options={{ pixelOffset: new google.maps.Size(0, -40) }}
-          >
-            <div className="p-2 max-w-xs">
-              <h4 className="font-semibold text-lg mb-1">{selectedJob.title}</h4>
-              <div className="flex items-center text-sm text-gray-600 mb-2">
-                <MapPin className="h-3 w-3 mr-1" />
-                <span className="truncate">{selectedJob.address}</span>
-              </div>
-              <div className="flex justify-between items-center mb-2">
-                <Badge className={getStatusColor(selectedJob.status)}>
-                  {selectedJob.status}
-                </Badge>
-                <Badge variant="outline" className={getUrgencyColor(selectedJob.urgency)}>
-                  {selectedJob.urgency === 'high' && <AlertCircle className="h-3 w-3 mr-1" />}
-                  {selectedJob.urgency}
-                </Badge>
-              </div>
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center text-sm">
-                  <Clock className="h-3 w-3 mr-1" />
-                  {selectedJob.time}
+          {/* Custom semi-transparent overlay for selected job positioned at job coordinates */}
+          {selectedJob && map && (
+            <OverlayView
+              position={{ lat: selectedJob.lat, lng: selectedJob.lng }}
+              mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+              getPixelPositionOffset={(width: number, height: number) => ({
+                x: -(width / 2),
+                y: -(height + 30) // Position above the marker
+              })}
+            >
+              <div className="w-80 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-lg overflow-hidden z-10 border border-gray-200 dark:border-gray-700">
+                <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                  <h3 className="font-medium text-sm">{selectedJob.title}</h3>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => setSelectedJob(null)}>
+                    <span className="sr-only">Close</span>
+                    ✕
+                  </Button>
                 </div>
-                <span className="font-medium">{selectedJob.price}</span>
+                
+                <div className="p-4 space-y-3 text-sm">
+                  <div className="flex gap-2">
+                    <Badge className={getStatusColor(selectedJob.status)}>
+                      {selectedJob.status}
+                    </Badge>
+                    <Badge className={getUrgencyColor(selectedJob.urgency)}>
+                      {selectedJob.urgency === 'high' && <AlertCircle className="h-3 w-3 mr-1" />}
+                      {selectedJob.urgency}
+                    </Badge>
+                  </div>
+                  
+                  <div>
+                    <div className="flex items-center mb-1">
+                      <MapPin className="h-3 w-3 text-blue-500 mr-1" />
+                      <span className="text-xs">{selectedJob.address}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center text-xs">
+                    <div>
+                      {selectedJob.category && (
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {selectedJob.category.replace(/-/g, ' ')}
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-medium text-green-600">{selectedJob.price}</span>
+                  </div>
+                  
+                  <div className="flex items-center text-xs">
+                    <Clock className="h-3 w-3 text-blue-500 mr-1" />
+                    <span>{selectedJob.time}</span>
+                  </div>
+                  
+                  <div className="pt-2 flex gap-2">
+                    <Button size="sm" className="w-full text-xs h-8">
+                      <MapPin className="h-3 w-3 mr-1" />
+                      Get Directions
+                    </Button>
+                    
+                    <Button variant="outline" size="sm" className="w-full text-xs h-8">
+                      Contact Customer
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <Button 
-                size="sm" 
-                className="w-full"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onJobSelect) onJobSelect(selectedJob);
-                }}
-              >
-                View Details
-              </Button>
-            </div>
-          </InfoWindow>
-        )}
-      </GoogleMap>
-    </LoadScript>
+            </OverlayView>
+          )}
+        </GoogleMap>
+      </LoadScript>
+    </div>
   );
 }

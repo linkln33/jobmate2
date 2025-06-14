@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { getCategoryNameById, getSubcategoryNameById } from '@/utils/category-icons';
 import { InteractiveJobMap } from '@/components/map/interactive-job-map';
+import { MapFilterOverlay } from '@/components/map/map-filter-overlay';
 import { MobileMapView } from '@/components/map/mobile-map-view';
 import { Job } from '@/types/job';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2, Layers } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout/main-layout';
@@ -28,7 +30,9 @@ const mockJobs = [
     customer: 'John Doe',
     time: '2:00 PM Today',
     lat: 37.7749,
-    lng: -122.4194
+    lng: -122.4194,
+    category: 'home-services',
+    subcategory: 'plumbing'
   },
   {
     id: '2',
@@ -41,7 +45,9 @@ const mockJobs = [
     customer: 'Sarah Johnson',
     time: '10:00 AM Tomorrow',
     lat: 37.7935,
-    lng: -122.3964
+    lng: -122.3964,
+    category: 'home-services',
+    subcategory: 'electrical'
   },
   {
     id: '3',
@@ -54,7 +60,9 @@ const mockJobs = [
     customer: 'Robert Brown',
     time: 'Yesterday',
     lat: 37.7841,
-    lng: -122.4076
+    lng: -122.4076,
+    category: 'home-services',
+    subcategory: 'hvac'
   },
   {
     id: '4',
@@ -67,7 +75,9 @@ const mockJobs = [
     customer: 'Emily Davis',
     time: '4:00 PM Today',
     lat: 37.7764,
-    lng: -122.4242
+    lng: -122.4242,
+    category: 'home-services',
+    subcategory: 'furniture-assembly'
   },
   {
     id: '5',
@@ -80,7 +90,9 @@ const mockJobs = [
     customer: 'Michael Wilson',
     time: '11:30 AM Tomorrow',
     lat: 37.7851,
-    lng: -122.3964
+    lng: -122.3964,
+    category: 'home-services',
+    subcategory: 'painting'
   },
   // Additional San Francisco Jobs
   {
@@ -94,7 +106,9 @@ const mockJobs = [
     customer: 'Jessica Miller',
     time: '9:00 AM Tomorrow',
     lat: 37.7797,
-    lng: -122.4001
+    lng: -122.4001,
+    category: 'skilled-trades',
+    subcategory: 'roofing'
   },
   {
     id: '7',
@@ -107,7 +121,9 @@ const mockJobs = [
     customer: 'David Thompson',
     time: '1:00 PM Tomorrow',
     lat: 37.7816,
-    lng: -122.3991
+    lng: -122.3991,
+    category: 'skilled-trades',
+    subcategory: 'carpentry'
   },
   {
     id: '8',
@@ -120,7 +136,9 @@ const mockJobs = [
     customer: 'Amanda Garcia',
     time: '2 Days Ago',
     lat: 37.7598,
-    lng: -122.4260
+    lng: -122.4260,
+    category: 'outdoor-garden',
+    subcategory: 'landscaping'
   },
   {
     id: '9',
@@ -133,7 +151,9 @@ const mockJobs = [
     customer: 'Thomas Rodriguez',
     time: 'In Progress',
     lat: 37.7683,
-    lng: -122.4216
+    lng: -122.4216,
+    category: 'skilled-trades',
+    subcategory: 'contracting'
   },
   {
     id: '10',
@@ -146,7 +166,9 @@ const mockJobs = [
     customer: 'Olivia Martinez',
     time: '3:30 PM Today',
     lat: 37.7867,
-    lng: -122.4103
+    lng: -122.4103,
+    category: 'home-services',
+    subcategory: 'appliance-repair'
   },
   {
     id: '11',
@@ -159,7 +181,9 @@ const mockJobs = [
     customer: 'William Johnson',
     time: '10:00 AM Day After Tomorrow',
     lat: 37.7885,
-    lng: -122.4117
+    lng: -122.4117,
+    category: 'home-services',
+    subcategory: 'carpet-cleaning'
   },
   {
     id: '12',
@@ -172,7 +196,9 @@ const mockJobs = [
     customer: 'Sophia Lee',
     time: '8:00 AM Tomorrow',
     lat: 37.7929,
-    lng: -122.4089
+    lng: -122.4089,
+    category: 'home-services',
+    subcategory: 'home-repairs'
   },
   {
     id: '13',
@@ -185,7 +211,9 @@ const mockJobs = [
     customer: 'Daniel Clark',
     time: 'Last Week',
     lat: 37.7905,
-    lng: -122.4092
+    lng: -122.4092,
+    category: 'home-services',
+    subcategory: 'pest-control'
   },
   {
     id: '14',
@@ -198,7 +226,9 @@ const mockJobs = [
     customer: 'Ava Wilson',
     time: 'In Progress',
     lat: 37.7719,
-    lng: -122.4316
+    lng: -122.4316,
+    category: 'skilled-trades',
+    subcategory: 'drywall'
   },
   {
     id: '15',
@@ -211,7 +241,9 @@ const mockJobs = [
     customer: 'Ethan Brown',
     time: 'Next Week',
     lat: 37.7750,
-    lng: -122.4377
+    lng: -122.4377,
+    category: 'skilled-trades',
+    subcategory: 'flooring'
   }
 ];
 
@@ -227,6 +259,13 @@ export function MapViewPage() {
   const [selectedJobId, setSelectedJobId] = useState<string | number | null>(null);
   const [mapLoading, setMapLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('all');
+  const [showFilterOverlay, setShowFilterOverlay] = useState(false);
+  const [categoryFilters, setCategoryFilters] = useState<{
+    categories: string[];
+    subcategories: string[];
+    searchQuery: string;
+  }>({ categories: [], subcategories: [], searchQuery: '' });
+  const filterOverlayRef = useRef<HTMLDivElement>(null);
   const [isMobileView, setIsMobileView] = useState(false);
   
   // Check if the screen is mobile size using window resize event
@@ -307,6 +346,84 @@ export function MapViewPage() {
   };
 
   // Filter jobs based on search query
+  // Handle clicks outside the filter overlay to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterOverlayRef.current && !filterOverlayRef.current.contains(event.target as Node)) {
+        setShowFilterOverlay(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Apply filters when category filters change
+  useEffect(() => {
+    applyAllFilters();
+  }, [categoryFilters, searchQuery, activeTab]);
+
+  // Apply all filters: search, categories, and tabs
+  const applyAllFilters = () => {
+    let filtered = [...jobs];
+    
+    // Apply search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(query) || 
+        job.address.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply category filters
+    if (categoryFilters.categories.length > 0 || categoryFilters.subcategories.length > 0) {
+      // Filter by selected categories and subcategories
+      filtered = filtered.filter(job => {
+        // If subcategories are selected, check if job matches any of them
+        if (categoryFilters.subcategories.length > 0) {
+          if (job.subcategory && categoryFilters.subcategories.includes(job.subcategory)) {
+            return true;
+          }
+        }
+        
+        // If categories are selected, check if job matches any of them
+        if (categoryFilters.categories.length > 0) {
+          if (job.category && categoryFilters.categories.includes(job.category)) {
+            return true;
+          }
+        }
+        
+        // If both category and subcategory filters are active but job doesn't match any, exclude it
+        return categoryFilters.categories.length === 0 && categoryFilters.subcategories.length === 0;
+      });
+    }
+    
+    // Apply tab filter (status)
+    if (activeTab !== 'all') {
+      filtered = filtered.filter(job => job.status === activeTab);
+    }
+    
+    setFilteredJobs(filtered);
+  };
+  
+  // Handle filter overlay toggle
+  const toggleFilterOverlay = () => {
+    setShowFilterOverlay(prev => !prev);
+  };
+  
+  // Handle filter changes from the overlay
+  const handleFilterChange = (filters: { categories: string[], subcategories: string[], searchQuery: string }) => {
+    setCategoryFilters(filters);
+    if (filters.searchQuery !== searchQuery) {
+      setSearchQuery(filters.searchQuery);
+      // Update search query in category filters as well
+      setCategoryFilters(prev => ({ ...prev, searchQuery: filters.searchQuery }));
+    }
+  };
+
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
     setSearchQuery(query);
@@ -415,8 +532,16 @@ export function MapViewPage() {
                   value={searchQuery}
                   onChange={handleSearch}
                 />
-                <Button variant="outline" size="icon">
+                <Button variant="outline" size="icon" type="submit">
                   <Search className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  onClick={toggleFilterOverlay}
+                  className={showFilterOverlay ? 'bg-primary/10' : ''}
+                >
+                  <Filter className="h-4 w-4" />
                 </Button>
                 <Button variant="outline" size="icon">
                   <MapPin className="h-4 w-4" />
@@ -425,33 +550,53 @@ export function MapViewPage() {
             </div>
             
             {/* Map and Job List */}
+            {/* Filter Overlay */}
+            {showFilterOverlay && (
+              <div 
+                className="absolute z-20 right-4 top-24 w-80"
+                ref={filterOverlayRef}
+              >
+                <MapFilterOverlay 
+                  onFilterChange={handleFilterChange}
+                  onClose={() => setShowFilterOverlay(false)}
+                />
+              </div>
+            )}
+            
             <div className="flex h-[calc(100vh-220px)]">
-              {/* Job List */}
-              <div className="w-1/3 pr-4 overflow-y-auto">
-                <div className="space-y-3">
+              {/* Job List - Smaller width */}
+              <div className="w-1/4 pr-4 overflow-y-auto">
+                <div className="space-y-2">
                   {filteredJobs.map(job => (
                     <div 
                       key={job.id} 
                       className={`cursor-pointer transition-all ${selectedJob?.id === job.id ? 'ring-2 ring-brand-500' : ''}`}
                       onClick={() => setSelectedJob(job)}
                     >
-                      <div className="p-4 border border-gray-200 rounded-md hover:border-brand-300 transition-colors">
-                        <div className="flex justify-between items-start mb-2">
-                          <h3 className="font-medium truncate">{job.title}</h3>
+                      <div className="p-2 border border-gray-200 rounded-md hover:border-brand-300 transition-colors">
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="text-sm font-medium truncate">{job.title}</h3>
                           <Badge className={getStatusColor(job.status)}>
-                            {job.status}
+                            <span className="text-xs">{job.status}</span>
                           </Badge>
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground mb-2">
-                          <MapPin className="h-3 w-3 mr-1 flex-shrink-0" />
+                        <div className="flex items-center text-xs text-muted-foreground mb-1">
+                          <MapPin className="h-2 w-2 mr-1 flex-shrink-0" />
                           <span className="truncate">{job.address}</span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <Badge variant="outline" className={getUrgencyColor(job.urgency)}>
-                            {job.urgency === 'high' && <AlertCircle className="h-3 w-3 mr-1" />}
-                            {job.urgency}
-                          </Badge>
-                          <span className="text-sm font-medium">{job.price}</span>
+                          {job.category && (
+                            <div className="text-xs text-gray-500 truncate max-w-[100px]">
+                              {getCategoryNameById(job.category)}
+                            </div>
+                          )}
+                          <div className="flex items-center gap-1">
+                            <Badge variant="outline" className={getUrgencyColor(job.urgency)}>
+                              {job.urgency === 'high' && <AlertCircle className="h-2 w-2 mr-1" />}
+                              <span className="text-xs">{job.urgency}</span>
+                            </Badge>
+                            <span className="text-xs font-medium">{job.price}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -465,8 +610,14 @@ export function MapViewPage() {
                 </div>
               </div>
               
-              {/* Map Area */}
-              <div className="w-2/3 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
+              {/* Map Area - Larger width */}
+              <div className="w-3/4 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
+                {/* Map Controls */}
+                <div className="absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 rounded-md shadow-md">
+                  <Button variant="ghost" size="icon" className="rounded-md" title="Toggle Layers">
+                    <Layers className="h-4 w-4" />
+                  </Button>
+                </div>
                 {mapLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Spinner className="h-12 w-12 text-brand-500" />
@@ -485,73 +636,7 @@ export function MapViewPage() {
           </>
         )}
         
-        {/* Selected Job Details - Right Sidebar (desktop only) */}
-        {selectedJob && !isMobileView && (
-          <div className="fixed right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 shadow-lg overflow-y-auto z-30 border-l border-gray-200 dark:border-gray-700">
-            <div className="sticky top-0 bg-white dark:bg-gray-800 z-10 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold">Job Details</h2>
-                <Button variant="ghost" size="icon" onClick={() => setSelectedJob(null)}>
-                  <span className="sr-only">Close</span>
-                  ✕
-                </Button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div>
-                <h3 className="text-lg font-medium">{selectedJob.title}</h3>
-                <div className="flex gap-2 mt-2">
-                  <Badge className={getStatusColor(selectedJob.status)}>
-                    {selectedJob.status}
-                  </Badge>
-                  <Badge className={getUrgencyColor(selectedJob.urgency)}>
-                    {selectedJob.urgency}
-                  </Badge>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 dark:bg-gray-900 rounded-md p-4 space-y-4">
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Location</p>
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 text-blue-500 mr-2" />
-                    <span className="font-medium">{selectedJob.address}</span>
-                  </div>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Customer</p>
-                  <p className="font-medium">{selectedJob.customer}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Price</p>
-                  <p className="font-medium text-green-600">{selectedJob.price}</p>
-                </div>
-                
-                <div>
-                  <p className="text-sm text-muted-foreground mb-1">Scheduled Time</p>
-                  <div className="flex items-center">
-                    <Clock className="h-4 w-4 text-blue-500 mr-2" />
-                    <p className="font-medium">{selectedJob.time}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button className="w-full mb-3">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  Get Directions
-                </Button>
-                
-                <Button variant="outline" className="w-full">
-                  Contact Customer
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* The right sidebar job details panel has been replaced with the semi-transparent popup on the map */}
       </div>
     </MainLayout>
   );

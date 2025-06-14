@@ -11,4 +11,7 @@ export interface Job {
   customer: string;
   lat: number;
   lng: number;
+  category?: string; // Category ID
+  subcategory?: string; // Subcategory ID
+  icon?: string; // Custom icon for the job
 }

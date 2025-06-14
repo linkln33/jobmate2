@@ -3,18 +3,27 @@
 import { useEffect, useState } from 'react';
 import { MapViewPage } from '@/components/pages/map-view-page';
 import { Spinner } from '@/components/ui/spinner';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export default function MapPage() {
   const [isLoading, setIsLoading] = useState(true);
+  const [key, setKey] = useState(Date.now()); // Unique key for forcing remount
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // Reset component when pathname or search params change
   useEffect(() => {
+    // Force component to remount with a new key
+    setKey(Date.now());
+    setIsLoading(true);
+    
     // Short timeout to ensure component mounts properly
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 500);
+    }, 800); // Slightly longer timeout to ensure Google Maps API loads properly
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [pathname, searchParams]);
 
   if (isLoading) {
     return (
@@ -27,5 +36,6 @@ export default function MapPage() {
     );
   }
 
-  return <MapViewPage />;
+  // Use the key to force a complete remount of MapViewPage
+  return <MapViewPage key={key} />;
 }
