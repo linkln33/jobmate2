@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2, Layers, Flame, Users } from 'lucide-react';
+import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2, Layers, Flame, Users, Tag as TagIcon, ThumbsUp, DollarSign } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout/main-layout';
@@ -264,6 +264,13 @@ export function MapViewPage() {
   const [filterUrgent, setFilterUrgent] = useState(false);
   const [filterVerified, setFilterVerified] = useState(false);
   const [filterNeighbors, setFilterNeighbors] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  
+  // Additional filter states for vertical buttons
+  const [showAccepted, setShowAccepted] = useState(false);
+  const [showRecommended, setShowRecommended] = useState(false);
+  const [showHighestPay, setShowHighestPay] = useState(false);
+  const [showNewest, setShowNewest] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [showFilterOverlay, setShowFilterOverlay] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState<{
@@ -278,6 +285,7 @@ export function MapViewPage() {
   useEffect(() => {
     const checkMobileView = () => {
       setIsMobileView(window.innerWidth < 768);
+      console.log('Mobile view:', window.innerWidth < 768, 'Width:', window.innerWidth);
     };
     
     // Set initial value
@@ -379,7 +387,11 @@ export function MapViewPage() {
       filterVerified, 
       filterNeighbors,
       categoryFilters,
-      activeTab
+      activeTab,
+      showAccepted,
+      showRecommended,
+      showHighestPay,
+      showNewest
     });
     
     let filtered = [...jobs];
@@ -406,6 +418,32 @@ export function MapViewPage() {
       // In a real app, this would filter based on actual neighbor data
       // For now, we'll use a deterministic approach based on job ID
       filtered = filtered.filter(job => parseInt(job.id.toString()) % 3 === 0);
+    }
+    
+    // Apply vertical action button filters
+    if (showAccepted) {
+      filtered = filtered.filter(job => job.status === 'accepted');
+    }
+    
+    if (showRecommended) {
+      // In a real app, this would filter based on actual recommendation algorithm
+      // For now, we'll use a deterministic approach based on job ID
+      filtered = filtered.filter(job => parseInt(job.id.toString()) % 2 === 0);
+    }
+    
+    if (showHighestPay) {
+      // Sort by price (highest first)
+      filtered.sort((a, b) => {
+        const priceA = parseInt(a.price.replace(/[^0-9]/g, '') || '0');
+        const priceB = parseInt(b.price.replace(/[^0-9]/g, '') || '0');
+        return priceB - priceA;
+      });
+    }
+    
+    if (showNewest) {
+      // In a real app, this would sort by actual creation date
+      // For now, we'll sort by ID (assuming higher ID = newer)
+      filtered.sort((a, b) => parseInt(b.id.toString()) - parseInt(a.id.toString()));
     }
     
     // Apply category filters
@@ -492,7 +530,7 @@ export function MapViewPage() {
 
   return (
     <MainLayout>
-      <div className="p-6 bg-gray-50 dark:bg-gray-900">
+      <div className="p-6 bg-gray-50 dark:bg-gray-900 h-full">
         {/* Conditional rendering based on screen size */}
         {isMobileView ? (
           /* Mobile View */
@@ -504,21 +542,19 @@ export function MapViewPage() {
             ) : (
               <MobileMapView
                 jobs={filteredJobs}
-                onJobSelect={(job) => setSelectedJob(job)}
+                onJobSelect={(job) => {
+                  console.log('Selected job in mobile view:', job);
+                  setSelectedJob(job as any);
+                  setSelectedJobId(job.id.toString());
+                }}
                 onSearch={(query) => {
+                  console.log('Search in mobile view:', query);
                   setSearchQuery(query);
-                  if (!query) {
-                    setFilteredJobs(jobs);
-                  } else {
-                    const filtered = jobs.filter(job => 
-                      job.title.toLowerCase().includes(query.toLowerCase()) || 
-                      job.address.toLowerCase().includes(query.toLowerCase())
-                    );
-                    setFilteredJobs(filtered);
-                  }
+                  applyAllFilters();
                 }}
                 onFilter={() => {
-                  // Filter functionality can be implemented here
+                  console.log('Filter in mobile view');
+                  setShowFilterOverlay(true);
                 }}
               />
             )}
@@ -639,20 +675,128 @@ export function MapViewPage() {
                 </div>
                 
                 {/* Map Filters - Overlay at the top */}
+                {/* Vertical action buttons on the right side */}
+                <div className="absolute top-1/4 right-4 z-10 flex flex-col gap-2" style={{ transform: 'translateX(6px)' }}>
+                  <button
+                    onClick={() => {
+                      setShowAccepted(!showAccepted);
+                      console.log('Toggle accepted jobs:', !showAccepted);
+                      // Apply filters immediately
+                      setTimeout(() => applyAllFilters(), 0);
+                    }}
+                    style={{
+                      backgroundColor: showAccepted ? 'rgba(34, 197, 94, 0.9)' : 'rgba(34, 197, 94, 0.7)',
+                      border: '1px solid rgba(34, 197, 94, 0.9)',
+                      borderRadius: '4px',
+                      padding: '5px',
+                      boxShadow: showAccepted ? '0 0 8px rgba(34, 197, 94, 0.5)' : '0 2px 4px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '40px',
+                      height: '40px',
+                      color: 'white',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                    title="Accepted Jobs"
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRecommended(!showRecommended);
+                      console.log('Toggle recommended jobs:', !showRecommended);
+                      // Apply filters immediately
+                      setTimeout(() => applyAllFilters(), 0);
+                    }}
+                    style={{
+                      backgroundColor: showRecommended ? 'rgba(59, 130, 246, 0.9)' : 'rgba(59, 130, 246, 0.7)',
+                      border: '1px solid rgba(59, 130, 246, 0.9)',
+                      borderRadius: '4px',
+                      padding: '5px',
+                      boxShadow: showRecommended ? '0 0 8px rgba(59, 130, 246, 0.5)' : '0 2px 4px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '40px',
+                      height: '40px',
+                      color: 'white',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                    title="Recommended Jobs"
+                  >
+                    <ThumbsUp className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowHighestPay(!showHighestPay);
+                      console.log('Toggle highest pay jobs:', !showHighestPay);
+                      // Apply filters immediately
+                      setTimeout(() => applyAllFilters(), 0);
+                    }}
+                    style={{
+                      backgroundColor: showHighestPay ? 'rgba(234, 179, 8, 0.9)' : 'rgba(234, 179, 8, 0.7)',
+                      border: '1px solid rgba(234, 179, 8, 0.9)',
+                      borderRadius: '4px',
+                      padding: '5px',
+                      boxShadow: showHighestPay ? '0 0 8px rgba(234, 179, 8, 0.5)' : '0 2px 4px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '40px',
+                      height: '40px',
+                      color: 'white',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                    title="Highest Pay"
+                  >
+                    <DollarSign className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowNewest(!showNewest);
+                      console.log('Toggle newest jobs:', !showNewest);
+                      // Apply filters immediately
+                      setTimeout(() => applyAllFilters(), 0);
+                    }}
+                    style={{
+                      backgroundColor: showNewest ? 'rgba(168, 85, 247, 0.9)' : 'rgba(168, 85, 247, 0.7)',
+                      border: '1px solid rgba(168, 85, 247, 0.9)',
+                      borderRadius: '4px',
+                      padding: '5px',
+                      boxShadow: showNewest ? '0 0 8px rgba(168, 85, 247, 0.5)' : '0 2px 4px rgba(0,0,0,0.1)',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '40px',
+                      height: '40px',
+                      color: 'white',
+                      backdropFilter: 'blur(4px)'
+                    }}
+                    title="Newest Jobs"
+                  >
+                    <Clock className="h-4 w-4" />
+                  </button>
+                </div>
+                
                 <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
                   <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-md px-1 py-1 backdrop-blur-sm">
                     <div className="flex items-center space-x-1">
                       <Button size="sm" variant={filterUrgent ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterUrgent(!filterUrgent)}>
-                        <Flame className="h-3 w-3 mr-1" /> Hot
+                        <Flame className="h-3 w-3 mr-1 text-red-500" /> Hot
                       </Button>
                       <Button size="sm" variant={filterVerified ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterVerified(!filterVerified)}>
-                        <CheckCircle2 className="h-3 w-3 mr-1" /> Verified
+                        <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" /> Verified
                       </Button>
                       <Button size="sm" variant={filterNeighbors ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterNeighbors(!filterNeighbors)}>
-                        <Users className="h-3 w-3 mr-1" /> Neighbors
+                        <Users className="h-3 w-3 mr-1 text-orange-500" /> Neighbors
                       </Button>
                       <Button size="sm" variant="outline" className="h-7 text-xs px-2">
-                        Categories
+                        <TagIcon className="h-3 w-3 mr-1 text-purple-800" /> Categories
                       </Button>
                       <Button size="sm" variant="outline" className="h-7 text-xs px-2">
                         <span className="flex items-center">

@@ -39,6 +39,20 @@ interface Job {
   };
 }
 
+// Define the internal filter state type
+interface FilterState {
+  showUrgent: boolean;
+  showVerifiedPay: boolean;
+  showNeighbors: boolean;
+  minPayRate: number;
+  maxDistance: number;
+  categories: string[];
+  // Additional custom filters
+  showAccepted?: boolean;
+  showSuggested?: boolean;
+  showNewest?: boolean;
+}
+
 interface EnhancedJobMapProps {
   initialJobs: Job[];
   initialCenter?: { lat: number; lng: number };
@@ -48,18 +62,20 @@ interface EnhancedJobMapProps {
   categories: Array<{ id: string; name: string }>;
   showFilters?: boolean;
   selectedJobId?: string | null;
+  filters?: FilterState;
 }
-
-const mapContainerStyle = {
-  width: '100%',
-  borderRadius: '0.5rem',
-};
 
 // Define libraries as a constant to prevent reloading
 const libraries: any[] = ['places'];
 
 const defaultCenter = { lat: 37.7749, lng: -122.4194 }; // San Francisco
 const defaultZoom = 12;
+
+// Default map container style
+const mapContainerStyle = {
+  width: '100%',
+  height: '100%'
+};
 
 export function EnhancedJobMap({
   initialJobs = [],
@@ -68,8 +84,9 @@ export function EnhancedJobMap({
   height = '600px',
   onJobSelected,
   categories = [],
-  showFilters = false,
-  selectedJobId = null
+  showFilters = true,
+  selectedJobId = null,
+  filters: externalFilters
 }: EnhancedJobMapProps) {
   // Load Google Maps with environment variable or fallback to a temporary key
   const { isLoaded, loadError } = useLoadScript({
@@ -82,6 +99,22 @@ export function EnhancedJobMap({
     console.log('Google Maps API Key available:', !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
   }, []);
 
+  // Check if we're on mobile
+  const [isMobile, setIsMobile] = useState(false);
+  
+  // Detect mobile devices
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      console.log('EnhancedJobMap - Mobile check:', window.innerWidth < 768, 'Width:', window.innerWidth);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // State
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -90,14 +123,26 @@ export function EnhancedJobMap({
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [mapInitialized, setMapInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [filters, setFilters] = useState({
+  const [mapType, setMapType] = useState<'roadmap' | 'satellite'>('roadmap');
+  const [filters, setFilters] = useState<FilterState>({
     showUrgent: false,
     showVerifiedPay: false,
     showNeighbors: false,
     minPayRate: 0,
     maxDistance: 50,
     categories: [] as string[],
+    showAccepted: false,
+    showSuggested: false,
+    showNewest: false
   });
+  
+  // Use external filters if provided
+  useEffect(() => {
+    if (externalFilters) {
+      console.log('Using external filters:', externalFilters);
+      setFilters(externalFilters);
+    }
+  }, [externalFilters]);
 
   // Map reference
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -134,87 +179,86 @@ export function EnhancedJobMap({
   const filteredJobs = useMemo(() => {
     console.log('Jobs before filtering:', jobs.length, jobs);
     
-    // TEMPORARY FIX: Return all jobs regardless of filters to ensure markers are visible
-    // This will show all jobs on the map while we debug the filtering issue
-    return jobs;
-    
-    /* Original filtering logic commented out for debugging
-    // If no filters are active, return all jobs
-    const anyFilterActive = filters.showUrgent || filters.showVerifiedPay || 
-                           filters.showNeighbors || filters.minPayRate > 0 || 
+    // Check if any filters are active
+    const anyFilterActive = filters.showUrgent || 
+                           filters.showVerifiedPay || 
+                           filters.showNeighbors || 
+                           filters.minPayRate > 0 || 
                            (filters.maxDistance < 100 && userLocation) || 
-                           filters.categories.length > 0;
+                           filters.categories.length > 0 ||
+                           (filters.showAccepted === true || 
+                            filters.showSuggested === true || 
+                            filters.showNewest === true);
     
     if (!anyFilterActive) {
       console.log('No filters active, returning all jobs');
       return jobs;
     }
     
-    // IMPORTANT: The filters are being applied incorrectly
-    // These filters should only include jobs that match the criteria, not exclude them
-    const filtered = jobs.filter(job => {
-      // When showUrgent is true, we want to INCLUDE urgent jobs, not exclude non-urgent ones
-      if (filters.showUrgent) {
-        return job.urgencyLevel === 'high' || job.urgencyLevel === 'emergency' || job.urgencyLevel === 'urgent';
-      }
-
-      // When showVerifiedPay is true, we want to INCLUDE verified jobs
-      if (filters.showVerifiedPay) {
-        return job.isVerifiedPayment;
-      }
-
-      // When showNeighbors is true, we want to INCLUDE neighbor posted jobs
-      if (filters.showNeighbors) {
-        return job.isNeighborPosted;
-      }
-
-      // If no specific filter is active, include the job
-      return true;
-    });
+    // Apply filters to include matching jobs
+    let filtered = jobs;
     
-    // Apply additional filters that should always be applied
-    const secondaryFiltered = filtered.filter(job => {
-      // Filter by pay rate
-      if (filters.minPayRate > 0) {
-        const jobMinRate = job.budgetMin || 0;
-        if (jobMinRate < filters.minPayRate) {
-          return false;
-        }
-      }
+    // Apply urgent filter
+    if (filters.showUrgent) {
+      filtered = filtered.filter(job => 
+        job.urgencyLevel === 'high' || job.urgencyLevel === 'urgent' || job.urgencyLevel === 'emergency'
+      );
+    }
 
-      // Filter by distance
-      if (userLocation && filters.maxDistance < 100) {
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          job.lat,
-          job.lng
-        );
-        if (distance > filters.maxDistance) {
-          return false;
-        }
-      }
-
-      // Filter by categories
-      if (filters.categories.length > 0) {
-        if (!filters.categories.includes(job.serviceCategory.id)) {
-          return false;
-        }
-      }
-
-      return true;
-    });
-    
-    console.log('Jobs after filtering:', secondaryFiltered.length, secondaryFiltered);
-    
-    // If all jobs are filtered out, return all jobs
-    if (secondaryFiltered.length === 0) {
-      console.log('All jobs filtered out, returning all jobs');
-      return jobs;
+    // Apply verified payment filter
+    if (filters.showVerifiedPay) {
+      filtered = filtered.filter(job => job.isVerifiedPayment);
     }
     
-    return secondaryFiltered;
-    */
+    // Apply neighbors filter
+    if (filters.showNeighbors) {
+      filtered = filtered.filter(job => job.isNeighborPosted);
+    }
+    
+    // Apply minimum pay rate filter
+    if (filters.minPayRate > 0) {
+      filtered = filtered.filter(job => job.budgetMin && job.budgetMin >= filters.minPayRate);
+    }
+    
+    // Apply distance filter if user location is available
+    if (filters.maxDistance < 100 && userLocation) {
+      filtered = filtered.filter(job => {
+        const distance = calculateDistance(
+          userLocation.lat, 
+          userLocation.lng, 
+          job.lat, 
+          job.lng
+        );
+        return distance <= filters.maxDistance;
+      });
+    }
+    
+    // Apply category filter
+    if (filters.categories.length > 0 && !filters.categories.includes('all')) {
+      filtered = filtered.filter(job => filters.categories.includes(job.serviceCategory.id));
+    }
+    
+    // Apply additional custom filters if they exist
+    if (filters.showAccepted) {
+      filtered = filtered.filter(job => job.status === 'accepted');
+    }
+    
+    if (filters.showSuggested) {
+      // Mock implementation for suggested jobs
+      filtered = filtered.filter(job => job.isNeighborPosted && job.budgetMin && job.budgetMin > 30);
+    }
+    
+    if (filters.showNewest) {
+      // Sort by creation date (newest first)
+      filtered = [...filtered].sort((a, b) => 
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+      // Take only the newest 5 jobs
+      filtered = filtered.slice(0, 5);
+    }
+    
+    console.log('Jobs after filtering:', filtered.length);
+    return filtered.length > 0 ? filtered : jobs; // Fallback to all jobs if filters exclude everything
   }, [jobs, filters, userLocation]);
 
   // Calculate distance between two points using Haversine formula
@@ -590,54 +634,91 @@ export function EnhancedJobMap({
         {/* Map Control Buttons */}
         <div style={{ 
           position: 'absolute', 
-          top: '10px', 
+          bottom: '120px', 
           right: '10px', 
           zIndex: 10, 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: '5px' 
+          gap: '8px'
         }}>
+          {/* Center on all jobs */}
           <button 
             onClick={centerOnAllJobs}
             style={{
               backgroundColor: 'white',
               border: '1px solid #ccc',
               borderRadius: '4px',
-              padding: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              padding: '5px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px'
             }}
             title="Center on all jobs"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="16"></line>
-              <line x1="8" y1="12" x2="16" y2="12"></line>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z"/>
+              <circle cx="12" cy="10" r="3"/>
             </svg>
           </button>
+          
+          {/* Center on my location */}
           <button 
             onClick={centerOnUser}
             style={{
               backgroundColor: 'white',
               border: '1px solid #ccc',
               borderRadius: '4px',
-              padding: '8px',
-              boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+              padding: '5px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px'
             }}
-            title="Center on your location"
+            title="Center on my location"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              <circle cx="12" cy="12" r="8"></circle>
             </svg>
           </button>
+          
+          {/* Map/Satellite toggle */}
+          <button 
+            onClick={() => setMapType(mapType === 'roadmap' ? 'satellite' : 'roadmap')}
+            style={{
+              backgroundColor: 'white',
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              padding: '5px',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '40px',
+              height: '40px'
+            }}
+            title={mapType === 'roadmap' ? 'Switch to Satellite View' : 'Switch to Map View'}
+          >
+            {mapType === 'roadmap' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4"></path>
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"></polygon>
+              </svg>
+            )}
+          </button>
+          
+          {/* Street View control removed - using Google's default draggable pegman */}
         </div>
         
 
@@ -647,7 +728,17 @@ export function EnhancedJobMap({
           center={center}
           zoom={zoom}
           onLoad={onMapLoad}
-          options={{ streetViewControl: false, mapTypeControl: false, fullscreenControl: false }}
+          options={{ 
+            disableDefaultUI: true,
+            streetViewControl: true, 
+            mapTypeControl: false, 
+            fullscreenControl: false,
+            zoomControl: false,
+            mapTypeId: mapType,
+            streetViewControlOptions: {
+              position: google.maps.ControlPosition.RIGHT_BOTTOM
+            }
+          }}
         >
           {/* User location marker */}
           {userLocation && (
@@ -754,17 +845,7 @@ export function EnhancedJobMap({
           )}
         </GoogleMap>
 
-        {/* Center on user button */}
-        {userLocation && (
-          <Button
-            size="sm"
-            className="absolute bottom-4 right-4 bg-white text-black border border-gray-300 hover:bg-gray-100"
-            onClick={centerOnUser}
-          >
-            <MapPin className="h-4 w-4 mr-1" />
-            Center on me
-          </Button>
-        )}
+        {/* Center on user button removed - now using the custom button in the left panel */}
 
         {/* Job count */}
         <div className="absolute top-4 left-4 bg-white px-3 py-1.5 rounded-md shadow-sm border border-gray-200 text-sm font-medium">
