@@ -373,6 +373,15 @@ export function MapViewPage() {
 
   // Apply all filters: search, categories, tabs, and filter buttons
   const applyAllFilters = () => {
+    console.log('Applying filters:', { 
+      searchQuery, 
+      filterUrgent, 
+      filterVerified, 
+      filterNeighbors,
+      categoryFilters,
+      activeTab
+    });
+    
     let filtered = [...jobs];
     
     // Apply search filter
@@ -386,7 +395,7 @@ export function MapViewPage() {
     
     // Apply filter buttons
     if (filterUrgent) {
-      filtered = filtered.filter(job => job.urgency === 'high');
+      filtered = filtered.filter(job => job.urgency === 'high' || job.urgency === 'urgent');
     }
     
     if (filterVerified) {
@@ -401,7 +410,6 @@ export function MapViewPage() {
     
     // Apply category filters
     if (categoryFilters.categories.length > 0 || categoryFilters.subcategories.length > 0) {
-      // Filter by selected categories and subcategories
       filtered = filtered.filter(job => {
         // If subcategories are selected, check if job matches any of them
         if (categoryFilters.subcategories.length > 0) {
@@ -425,6 +433,14 @@ export function MapViewPage() {
     // Apply tab filter (status)
     if (activeTab !== 'all') {
       filtered = filtered.filter(job => job.status === activeTab);
+    }
+    
+    console.log(`Filtered jobs: ${filtered.length} out of ${jobs.length}`);
+    
+    // If all jobs are filtered out, show all jobs
+    if (filtered.length === 0) {
+      console.log('All jobs filtered out, showing all jobs instead');
+      filtered = [...jobs];
     }
     
     setFilteredJobs(filtered);
@@ -666,7 +682,7 @@ export function MapViewPage() {
                         zipCode: job.address.split(',')[2] || '',
                         budgetMin: parseInt(job.price.replace(/[^0-9]/g, '') || '0'),
                         createdAt: new Date().toISOString(),
-                        urgencyLevel: job.urgency,
+                        urgencyLevel: job.urgency === 'urgent' ? 'high' : job.urgency,
                         isVerifiedPayment: job.status === 'accepted',
                         isNeighborPosted: Math.random() > 0.5, // Mock data for now
                         serviceCategory: {

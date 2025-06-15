@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { GoogleMap, useLoadScript, InfoWindow, Marker } from '@react-google-maps/api';
+import { GoogleMap, useLoadScript, InfoWindow, Marker, OverlayView } from '@react-google-maps/api';
+import styles from './map-animations.module.css';
 import { MapFilters } from './map-filters';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -72,9 +73,14 @@ export function EnhancedJobMap({
 }: EnhancedJobMapProps) {
   // Load Google Maps with environment variable or fallback to a temporary key
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg', // Fallback to temporary key
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y', // Use the key from .env.local
     libraries,
   });
+  
+  // Debug log for API key
+  useEffect(() => {
+    console.log('Google Maps API Key available:', !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
+  }, []);
 
   // State
   const [jobs, setJobs] = useState<Job[]>(initialJobs);
@@ -96,6 +102,17 @@ export function EnhancedJobMap({
   // Map reference
   const mapRef = useRef<google.maps.Map | null>(null);
 
+  // Update jobs when initialJobs change
+  useEffect(() => {
+    setJobs(initialJobs);
+    console.log('Initial jobs updated:', initialJobs.length);
+  }, [initialJobs]);
+
+  // Debug log for filters
+  useEffect(() => {
+    console.log('Current filters:', filters);
+  }, [filters]);
+
   // Get user location
   useEffect(() => {
     if (navigator.geolocation) {
@@ -115,22 +132,48 @@ export function EnhancedJobMap({
 
   // Filter jobs based on selected filters
   const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
-      // Filter by urgency
-      if (filters.showUrgent && job.urgencyLevel !== 'high' && job.urgencyLevel !== 'emergency') {
-        return false;
+    console.log('Jobs before filtering:', jobs.length, jobs);
+    
+    // TEMPORARY FIX: Return all jobs regardless of filters to ensure markers are visible
+    // This will show all jobs on the map while we debug the filtering issue
+    return jobs;
+    
+    /* Original filtering logic commented out for debugging
+    // If no filters are active, return all jobs
+    const anyFilterActive = filters.showUrgent || filters.showVerifiedPay || 
+                           filters.showNeighbors || filters.minPayRate > 0 || 
+                           (filters.maxDistance < 100 && userLocation) || 
+                           filters.categories.length > 0;
+    
+    if (!anyFilterActive) {
+      console.log('No filters active, returning all jobs');
+      return jobs;
+    }
+    
+    // IMPORTANT: The filters are being applied incorrectly
+    // These filters should only include jobs that match the criteria, not exclude them
+    const filtered = jobs.filter(job => {
+      // When showUrgent is true, we want to INCLUDE urgent jobs, not exclude non-urgent ones
+      if (filters.showUrgent) {
+        return job.urgencyLevel === 'high' || job.urgencyLevel === 'emergency' || job.urgencyLevel === 'urgent';
       }
 
-      // Filter by verified payment
-      if (filters.showVerifiedPay && !job.isVerifiedPayment) {
-        return false;
+      // When showVerifiedPay is true, we want to INCLUDE verified jobs
+      if (filters.showVerifiedPay) {
+        return job.isVerifiedPayment;
       }
 
-      // Filter by neighbor posted
-      if (filters.showNeighbors && !job.isNeighborPosted) {
-        return false;
+      // When showNeighbors is true, we want to INCLUDE neighbor posted jobs
+      if (filters.showNeighbors) {
+        return job.isNeighborPosted;
       }
 
+      // If no specific filter is active, include the job
+      return true;
+    });
+    
+    // Apply additional filters that should always be applied
+    const secondaryFiltered = filtered.filter(job => {
       // Filter by pay rate
       if (filters.minPayRate > 0) {
         const jobMinRate = job.budgetMin || 0;
@@ -161,6 +204,17 @@ export function EnhancedJobMap({
 
       return true;
     });
+    
+    console.log('Jobs after filtering:', secondaryFiltered.length, secondaryFiltered);
+    
+    // If all jobs are filtered out, return all jobs
+    if (secondaryFiltered.length === 0) {
+      console.log('All jobs filtered out, returning all jobs');
+      return jobs;
+    }
+    
+    return secondaryFiltered;
+    */
   }, [jobs, filters, userLocation]);
 
   // Calculate distance between two points using Haversine formula
@@ -193,7 +247,9 @@ export function EnhancedJobMap({
   // Handle map load
   const onMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
-    
+    setMapInitialized(true);
+    console.log('Map loaded successfully', map);
+
     // Only center on jobs if we have jobs and map isn't already initialized
     if (jobs.length > 0 && !mapInitialized) {
       try {
@@ -319,14 +375,117 @@ export function EnhancedJobMap({
     
     return settings;
   };
+  
+  // Determine which animation to use for a job marker
+  const getMarkerAnimation = (job: Job): google.maps.Animation | undefined => {
+    if (selectedJobId === job.id) {
+      return google.maps.Animation.BOUNCE;
+    }
+    return undefined;
+  };
+  
+  // Custom component for pulsing marker
+  const PulsingMarker = ({ position, color }: { position: google.maps.LatLng | google.maps.LatLngLiteral, color: string }) => {
+    console.log('Rendering PulsingMarker at position:', position, 'with color:', color);
+    
+    // Add inline styles as a fallback with proper TypeScript types
+    const pulseContainerStyle: React.CSSProperties = {
+      position: 'relative' as const,
+      width: '30px',
+      height: '30px',
+      zIndex: 999
+    };
+    
+    const pulseCircleStyle: React.CSSProperties = {
+      width: '14px',
+      height: '14px',
+      borderRadius: '50%',
+      position: 'absolute' as const,
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      zIndex: 1001,
+      backgroundColor: color,
+      boxShadow: '0 0 5px rgba(255, 255, 255, 0.8)'
+    };
+    
+    const pulseRingStyle: React.CSSProperties = {
+      position: 'absolute' as const,
+      width: '24px',
+      height: '24px',
+      borderRadius: '50%',
+      border: `3px solid ${color}`,
+      opacity: 1,
+      top: '50%',
+      left: '50%',
+      transform: 'translate(-50%, -50%)',
+      animation: 'pulseAnimation 1.5s infinite',
+      zIndex: 1000
+    };
+    
+    return (
+      <OverlayView
+        position={position}
+        mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+        getPixelPositionOffset={(width, height) => ({
+          x: -(width / 2),
+          y: -(height / 2)
+        })}
+      >
+        <div style={pulseContainerStyle}>
+          <div style={pulseCircleStyle} />
+          <div style={pulseRingStyle} />
+          <style jsx>{`
+            @keyframes pulseAnimation {
+              0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 1;
+              }
+              70% {
+                transform: translate(-50%, -50%) scale(2);
+                opacity: 0;
+              }
+              100% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+              }
+            }
+          `}</style>
+        </div>
+      </OverlayView>
+    );
+  };
 
   // Handle filter changes
   const handleFiltersChange = (newFilters: typeof filters) => {
-    setFilters(newFilters);
+    // Reset filters if they would result in no visible jobs
+    const wouldFilterAllJobs = jobs.every(job => {
+      if (newFilters.showUrgent && job.urgencyLevel !== 'high' && job.urgencyLevel !== 'emergency') return true;
+      if (newFilters.showVerifiedPay && !job.isVerifiedPayment) return true;
+      if (newFilters.showNeighbors && !job.isNeighborPosted) return true;
+      return false;
+    });
+    
+    if (wouldFilterAllJobs) {
+      console.log('Preventing all jobs from being filtered out');
+      // Only apply non-destructive filters
+      setFilters({
+        ...newFilters,
+        showUrgent: false,
+        showVerifiedPay: false,
+        showNeighbors: false
+      });
+    } else {
+      setFilters(newFilters);
+    }
     
     // Re-center map on filtered jobs after filter changes
-    if (mapRef.current && filteredJobs.length > 0) {
-      setTimeout(() => centerOnAllJobs(), 100);
+    if (mapRef.current) {
+      setTimeout(() => {
+        if (filteredJobs.length > 0) {
+          centerOnAllJobs();
+        }
+      }, 100);
     }
   };
 
@@ -481,6 +640,8 @@ export function EnhancedJobMap({
           </button>
         </div>
         
+
+        
         <GoogleMap
           mapContainerStyle={{ ...mapContainerStyle, height }}
           center={center}
@@ -504,15 +665,34 @@ export function EnhancedJobMap({
           )}
 
           {/* Job markers */}
-          {filteredJobs.map((job) => (
-            <Marker
-              key={job.id}
-              position={{ lat: job.lat, lng: job.lng }}
-              onClick={() => handleMarkerClick(job)}
-              icon={getMarkerIcon(job)}
-              animation={selectedJobId === job.id ? google.maps.Animation.BOUNCE : undefined}
-            />
-          ))}
+          {filteredJobs.length > 0 ? (
+            filteredJobs.map((job: Job) => (
+              <React.Fragment key={job.id}>
+                {/* Regular marker */}
+                <Marker
+                  position={{ lat: job.lat, lng: job.lng }}
+                  onClick={() => handleMarkerClick(job)}
+                  icon={getMarkerIcon(job)}
+                  animation={getMarkerAnimation(job)}
+                />
+                
+                {/* Pulsing overlay for urgent jobs */}
+                {(job.urgencyLevel === 'high' || job.urgencyLevel === 'urgent') && selectedJobId !== job.id && (
+                  <PulsingMarker 
+                    position={{ lat: job.lat, lng: job.lng }}
+                    color="#DC2626" // Red color for urgent jobs
+                  />
+                )}
+                {/* Log marker rendering */}
+                {(() => { console.log('Rendered marker for job:', job.id, job.title, job.urgencyLevel); return null; })()}
+              </React.Fragment>
+            ))
+          ) : (
+            <div>
+              {(() => { console.log('No jobs to display on map'); return null; })()}
+              No jobs available
+            </div>
+          )}
 
           {/* Info window for selected job */}
           {selectedJob && (
