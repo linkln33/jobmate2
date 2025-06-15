@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { getCategoryNameById, getSubcategoryNameById } from '@/utils/category-icons';
-import { InteractiveJobMap } from '@/components/map/interactive-job-map';
+import { EnhancedJobMap } from '@/components/map/enhanced-job-map';
+import { MapFilters } from '@/components/map/map-filters';
 import { MapFilterOverlay } from '@/components/map/map-filter-overlay';
 import { MobileMapView } from '@/components/map/mobile-map-view';
 import { Job } from '@/types/job';
@@ -11,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2, Layers } from 'lucide-react';
+import { Search, Filter, MapPin, Clock, Calendar, AlertCircle, CheckCircle2, Layers, Flame, Users } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { MainLayout } from '@/components/layout/main-layout';
@@ -246,8 +247,6 @@ const mockJobs = [
     subcategory: 'flooring'
   }
 ];
-
-// Convert mock jobs to our Job type
 const typedMockJobs: Job[] = mockJobs;
 
 export function MapViewPage() {
@@ -255,9 +254,16 @@ export function MapViewPage() {
   const [jobs, setJobs] = useState<Job[]>(typedMockJobs);
   const [filteredJobs, setFilteredJobs] = useState<Job[]>(jobs);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | number | null>(null);
-  const [mapLoading, setMapLoading] = useState(true);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  
+  // ... (rest of the code remains the same)
+  // Filter states
+  const [filterUrgent, setFilterUrgent] = useState(false);
+  const [filterVerified, setFilterVerified] = useState(false);
+  const [filterNeighbors, setFilterNeighbors] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
   const [showFilterOverlay, setShowFilterOverlay] = useState(false);
   const [categoryFilters, setCategoryFilters] = useState<{
@@ -365,7 +371,7 @@ export function MapViewPage() {
     applyAllFilters();
   }, [categoryFilters, searchQuery, activeTab]);
 
-  // Apply all filters: search, categories, and tabs
+  // Apply all filters: search, categories, tabs, and filter buttons
   const applyAllFilters = () => {
     let filtered = [...jobs];
     
@@ -376,6 +382,21 @@ export function MapViewPage() {
         job.title.toLowerCase().includes(query) || 
         job.address.toLowerCase().includes(query)
       );
+    }
+    
+    // Apply filter buttons
+    if (filterUrgent) {
+      filtered = filtered.filter(job => job.urgency === 'high');
+    }
+    
+    if (filterVerified) {
+      filtered = filtered.filter(job => job.status === 'accepted');
+    }
+    
+    if (filterNeighbors) {
+      // In a real app, this would filter based on actual neighbor data
+      // For now, we'll use a deterministic approach based on job ID
+      filtered = filtered.filter(job => parseInt(job.id.toString()) % 3 === 0);
     }
     
     // Apply category filters
@@ -424,42 +445,17 @@ export function MapViewPage() {
     }
   };
 
+  // Handle search input changes
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value.toLowerCase();
+    const query = e.target.value;
     setSearchQuery(query);
-    
-    if (!query) {
-      setFilteredJobs(jobs);
-    } else {
-      const filtered = jobs.filter(job => 
-        job.title.toLowerCase().includes(query) || 
-        job.address.toLowerCase().includes(query)
-      );
-      setFilteredJobs(filtered);
-    }
   };
-
-  // Filter jobs by search query and tab
+  
+  // Update filters when filter buttons change
   useEffect(() => {
-    let filtered = [...jobs];
-    
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(job => 
-        job.title.toLowerCase().includes(query) ||
-        job.address.toLowerCase().includes(query)
-      );
-    }
-    
-    // Filter by tab
-    if (activeTab !== 'all') {
-      filtered = filtered.filter(job => job.status.toLowerCase() === activeTab);
-    }
-    
-    setFilteredJobs(filtered);
-  }, [jobs, searchQuery, activeTab]);
-
+    applyAllFilters();
+  }, [filterUrgent, filterVerified, filterNeighbors, activeTab, searchQuery]);
+  
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'new': return 'bg-green-500 text-white';
@@ -567,20 +563,27 @@ export function MapViewPage() {
               {/* Job List - Smaller width */}
               <div className="w-1/4 pr-4 overflow-y-auto">
                 <div className="space-y-2">
-                  {filteredJobs.map(job => (
+                  {filteredJobs.map((job) => (
                     <div 
                       key={job.id} 
-                      className={`cursor-pointer transition-all ${selectedJob?.id === job.id ? 'ring-2 ring-brand-500' : ''}`}
-                      onClick={() => setSelectedJob(job)}
+                      className="p-3 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedJobId(job.id.toString());
+                        // Find the job and set it as selected
+                        const selectedJob = jobs.find(j => j.id === job.id);
+                        if (selectedJob) {
+                          setSelectedJob(selectedJob);
+                        }
+                      }}
                     >
-                      <div className="p-2 border border-gray-200 rounded-md hover:border-brand-300 transition-colors">
-                        <div className="flex justify-between items-start mb-1">
-                          <h3 className="text-sm font-medium truncate">{job.title}</h3>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex justify-between items-center">
+                          <h3 className={`font-medium text-sm ${selectedJobId === job.id ? 'text-primary' : ''}`}>{job.title}</h3>
                           <Badge className={getStatusColor(job.status)}>
-                            <span className="text-xs">{job.status}</span>
+                            {job.status}
                           </Badge>
                         </div>
-                        <div className="flex items-center text-xs text-muted-foreground mb-1">
+                        <div className="flex items-center text-xs text-gray-500">
                           <MapPin className="h-2 w-2 mr-1 flex-shrink-0" />
                           <span className="truncate">{job.address}</span>
                         </div>
@@ -611,25 +614,85 @@ export function MapViewPage() {
               </div>
               
               {/* Map Area - Larger width */}
-              <div className="w-3/4 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
+              <div className="w-3/4 bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative" style={{ height: 'calc(100vh - 200px)' }}>
                 {/* Map Controls */}
                 <div className="absolute top-4 right-4 z-10 bg-white dark:bg-gray-800 rounded-md shadow-md">
                   <Button variant="ghost" size="icon" className="rounded-md" title="Toggle Layers">
                     <Layers className="h-4 w-4" />
                   </Button>
                 </div>
+                
+                {/* Map Filters - Overlay at the top */}
+                <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-10">
+                  <div className="bg-white/90 dark:bg-gray-800/90 rounded-lg shadow-md px-1 py-1 backdrop-blur-sm">
+                    <div className="flex items-center space-x-1">
+                      <Button size="sm" variant={filterUrgent ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterUrgent(!filterUrgent)}>
+                        <Flame className="h-3 w-3 mr-1" /> Hot
+                      </Button>
+                      <Button size="sm" variant={filterVerified ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterVerified(!filterVerified)}>
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Verified
+                      </Button>
+                      <Button size="sm" variant={filterNeighbors ? "default" : "outline"} className="h-7 text-xs px-2" onClick={() => setFilterNeighbors(!filterNeighbors)}>
+                        <Users className="h-3 w-3 mr-1" /> Neighbors
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-2">
+                        Categories
+                      </Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs px-2">
+                        <span className="flex items-center">
+                          Filters
+                        </span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
                 {mapLoading ? (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <Spinner className="h-12 w-12 text-brand-500" />
                   </div>
                 ) : (
-                  <InteractiveJobMap
-                    jobs={filteredJobs}
-                    onJobSelect={(job) => setSelectedJob(job)}
-                    selectedJobId={selectedJob?.id}
-                    defaultCenter={{ lat: 37.7749, lng: -122.4194 }} // San Francisco center
-                    defaultZoom={12}
-                  />
+                  <div className="h-full w-full">
+                    <EnhancedJobMap
+                      initialJobs={filteredJobs.map(job => ({
+                        id: job.id.toString(),
+                        title: job.title,
+                        description: job.title, // Use title as description since description doesn't exist
+                        status: job.status,
+                        lat: job.lat,
+                        lng: job.lng,
+                        city: job.address.split(',')[0] || '',
+                        state: job.address.split(',')[1] || '',
+                        zipCode: job.address.split(',')[2] || '',
+                        budgetMin: parseInt(job.price.replace(/[^0-9]/g, '') || '0'),
+                        createdAt: new Date().toISOString(),
+                        urgencyLevel: job.urgency,
+                        isVerifiedPayment: job.status === 'accepted',
+                        isNeighborPosted: Math.random() > 0.5, // Mock data for now
+                        serviceCategory: {
+                          id: job.category || '',
+                          name: getCategoryNameById(job.category || '')
+                        },
+                        customer: {
+                          id: typeof job.customer === 'string' ? job.customer : '',
+                          firstName: 'Customer',
+                          lastName: 'Name'
+                        }
+                      }))}
+                      initialCenter={{ lat: 37.7749, lng: -122.4194 }} // San Francisco
+                      initialZoom={12}
+                      height="100%"
+                      onJobSelected={(jobId) => {
+                        setSelectedJobId(jobId);
+                        const job = jobs.find(j => j.id === jobId);
+                        if (job) {
+                          setSelectedJob(job);
+                        }
+                      }}
+                      categories={[]} // We'll implement this later
+                      selectedJobId={selectedJobId}
+                    />
+                  </div>
                 )}
               </div>
             </div>
