@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LayoutProvider } from "@/contexts/LayoutContext";
+import { AssistantProvider } from "@/contexts/AssistantContext/AssistantContext";
+import AIAdaptivePanel from "@/components/assistant/AIAdaptivePanel";
 
 interface ClientLayoutProps {
   children: React.ReactNode;
@@ -15,8 +17,11 @@ export function ClientLayout({ children }: ClientLayoutProps) {
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <AuthProvider>
         <LayoutProvider>
-          {children}
-          <Toaster />
+          <AssistantProvider>
+            {children}
+            <AIAdaptivePanel />
+            <Toaster />
+          </AssistantProvider>
         </LayoutProvider>
       </AuthProvider>
     </ThemeProvider>
