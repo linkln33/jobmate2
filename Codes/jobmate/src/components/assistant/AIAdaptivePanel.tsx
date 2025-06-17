@@ -6,6 +6,7 @@ import { X, ChevronRight, ChevronLeft, Settings, MessageSquare, MessageCircle, L
 import { useAssistant } from '@/contexts/AssistantContext/AssistantContext';
 import { AssistantMode, ProactivityLevel } from '@/contexts/AssistantContext/types';
 import SuggestionCard from '@/components/assistant/SuggestionCard';
+import PriceEstimateCard from '@/components/assistant/PriceEstimateCard';
 import ModeSelector from '@/components/assistant/ModeSelector';
 import ChatInterface from './ChatInterface';
 import PromptSuggestions from './PromptSuggestions';
@@ -199,13 +200,29 @@ const AIAdaptivePanel: React.FC = () => {
                       <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
                     </div>
                   ) : suggestions.length > 0 ? (
-                    suggestions.map((suggestion) => (
-                      <SuggestionCard
-                        key={suggestion.id}
-                        suggestion={suggestion}
-                        onDismiss={() => actions.dismissSuggestion(suggestion.id)}
-                      />
-                    ))
+                    suggestions.map((suggestion) => {
+                      // Check if this is a price-related suggestion
+                      const isPriceEstimate = 
+                        suggestion.context?.includes('pricing') || 
+                        suggestion.title?.includes('Price') || 
+                        suggestion.title?.includes('Cost') || 
+                        suggestion.title?.includes('Budget') ||
+                        suggestion.content?.includes('$');
+                      
+                      return isPriceEstimate ? (
+                        <PriceEstimateCard
+                          key={suggestion.id}
+                          suggestion={suggestion}
+                          onDismiss={() => actions.dismissSuggestion(suggestion.id)}
+                        />
+                      ) : (
+                        <SuggestionCard
+                          key={suggestion.id}
+                          suggestion={suggestion}
+                          onDismiss={() => actions.dismissSuggestion(suggestion.id)}
+                        />
+                      );
+                    })
                   ) : (
                     <div className="text-center py-8 text-gray-500">
                       <MessageSquare className="mx-auto h-12 w-12 mb-2 opacity-50" />

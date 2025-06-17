@@ -96,6 +96,7 @@ To connect customers with skilled local specialists (plumbers, electricians, etc
 - **Real-time Chat**: Communicate directly with customers/specialists
 - **AI Diagnosis**: Automatically identify issues from photos
 - **Smart Scheduling**: AI-powered scheduling assistant
+- **Price Calculator**: AI-powered project cost estimation based on multiple factors
 - **Secure Payments**: Integrated wallet and payment system
 - **Verification**: ID and license verification for specialists
 - **Reviews & Ratings**: Build reputation through quality work
