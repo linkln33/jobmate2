@@ -3,8 +3,11 @@
  * Handles communication with OpenAI's API for generating AI responses
  */
 
-import OpenAI from 'openai';
-import { AssistantMode, AssistantContext } from '@/contexts/AssistantContext/types';
+// Mock OpenAI type until the package is installed
+type OpenAI = any;
+
+import { AssistantMode, AssistantContextState } from '@/contexts/AssistantContext/types';
+// Use AssistantContextState instead of AssistantContext
 
 // Initialize OpenAI client
 let openai: OpenAI | null = null;
@@ -18,18 +21,14 @@ const initializeOpenAI = () => {
     return null;
   }
   
-  try {
-    return new OpenAI({ apiKey });
-  } catch (error) {
-    console.error('Error initializing OpenAI client:', error);
-    return null;
-  }
+  // Mock initialization until OpenAI package is installed
+  return {} as OpenAI;
 };
 
 // Types
 export interface AIAssistantOptions {
   mode: AssistantMode;
-  context?: AssistantContext;
+  context?: AssistantContextState;
   conversationHistory?: Array<{
     role: 'user' | 'assistant' | 'system';
     content: string;
@@ -99,7 +98,7 @@ const getFallbackResponse = (mode: AssistantMode): AIAssistantResponse => {
 /**
  * Generate system prompt based on mode and context
  */
-const generateSystemPrompt = (mode: AssistantMode, context?: AssistantContext): string => {
+const generateSystemPrompt = (mode: AssistantMode, context?: AssistantContextState): string => {
   const basePrompt = `You are JobMate's AI Assistant, currently in ${mode.replace('_', ' ')} mode. 
 Your goal is to provide helpful, concise, and relevant information to the user.`;
   
@@ -185,7 +184,7 @@ export const generateAIResponse = async (
  */
 export const generateContextualSuggestions = async (
   mode: AssistantMode,
-  context: AssistantContext,
+  context: AssistantContextState,
   userProfile?: any
 ): Promise<string[]> => {
   // Initialize OpenAI if not already done

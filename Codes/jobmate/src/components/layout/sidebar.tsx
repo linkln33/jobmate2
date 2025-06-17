@@ -146,6 +146,12 @@ export function Sidebar() {
         badge: null
       },
       { 
+        href: "/assistant/analytics", 
+        label: "Assistant Analytics", 
+        icon: <BarChart className="h-5 w-5 text-blue-500" />,
+        badge: null
+      },
+      { 
         href: "/settings", 
         label: "Settings", 
         icon: <Settings className="h-5 w-5" />,

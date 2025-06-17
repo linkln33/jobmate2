@@ -5,7 +5,7 @@
  * Currently implements placeholder functions that can be replaced with actual ML implementations
  */
 
-import { AssistantMode, AssistantContext } from '@/contexts/AssistantContext/types';
+import { AssistantMode, AssistantContextState } from '@/contexts/AssistantContext/types';
 import { prisma } from '@/lib/prisma';
 import aiAssistantService from './aiAssistantService';
 
@@ -22,7 +22,7 @@ export const predictRelevantMode = async (
   
   try {
     // Get user's recent memory logs
-    const recentLogs = await prisma.assistantMemoryLog.findMany({
+    const recentLogs = await (prisma as any).assistantMemoryLog?.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 10
@@ -52,7 +52,7 @@ export const predictRelevantMode = async (
         GENERAL: 0
       };
       
-      recentLogs.forEach(log => {
+      recentLogs.forEach((log: { mode?: string }) => {
         if (log.mode) {
           modeCounts[log.mode as AssistantMode]++;
         }
@@ -85,20 +85,24 @@ export const predictRelevantMode = async (
  */
 export const calculateEngagementScore = async (userId: string): Promise<number> => {
   try {
-    // Get user's memory logs
-    const logs = await prisma.assistantMemoryLog.findMany({
+    // Get user's recent activity logs
+    const logs = await (prisma as any).assistantMemoryLog?.findMany({
       where: { userId }
-    });
+    }) || [];
     
     // Get user's chat history
-    const chats = await prisma.assistantChat.findMany({
+    const chatHistory = await (prisma as any).assistantChat?.findMany({
       where: { userId }
-    });
+    }) || [];
     
-    // Calculate engagement metrics
+    // Calculate basic engagement metrics
     const totalInteractions = logs.length;
-    const helpfulInteractions = logs.filter(log => log.helpful).length;
-    const totalChats = chats.length;
+    // Use context data for sentiment analysis instead of helpful flag
+    const helpfulInteractions = logs.filter((log: any) => {
+      const context = log.context as any;
+      return context?.sentiment === 'positive';
+    }).length;
+    const totalChats = chatHistory.length;
     
     // Simple scoring formula (would be replaced by ML model)
     const baseScore = Math.min(totalInteractions * 5, 50);
@@ -120,51 +124,60 @@ export const calculateEngagementScore = async (userId: string): Promise<number> 
 export const predictRelevantSuggestions = async (
   userId: string,
   mode: AssistantMode,
-  context: AssistantContext
+  context: AssistantContextState
 ): Promise<string[]> => {
   try {
     // Get user profile data
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        skills: {
-          include: { skill: true }
-        },
-        jobsPosted: {
-          take: 3,
-          orderBy: { createdAt: 'desc' }
-        }
+        skills: true,
+        specialistProfile: true
       }
+    }) as any; // Cast to any to handle custom fields
+    
+    // Fetch jobs posted by user separately
+    const jobsPosted = await prisma.job.findMany({
+      where: { customerId: userId },
+      take: 5
     });
+    
+    // Attach to user object
+    user.jobsPosted = jobsPosted;
     
     if (!user) {
       throw new Error('User not found');
     }
     
     // Get user's memory logs to analyze patterns
-    const memoryLogs = await prisma.assistantMemoryLog.findMany({
+    const recentActivity = await (prisma as any).assistantMemoryLog?.findMany({
       where: { 
         userId,
-        helpful: true // Only consider helpful interactions
+        // Use interactionType instead of helpful flag
+        interactionType: 'suggestion_accepted'
       },
       orderBy: { createdAt: 'desc' },
       take: 20
-    });
+    }) || [];
+    
+    // Extract relevant information from user data
+    const userSkills = user?.skills?.map((s: any) => s.skill?.name) || [];
+    const jobCategories = user?.jobsPosted?.map((j: any) => j.serviceCategoryId) || [];
+    const interactionContexts = recentActivity?.map((log: any) => log.context) || [];
     
     // In a real implementation, this would use a trained model
     // For now, use the AI service as a placeholder for ML capabilities
-    return await aiAssistantService.generateContextualSuggestions(
+    const suggestedTopics = await aiAssistantService.generateContextualSuggestions(
       mode,
       context,
       {
-        skills: user.skills.map(s => s.skill.name),
-        recentJobs: user.jobsPosted.map(j => j.title),
-        interactionHistory: memoryLogs.map(log => ({
-          type: log.interactionType,
-          context: log.context
-        }))
+        skills: userSkills,
+        recentJobs: user.jobsPosted.map((j: any) => j.title),
+        interactionHistory: interactionContexts
       }
     );
+
+    return suggestedTopics;
   } catch (error) {
     console.error('Error predicting relevant suggestions:', error);
     return [
@@ -184,19 +197,26 @@ export const analyzeFeedback = async (userId: string): Promise<{
   overallSentiment: 'positive' | 'neutral' | 'negative';
 }> => {
   try {
-    // Get user's feedback
-    const feedbackLogs = await prisma.assistantMemoryLog.findMany({
-      where: { 
+    // Get user feedback logs with text content
+    const feedbackLogs = await (prisma as any).assistantMemoryLog?.findMany({
+      where: {
         userId,
-        feedbackText: { not: null }
+        interactionType: 'feedback' // Use interactionType instead of feedbackText
       },
       orderBy: { createdAt: 'desc' },
       take: 50
     });
     
-    // Count positive and negative feedback
-    const positiveCount = feedbackLogs.filter(log => log.helpful).length;
-    const negativeCount = feedbackLogs.filter(log => !log.helpful).length;
+    // Count positive and negative feedback based on context data
+    const positiveCount = feedbackLogs.filter((log: any) => {
+      const context = log.context as any;
+      return context?.sentiment === 'positive';
+    }).length;
+    
+    const negativeCount = feedbackLogs.filter((log: any) => {
+      const context = log.context as any;
+      return context?.sentiment === 'negative';
+    }).length;
     
     // Simple sentiment analysis (would be replaced by ML model)
     let overallSentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
@@ -224,9 +244,133 @@ export const analyzeFeedback = async (userId: string): Promise<{
   }
 };
 
+/**
+ * Score suggestions based on relevance to user context and history
+ * Returns suggestions with relevance scores attached
+ */
+export const scoreSuggestions = async (
+  userId: string,
+  suggestions: Array<any>,
+  context: AssistantContextState
+): Promise<Array<any>> => {
+  try {
+    // Get user's recent activity and preferences
+    const recentLogs = await (prisma as any).assistantMemoryLog?.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: 50
+    }) || [];
+    
+    // Get user preferences
+    const preferences = await (prisma as any).assistantPreference?.findUnique({
+      where: { userId }
+    }) || {};
+    
+    // Get user profile data for context
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        skills: true,
+        specialistProfile: true
+      }
+    });
+    
+    // Calculate base scores for each suggestion
+    return suggestions.map(suggestion => {
+      // Start with base score
+      let score = 50;
+      
+      // 1. Context matching (0-30 points)
+      if (suggestion.context && context.currentPath) {
+        // Direct context match
+        if (context.currentPath.includes(suggestion.context)) {
+          score += 30;
+        } 
+        // Partial context match
+        else if (suggestion.context.split('_').some((part: string) => 
+          context.currentPath.includes(part))) {
+          score += 15;
+        }
+      }
+      
+      // 2. User history (0-25 points)
+      const similarInteractions = recentLogs.filter((log: any) => 
+        log.action === suggestion.action || 
+        log.context === suggestion.context
+      );
+      
+      // If user has interacted with similar suggestions
+      if (similarInteractions.length > 0) {
+        // Calculate acceptance rate
+        const acceptedCount = similarInteractions.filter(
+          (log: any) => log.interactionType === 'suggestion_accepted'
+        ).length;
+        
+        const acceptanceRate = acceptedCount / similarInteractions.length;
+        
+        // Higher acceptance rate = higher score
+        score += Math.round(acceptanceRate * 25);
+      }
+      
+      // 3. Priority boost (0-20 points)
+      if (suggestion.priority) {
+        score += (suggestion.priority * 6);
+      }
+      
+      // 4. Skill relevance (0-15 points)
+      if (suggestion.skills && user?.skills) {
+        const userSkills = user.skills.map((s: any) => s.skill?.name.toLowerCase());
+        const suggestionSkills = Array.isArray(suggestion.skills) 
+          ? suggestion.skills.map((s: string) => s.toLowerCase())
+          : [];
+          
+        // Count matching skills
+        const matchingSkills = suggestionSkills.filter(
+          (skill: string) => userSkills.includes(skill)
+        ).length;
+        
+        if (matchingSkills > 0) {
+          // Award points based on percentage of matching skills
+          const matchPercentage = matchingSkills / suggestionSkills.length;
+          score += Math.round(matchPercentage * 15);
+        }
+      }
+      
+      // 5. Recency adjustment (-10 to 0 points)
+      // Reduce score for suggestions user has seen recently
+      const recentSameSuggestion = recentLogs.find(
+        (log: any) => 
+          log.title === suggestion.title && 
+          new Date(log.createdAt) > new Date(Date.now() - 24 * 60 * 60 * 1000)
+      );
+      
+      if (recentSameSuggestion) {
+        score -= 10;
+      }
+      
+      // Ensure score is within bounds (0-100)
+      score = Math.max(0, Math.min(100, score));
+      
+      // Attach score to suggestion
+      return {
+        ...suggestion,
+        relevanceScore: score
+      };
+    });
+  } catch (error) {
+    console.error('Error scoring suggestions:', error);
+    // Return original suggestions with default score if error
+    return suggestions.map(suggestion => ({
+      ...suggestion,
+      relevanceScore: 50 // Default middle score
+    }));
+  }
+};
+
 export default {
   predictRelevantMode,
   calculateEngagementScore,
   predictRelevantSuggestions,
-  analyzeFeedback
+  analyzeFeedback,
+  scoreSuggestions
 };

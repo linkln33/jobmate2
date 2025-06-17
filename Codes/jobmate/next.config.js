@@ -11,13 +11,8 @@ const nextConfig = {
     // Keep this for Netlify compatibility
     unoptimized: true,
   },
-  experimental: {
-    serverActions: true,
-  },
-  // Ensure server always starts on port 3000
-  server: {
-    port: 3000,
-  },
+  // Server Actions are enabled by default in Next.js 14
+  // Port is configured via package.json scripts
   // Increase memory limit
   onDemandEntries: {
     // period (in ms) where the server will keep pages in the buffer

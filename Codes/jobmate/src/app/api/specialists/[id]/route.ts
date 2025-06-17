@@ -53,12 +53,12 @@ export async function GET(
         revieweeId: specialistId,
       },
       select: {
-        rating: true,
+        overallRating: true,
       },
     });
 
     const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      ? reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length
       : 0;
 
     // Get recent completed jobs

@@ -184,7 +184,7 @@ export function VerificationTabs() {
 }
 
 // Helper function to calculate progress percentage
-function calculateProgress(status) {
+function calculateProgress(status: Record<string, boolean | number>): number {
   const totalFields = Object.keys(status).filter(key => key !== 'progress').length;
   const completedFields = Object.entries(status)
     .filter(([key, value]) => key !== 'progress' && value === true)

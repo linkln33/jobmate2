@@ -6,6 +6,7 @@
  */
 
 import { AssistantMode } from '@/contexts/AssistantContext/types';
+import { prisma } from '@/lib/prisma';
 
 // Job categories with base rates (hourly)
 export interface JobCategory {
@@ -388,9 +389,182 @@ export const getPriceEstimateFromQuery = (
   return estimate.explanation;
 };
 
+/**
+ * Get user's historical price calculator usage
+ * @param userId User ID
+ * @returns Object containing user's most frequent choices
+ */
+export const getUserPriceCalculatorHistory = async (userId: string) => {
+  try {
+    // Get all memory logs related to price calculator
+    const memoryLogs = await prisma.assistantMemoryLog.findMany({
+      where: {
+        userId,
+        interactionType: 'price_calculator',
+        context: {
+          path: ['$'],
+          not: null
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 10 // Get the 10 most recent interactions
+    });
+
+    if (memoryLogs.length === 0) {
+      return undefined;
+    }
+
+    // Extract data from memory logs
+    const categoryFrequency: Record<string, number> = {};
+    const complexityFrequency: Record<string, number> = {};
+    const experienceFrequency: Record<string, number> = {};
+    const regionFrequency: Record<string, number> = {};
+    const durationFrequency: Record<string, number> = {};
+    let totalHours = 0;
+    let hoursCount = 0;
+
+    memoryLogs.forEach(log => {
+      const context = log.context as any;
+      
+      if (context.jobCategory) {
+        categoryFrequency[context.jobCategory] = (categoryFrequency[context.jobCategory] || 0) + 1;
+      }
+      
+      if (context.complexity) {
+        complexityFrequency[context.complexity] = (complexityFrequency[context.complexity] || 0) + 1;
+      }
+      
+      if (context.experience) {
+        experienceFrequency[context.experience] = (experienceFrequency[context.experience] || 0) + 1;
+      }
+      
+      if (context.region) {
+        regionFrequency[context.region] = (regionFrequency[context.region] || 0) + 1;
+      }
+      
+      if (context.duration) {
+        durationFrequency[context.duration] = (durationFrequency[context.duration] || 0) + 1;
+      }
+      
+      if (context.hours) {
+        totalHours += context.hours;
+        hoursCount++;
+      }
+    });
+
+    // Find most frequent values
+    const getMostFrequent = (frequency: Record<string, number>) => {
+      let maxCount = 0;
+      let mostFrequent = '';
+      
+      Object.entries(frequency).forEach(([value, count]) => {
+        if (count > maxCount) {
+          maxCount = count;
+          mostFrequent = value;
+        }
+      });
+      
+      return mostFrequent;
+    };
+
+    return {
+      mostFrequentCategory: getMostFrequent(categoryFrequency),
+      mostFrequentComplexity: getMostFrequent(complexityFrequency),
+      mostFrequentExperience: getMostFrequent(experienceFrequency),
+      mostFrequentRegion: getMostFrequent(regionFrequency),
+      mostFrequentDuration: getMostFrequent(durationFrequency),
+      averageHours: hoursCount > 0 ? Math.round(totalHours / hoursCount) : null,
+      recentLogs: memoryLogs
+    };
+  } catch (error) {
+    console.error('Error retrieving price calculator history:', error);
+    return undefined;
+  }
+};
+
+/**
+ * Log price calculator usage to memory logs
+ * @param userId User ID
+ * @param calculatorData Calculator data used
+ */
+export const logPriceCalculatorUsage = async (
+  userId: string,
+  calculatorData: {
+    jobCategory: string;
+    complexity: string;
+    experience: string;
+    region: string;
+    duration: string;
+    hours: number;
+  }
+) => {
+  try {
+    await prisma.assistantMemoryLog.create({
+      data: {
+        userId,
+        mode: 'PROJECT_SETUP',
+        interactionType: 'price_calculator',
+        context: calculatorData as any,
+        routePath: '/project/price-calculator'
+      }
+    });
+  } catch (error) {
+    console.error('Error logging price calculator usage:', error);
+  }
+};
+
+/**
+ * Generate personalized price estimate suggestions based on user history
+ * @param userId User ID
+ * @returns Array of personalized suggestions
+ */
+export const getPersonalizedPriceEstimates = async (userId: string) => {
+  try {
+    const history = await getUserPriceCalculatorHistory(userId);
+    
+    if (!history) {
+      return [];
+    }
+    
+    const suggestions = [];
+    
+    // Generate suggestion based on most frequent category
+    if (history.mostFrequentCategory) {
+      const estimate = calculatePriceEstimate(
+        history.mostFrequentCategory,
+        history.mostFrequentComplexity || 'Standard',
+        history.mostFrequentExperience || 'Intermediate',
+        history.mostFrequentRegion || 'North America',
+        history.mostFrequentDuration || 'Medium-term (1-4 weeks)',
+        history.averageHours || 40
+      );
+      
+      suggestions.push({
+        title: `${history.mostFrequentCategory} Estimate (Based on History)`,
+        content: `Based on your previous estimates, a ${history.mostFrequentCategory} project typically costs between $${estimate.totalMin}-${estimate.totalMax}.`,
+        mode: 'PROJECT_SETUP',
+        context: 'price_calculator_history',
+        priority: 85,
+        actionUrl: `/project/price-calculator?category=${encodeURIComponent(history.mostFrequentCategory.toLowerCase())}&prefill=true`,
+        isActive: true
+      });
+    }
+    
+    return suggestions;
+  } catch (error) {
+    console.error('Error generating personalized price estimates:', error);
+    return [];
+  }
+};
+
 export default {
   calculatePriceEstimate,
   getPriceEstimateFromQuery,
+  getUserPriceCalculatorHistory,
+  logPriceCalculatorUsage,
+  getPersonalizedPriceEstimates,
   jobCategories,
   complexityLevels,
   experienceLevels,

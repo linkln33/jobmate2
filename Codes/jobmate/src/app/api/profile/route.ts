@@ -219,7 +219,7 @@ export async function PUT(req: NextRequest) {
         const existingSkillIds = existingSkills.map(skill => skill.skillId);
         
         // Find skills to add (in skills but not in existingSkillIds)
-        const skillsToAdd = skills.filter(skill => !existingSkillIds.includes(skill.id));
+        const skillsToAdd = skills.filter((skill: { id: string; proficiencyLevel?: number }) => !existingSkillIds.includes(skill.id));
         
         // Add new skills
         for (const skill of skillsToAdd) {
@@ -233,7 +233,7 @@ export async function PUT(req: NextRequest) {
         }
         
         // Find skills to remove (in existingSkillIds but not in skills)
-        const skillIdsToKeep = skills.map(skill => skill.id);
+        const skillIdsToKeep = skills.map((skill: { id: string }) => skill.id);
         const skillsToRemove = existingSkillIds.filter(id => !skillIdsToKeep.includes(id));
         
         // Remove skills that are no longer in the list
@@ -266,8 +266,8 @@ export async function PUT(req: NextRequest) {
       }
     });
 
-    // Remove sensitive data before sending response
-    const { passwordHash: _, ...userWithoutPassword } = updatedUserWithProfile;
+    // The user object already doesn't contain passwordHash due to our select options
+    const userWithoutPassword = updatedUserWithProfile;
 
     return NextResponse.json({
       profile: userWithoutPassword,
@@ -315,31 +315,44 @@ async function calculateReviewStatistics(userId: string) {
   const negative = reviews.filter(r => r.reviewType === 'NEGATIVE').length;
   
   // Calculate positive percentage
-  const positivePercentage = (positive / reviews.length) * 100;
+  const positivePercentage = reviews.length > 0 ? (positive / reviews.length) * 100 : 0;
   
   // Calculate overall average rating
-  const averageRating = reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length;
+  const averageRating = reviews.length > 0
+    ? reviews.reduce((sum: number, review) => sum + review.overallRating, 0) / reviews.length
+    : 0;
   
   // Calculate criteria averages
-  const timingRatings = reviews.filter(r => r.timingRating !== null).map(r => r.timingRating);
-  const satisfactionRatings = reviews.filter(r => r.satisfactionRating !== null).map(r => r.satisfactionRating);
-  const costRatings = reviews.filter(r => r.costRating !== null).map(r => r.costRating);
-  const communicationRatings = reviews.filter(r => r.communicationRating !== null).map(r => r.communicationRating);
+  const timingRatings = reviews
+    .filter((r): r is typeof r & { timingRating: number } => r.timingRating !== null)
+    .map(r => r.timingRating);
+  
+  const satisfactionRatings = reviews
+    .filter((r): r is typeof r & { satisfactionRating: number } => r.satisfactionRating !== null)
+    .map(r => r.satisfactionRating);
+  
+  const costRatings = reviews
+    .filter((r): r is typeof r & { costRating: number } => r.costRating !== null)
+    .map(r => r.costRating);
+  
+  const communicationRatings = reviews
+    .filter((r): r is typeof r & { communicationRating: number } => r.communicationRating !== null)
+    .map(r => r.communicationRating);
   
   const avgTiming = timingRatings.length > 0 
-    ? timingRatings.reduce((sum, rating) => sum + rating, 0) / timingRatings.length 
+    ? timingRatings.reduce((sum: number, rating: number) => sum + rating, 0) / timingRatings.length 
     : 0;
   
   const avgSatisfaction = satisfactionRatings.length > 0 
-    ? satisfactionRatings.reduce((sum, rating) => sum + rating, 0) / satisfactionRatings.length 
+    ? satisfactionRatings.reduce((sum: number, rating: number) => sum + rating, 0) / satisfactionRatings.length 
     : 0;
   
   const avgCost = costRatings.length > 0 
-    ? costRatings.reduce((sum, rating) => sum + rating, 0) / costRatings.length 
+    ? costRatings.reduce((sum: number, rating: number) => sum + rating, 0) / costRatings.length 
     : 0;
   
   const avgCommunication = communicationRatings.length > 0 
-    ? communicationRatings.reduce((sum, rating) => sum + rating, 0) / communicationRatings.length 
+    ? communicationRatings.reduce((sum: number, rating: number) => sum + rating, 0) / communicationRatings.length 
     : 0;
 
   return {

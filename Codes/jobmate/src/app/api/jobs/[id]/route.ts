@@ -25,7 +25,7 @@ export async function GET(
     const job = await prisma.job.findUnique({
       where: { id: jobId },
       include: {
-        category: true,
+        serviceCategory: true,
         customer: {
           select: {
             id: true,
@@ -35,7 +35,7 @@ export async function GET(
             email: user.role === 'ADMIN' ? true : false, // Only admins can see email
           },
         },
-        jobMedia: true,
+        media: true,
         proposals: user.role === 'CUSTOMER' || user.role === 'ADMIN' ? {
           include: {
             specialist: {
@@ -189,7 +189,7 @@ export async function PATCH(
       where: { id: jobId },
       data: updateData,
       include: {
-        category: true,
+        serviceCategory: true,
         customer: {
           select: {
             id: true,
@@ -206,7 +206,7 @@ export async function PATCH(
             profileImageUrl: true,
           },
         } : undefined,
-        jobMedia: true,
+        media: true,
       },
     });
 
@@ -231,7 +231,7 @@ export async function PATCH(
       }
 
       // Refresh job with updated media
-      updatedJob.jobMedia = await prisma.jobMedia.findMany({
+      updatedJob.media = await prisma.jobMedia.findMany({
         where: { jobId },
       });
     }

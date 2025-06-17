@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { getUserFromRequest } from '@/lib/auth';
+import { getUserFromRequest } from '../../../../../lib/auth';
 
 const prisma = new PrismaClient();
 
@@ -72,11 +72,11 @@ export async function GET(
             firstName: true,
             lastName: true,
             profileImageUrl: true,
+            bio: true,
             specialistProfile: {
               select: {
-                bio: true,
-                rating: true,
-                completedJobsCount: true,
+                averageRating: true,
+                totalJobsCompleted: true,
               },
             },
           },
@@ -171,9 +171,8 @@ export async function POST(
     const proposal = await prisma.jobProposal.create({
       data: {
         price: parseFloat(price),
-        description,
+        message: description,
         estimatedDuration: estimatedDuration ? parseInt(estimatedDuration) : null,
-        estimatedDurationUnit: estimatedDurationUnit || null,
         status: 'PENDING',
         job: {
           connect: { id: jobId },
@@ -202,7 +201,7 @@ export async function POST(
         title: 'New Proposal Received',
         message: `You have received a new proposal for your job: ${job.title}`,
         isRead: false,
-        metadata: {
+        data: {
           jobId: job.id,
           proposalId: proposal.id,
           specialistId: user.id,

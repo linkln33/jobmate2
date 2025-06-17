@@ -309,7 +309,7 @@ export async function DELETE(req: NextRequest) {
       // Delete by skill ID
       const userSkill = await prisma.userSkill.findFirst({
         where: {
-          skillId: skillId,
+          skillId: skillId || '',
           userId: user.id // Ensure the skill belongs to the user
         }
       });

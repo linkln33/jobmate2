@@ -2,20 +2,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Calculator, DollarSign, Info } from 'lucide-react';
+import { ArrowLeft, Calculator, DollarSign, Info, History } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import priceCalculator, { 
   jobCategories, 
   complexityLevels, 
   experienceLevels, 
   locationFactors, 
-  durationImpacts 
+  durationImpacts,
+  logPriceCalculatorUsage,
+  getUserPriceCalculatorHistory
 } from '@/services/assistant/priceCalculator';
 
 export default function PriceCalculatorPage() {
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
   const searchParams = useSearchParams();
   const initialCategory = searchParams.get('category') || '';
+  const shouldPrefill = searchParams.get('prefill') === 'true';
   
   // Form state
   const [jobCategory, setJobCategory] = useState(initialCategory ? 
@@ -29,6 +35,10 @@ export default function PriceCalculatorPage() {
   const [duration, setDuration] = useState(durationImpacts[1].duration); // Default to Medium-term
   const [hours, setHours] = useState(40); // Default to 40 hours
   
+  // History state
+  const [hasHistory, setHasHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
   // Result state
   const [estimate, setEstimate] = useState<{
     hourlyMin: number;
@@ -38,6 +48,38 @@ export default function PriceCalculatorPage() {
     explanation: string;
   } | null>(null);
   
+  // Load user history on initial render
+  useEffect(() => {
+    const loadUserHistory = async () => {
+      if (!userId || !shouldPrefill) return;
+      
+      setIsLoadingHistory(true);
+      try {
+        const history = await getUserPriceCalculatorHistory(userId);
+        
+        if (history) {
+          setHasHistory(true);
+          
+          // Pre-fill form with user's most frequent choices if prefill=true
+          if (shouldPrefill) {
+            if (history.mostFrequentCategory) setJobCategory(history.mostFrequentCategory);
+            if (history.mostFrequentComplexity) setComplexity(history.mostFrequentComplexity);
+            if (history.mostFrequentExperience) setExperience(history.mostFrequentExperience);
+            if (history.mostFrequentRegion) setLocation(history.mostFrequentRegion);
+            if (history.mostFrequentDuration) setDuration(history.mostFrequentDuration);
+            if (history.averageHours) setHours(history.averageHours);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    loadUserHistory();
+  }, [userId, shouldPrefill]);
+
   // Calculate estimate when form values change
   useEffect(() => {
     const result = priceCalculator.calculatePriceEstimate(
@@ -49,7 +91,26 @@ export default function PriceCalculatorPage() {
       hours
     );
     setEstimate(result);
-  }, [jobCategory, complexity, experience, location, duration, hours]);
+    
+    // Log calculator usage to memory logs when values change
+    // But only if the user is logged in and the component has mounted (not on initial render)
+    const logUsage = async () => {
+      if (userId && !isLoadingHistory) {
+        await logPriceCalculatorUsage(userId, {
+          jobCategory,
+          complexity,
+          experience,
+          region: location,
+          duration,
+          hours
+        });
+      }
+    };
+    
+    // Use a debounce to avoid excessive logging
+    const timeoutId = setTimeout(logUsage, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [jobCategory, complexity, experience, location, duration, hours, userId, isLoadingHistory]);
   
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -59,6 +120,21 @@ export default function PriceCalculatorPage() {
           Back to Project Setup
         </Link>
       </div>
+      
+      {hasHistory && shouldPrefill && (
+        <motion.div
+          className="mb-4 bg-blue-50 p-4 rounded-lg border border-blue-200 flex items-start"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <History size={20} className="text-blue-600 mr-2 mt-0.5" />
+          <div>
+            <p className="text-blue-800 font-medium">Form pre-filled based on your history</p>
+            <p className="text-sm text-blue-600">We've used your previous estimates to pre-fill this form with your most common choices.</p>
+          </div>
+        </motion.div>
+      )}
       
       <motion.div 
         className="bg-white rounded-lg shadow-lg overflow-hidden"

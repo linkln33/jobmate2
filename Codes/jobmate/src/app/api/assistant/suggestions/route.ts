@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { withAIRateLimit } from '../middleware';
 
 // GET /api/assistant/suggestions - Get suggestions for the current user based on context
-export async function GET(req: NextRequest) {
+export const GET = withAIRateLimit(async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -40,12 +41,8 @@ export async function GET(req: NextRequest) {
       filters.mode = mode;
     }
     
-    if (context) {
-      filters.context = context;
-    }
-    
     // Get suggestions, excluding dismissed ones
-    const dismissedIds = preferences?.dismissedSuggestionIds || [];
+    const dismissedIds = preferences?.dismissedSuggestions || [];
     
     const suggestions = await prisma.assistantSuggestion.findMany({
       where: {
@@ -63,28 +60,22 @@ export async function GET(req: NextRequest) {
     await prisma.assistantMemoryLog.create({
       data: {
         userId,
-        action: 'FETCH_SUGGESTIONS',
-        context: context || '',
+        interactionType: 'FETCH_SUGGESTIONS',
+        context: context ? { value: context } : {},
         mode: mode || 'GENERAL',
-        metadata: {
-          url: req.url,
-          suggestionsCount: suggestions.length
-        }
+        routePath: req.url
       }
     });
     
     return NextResponse.json({ suggestions });
   } catch (error) {
-    console.error('Error fetching assistant suggestions:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch assistant suggestions' },
-      { status: 500 }
-    );
+    console.error('Error getting suggestions:', error);
+    return NextResponse.json({ error: 'Failed to get suggestions' }, { status: 500 });
   }
-}
+});
 
 // POST /api/assistant/suggestions - Create a new suggestion
-export async function POST(req: NextRequest) {
+export const POST = withAIRateLimit(async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -96,11 +87,11 @@ export async function POST(req: NextRequest) {
     const data = await req.json();
     
     // Validate required fields
-    const { title, content, mode, context, priority, actionUrl } = data;
+    const { title, description, mode, context, priority, actionUrl, actionType } = data;
     
-    if (!title || !content || !mode) {
+    if (!title || !description || !mode) {
       return NextResponse.json(
-        { error: 'Missing required fields: title, content, and mode are required' },
+        { error: 'Missing required fields: title, description, and mode are required' },
         { status: 400 }
       );
     }
@@ -110,12 +101,13 @@ export async function POST(req: NextRequest) {
       data: {
         userId,
         title,
-        content,
+        description,
         mode,
-        context: context || '',
+        actionPayload: context ? { value: context } : undefined,
         priority: priority || 1,
-        actionUrl: actionUrl || null,
-        isActive: true,
+        actionType: actionType || null,
+        status: 'pending',
+        // Removed isActive as it's not in the schema
       }
     });
     
@@ -123,28 +115,22 @@ export async function POST(req: NextRequest) {
     await prisma.assistantMemoryLog.create({
       data: {
         userId,
-        action: 'CREATE_SUGGESTION',
-        context: context || '',
+        interactionType: 'CREATE_SUGGESTION',
+        context: context ? { value: context, suggestionId: suggestion.id, title } : { suggestionId: suggestion.id, title },
         mode,
-        metadata: {
-          suggestionId: suggestion.id,
-          title
-        }
+        routePath: req.url
       }
     });
     
     return NextResponse.json(suggestion, { status: 201 });
   } catch (error) {
-    console.error('Error creating assistant suggestion:', error);
-    return NextResponse.json(
-      { error: 'Failed to create assistant suggestion' },
-      { status: 500 }
-    );
+    console.error('Error creating suggestion:', error);
+    return NextResponse.json({ error: 'Failed to create suggestion' }, { status: 500 });
   }
-}
+});
 
 // PUT /api/assistant/suggestions/:id - Update a suggestion (e.g., mark as completed)
-export async function PUT(req: NextRequest) {
+export const PUT = withAIRateLimit(async function PUT(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -195,22 +181,16 @@ export async function PUT(req: NextRequest) {
     await prisma.assistantMemoryLog.create({
       data: {
         userId,
-        action: 'UPDATE_SUGGESTION',
-        context: existingSuggestion.context || '',
+        interactionType: 'UPDATE_SUGGESTION',
+        context: { suggestionId, changes: data },
         mode: existingSuggestion.mode,
-        metadata: {
-          suggestionId,
-          changes: data
-        }
+        routePath: req.url
       }
     });
     
     return NextResponse.json(suggestion);
   } catch (error) {
-    console.error('Error updating assistant suggestion:', error);
-    return NextResponse.json(
-      { error: 'Failed to update assistant suggestion' },
-      { status: 500 }
-    );
+    console.error('Error updating suggestion:', error);
+    return NextResponse.json({ error: 'Failed to update suggestion' }, { status: 500 });
   }
-}
+});

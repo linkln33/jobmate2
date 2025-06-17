@@ -13,6 +13,7 @@ export const metadata: Metadata = {
   title: 'JobMate - Connect with Local Service Specialists',
   description: 'Find trusted specialists for maintenance and handyman jobs in your area.',
   manifest: '/manifest.json',
+  themeColor: '#00a3ff',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
@@ -27,8 +28,6 @@ export const metadata: Metadata = {
     siteName: 'JobMate',
   },
 };
-
-export const themeColor = '#00a3ff';
 
 export default function RootLayout({
   children,

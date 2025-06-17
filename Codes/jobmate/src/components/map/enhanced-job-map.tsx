@@ -12,7 +12,7 @@ import { Flame, CheckCircle2, Users, MapPin, DollarSign, Clock } from 'lucide-re
 import Link from 'next/link';
 
 // Define job type
-interface Job {
+export interface Job {
   id: string;
   title: string;
   description: string;

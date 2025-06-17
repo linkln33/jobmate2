@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { withStandardRateLimit } from '../middleware';
 
 // GET /api/assistant/preferences - Get the current user's assistant preferences
-export async function GET(req: NextRequest) {
+export const GET = withStandardRateLimit(async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
           isEnabled: true,
           proactivityLevel: 2, // Default: balanced
           preferredModes: ['MATCHING', 'PROJECT_SETUP'], // Default enabled modes
-          dismissedSuggestionIds: [],
+          dismissedSuggestions: [],
         }
       });
     }
@@ -40,10 +41,10 @@ export async function GET(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // PUT /api/assistant/preferences - Update the current user's assistant preferences
-export async function PUT(req: NextRequest) {
+export const PUT = withStandardRateLimit(async function PUT(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -55,7 +56,7 @@ export async function PUT(req: NextRequest) {
     const data = await req.json();
     
     // Validate input data
-    const { isEnabled, proactivityLevel, preferredModes, dismissedSuggestionIds } = data;
+    const { isEnabled, proactivityLevel, preferredModes, dismissedSuggestions } = data;
     
     // Update or create preferences
     const preferences = await prisma.assistantPreference.upsert({
@@ -64,14 +65,14 @@ export async function PUT(req: NextRequest) {
         ...(isEnabled !== undefined && { isEnabled }),
         ...(proactivityLevel !== undefined && { proactivityLevel }),
         ...(preferredModes !== undefined && { preferredModes }),
-        ...(dismissedSuggestionIds !== undefined && { dismissedSuggestionIds }),
+        ...(dismissedSuggestions !== undefined && { dismissedSuggestions }),
       },
       create: {
         userId,
         isEnabled: isEnabled ?? true,
         proactivityLevel: proactivityLevel ?? 2,
         preferredModes: preferredModes ?? ['MATCHING', 'PROJECT_SETUP'],
-        dismissedSuggestionIds: dismissedSuggestionIds ?? [],
+        dismissedSuggestions: dismissedSuggestions ?? [],
       }
     });
     
@@ -83,10 +84,10 @@ export async function PUT(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});
 
 // POST /api/assistant/preferences/dismiss - Dismiss a suggestion
-export async function POST(req: NextRequest) {
+export const POST = withStandardRateLimit(async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
@@ -117,17 +118,17 @@ export async function POST(req: NextRequest) {
           isEnabled: true,
           proactivityLevel: 2,
           preferredModes: ['MATCHING', 'PROJECT_SETUP'],
-          dismissedSuggestionIds: [suggestionId],
+          dismissedSuggestions: [suggestionId],
         }
       });
     } else {
       // Update dismissed suggestions
-      const dismissedIds = preferences.dismissedSuggestionIds || [];
+      const dismissedIds = preferences.dismissedSuggestions || [];
       if (!dismissedIds.includes(suggestionId)) {
         preferences = await prisma.assistantPreference.update({
           where: { userId },
           data: {
-            dismissedSuggestionIds: [...dismissedIds, suggestionId],
+            dismissedSuggestions: [...dismissedIds, suggestionId],
           }
         });
       }
@@ -141,4 +142,4 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+});

@@ -29,7 +29,7 @@ export async function GET(
                 profileImageUrl: true,
               },
             },
-            jobMedia: {
+            media: {
               take: 1,
             },
             _count: {

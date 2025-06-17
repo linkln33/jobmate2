@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       prisma.job.findMany({
         where,
         include: {
-          category: true,
+          serviceCategory: true,
           customer: {
             select: {
               id: true,
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
               profileImageUrl: true,
             },
           },
-          jobMedia: true,
+          media: true,
         },
         skip,
         take: limit,
@@ -136,14 +136,17 @@ export async function POST(req: NextRequest) {
         title,
         description,
         status: 'OPEN',
-        budget: parseFloat(budget),
-        location,
+        budgetMin: budget ? parseFloat(budget) : null,
+        budgetMax: budget ? parseFloat(budget) : null,
         address,
-        latitude: latitude ? parseFloat(latitude) : null,
-        longitude: longitude ? parseFloat(longitude) : null,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        category: {
+        city: location?.city || '',
+        zipCode: location?.zipCode || '',
+        country: location?.country || 'Unknown',
+        latitude: latitude ? parseFloat(latitude) : 0,
+        longitude: longitude ? parseFloat(longitude) : 0,
+        scheduledStartTime: startDate ? new Date(startDate) : null,
+        scheduledEndTime: endDate ? new Date(endDate) : null,
+        serviceCategory: {
           connect: { id: categoryId },
         },
         customer: {
@@ -169,16 +172,11 @@ export async function POST(req: NextRequest) {
     const createdJob = await prisma.job.findUnique({
       where: { id: job.id },
       include: {
-        category: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        },
-        jobMedia: true,
+        serviceCategory: true,
+        customer: true,
+        specialist: true,
+        media: true,
+        proposals: true
       },
     });
 

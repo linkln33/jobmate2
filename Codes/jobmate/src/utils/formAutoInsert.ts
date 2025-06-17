@@ -11,10 +11,19 @@
 export const insertIntoField = (fieldId: string, content: string): boolean => {
   try {
     // Find the field in the DOM
-    const field = document.getElementById(fieldId) as HTMLInputElement | HTMLTextAreaElement;
+    const element = document.getElementById(fieldId);
     
-    if (!field) {
+    if (!element) {
       console.error(`Field with ID ${fieldId} not found`);
+      return false;
+    }
+    
+    // Type guard to ensure element is an input or textarea
+    const field = element as HTMLInputElement | HTMLTextAreaElement;
+    
+    // Verify the element is actually a form input element
+    if (!(element instanceof HTMLInputElement) && !(element instanceof HTMLTextAreaElement)) {
+      console.error(`Element with ID ${fieldId} is not a form input element`);
       return false;
     }
     
@@ -56,12 +65,15 @@ export const insertIntoField = (fieldId: string, content: string): boolean => {
 export const insertIntoActiveField = (content: string): boolean => {
   try {
     // Get the currently focused element
-    const activeElement = document.activeElement as HTMLInputElement | HTMLTextAreaElement;
+    const element = document.activeElement;
     
-    if (!activeElement) {
+    if (!element) {
       console.error('No active element found');
       return false;
     }
+    
+    // Type guard for the active element
+    const activeElement = element as HTMLElement;
     
     // Check if it's an input or textarea
     if (activeElement instanceof HTMLInputElement || activeElement instanceof HTMLTextAreaElement) {
@@ -85,7 +97,7 @@ export const insertIntoActiveField = (content: string): boolean => {
     }
     
     // Handle contentEditable elements (like rich text editors)
-    if (activeElement.isContentEditable) {
+    if ('isContentEditable' in activeElement && activeElement.isContentEditable) {
       // Get selection
       const selection = window.getSelection();
       if (selection && selection.rangeCount > 0) {
@@ -106,7 +118,9 @@ export const insertIntoActiveField = (content: string): boolean => {
         
         // Trigger input event
         const event = new Event('input', { bubbles: true });
-        activeElement.dispatchEvent(event);
+        if ('dispatchEvent' in activeElement) {
+          activeElement.dispatchEvent(event);
+        }
         
         return true;
       }

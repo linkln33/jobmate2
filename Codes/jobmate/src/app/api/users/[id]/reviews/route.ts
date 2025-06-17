@@ -15,8 +15,8 @@ export async function GET(
     const { searchParams } = new URL(req.url);
     const reviewType = searchParams.get('reviewType') as ReviewType;
     const asReviewer = searchParams.get('asReviewer') === 'true';
-    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit')) : 10;
-    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset')) : 0;
+    const limit = searchParams.get('limit') ? parseInt(searchParams.get('limit') || '10') : 10;
+    const offset = searchParams.get('offset') ? parseInt(searchParams.get('offset') || '0') : 0;
     
     // Build the query
     const query: any = {
@@ -139,13 +139,24 @@ async function calculateReviewStatistics(userId: string) {
   const averageRating = reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length;
   
   // Calculate criteria averages
-  const timingRatings = reviews.filter(r => r.timingRating !== null).map(r => r.timingRating);
-  const satisfactionRatings = reviews.filter(r => r.satisfactionRating !== null).map(r => r.satisfactionRating);
-  const costRatings = reviews.filter(r => r.costRating !== null).map(r => r.costRating);
-  const communicationRatings = reviews.filter(r => r.communicationRating !== null).map(r => r.communicationRating);
+  const timingRatings = reviews
+    .filter((r): r is typeof r & { timingRating: number } => r.timingRating !== null)
+    .map(r => r.timingRating);
+  
+  const satisfactionRatings = reviews
+    .filter((r): r is typeof r & { satisfactionRating: number } => r.satisfactionRating !== null)
+    .map(r => r.satisfactionRating);
+  
+  const costRatings = reviews
+    .filter((r): r is typeof r & { costRating: number } => r.costRating !== null)
+    .map(r => r.costRating);
+  
+  const communicationRatings = reviews
+    .filter((r): r is typeof r & { communicationRating: number } => r.communicationRating !== null)
+    .map(r => r.communicationRating);
   
   const avgTiming = timingRatings.length > 0 
-    ? timingRatings.reduce((sum, rating) => sum + rating, 0) / timingRatings.length 
+    ? timingRatings.reduce((sum: number, rating: number) => sum + rating, 0) / timingRatings.length 
     : 0;
   
   const avgSatisfaction = satisfactionRatings.length > 0 

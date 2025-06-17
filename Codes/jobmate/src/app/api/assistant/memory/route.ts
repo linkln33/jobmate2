@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { withAIRateLimit } from "../middleware";
+import { authOptions } from "@/lib/auth";
 
 // Schema for memory log creation
 const memoryLogSchema = z.object({
   action: z.string(),
   mode: z.string(),
   context: z.any().optional(),
-  helpful: z.boolean().optional(),
   feedbackText: z.string().optional(),
   aiGenerated: z.boolean().optional(),
   metadata: z.record(z.any()).optional(),
@@ -28,7 +29,7 @@ const memoryQuerySchema = z.object({
  * GET /api/assistant/memory
  * Retrieves memory logs for the current user with filtering options
  */
-export async function GET(request: NextRequest) {
+export const GET = withAIRateLimit(async function GET(request: NextRequest) {
   try {
     // Get the authenticated user session
     const session = await getServerSession();
@@ -109,19 +110,16 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error retrieving memory logs:", error);
-    return NextResponse.json(
-      { error: "Failed to retrieve memory logs" },
-      { status: 500 }
-    );
+    console.error("Error fetching memory logs:", error);
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
-}
+});
 
 /**
  * POST /api/assistant/memory
  * Creates a new memory log for the current user
  */
-export async function POST(request: NextRequest) {
+export const POST = withAIRateLimit(async function POST(request: NextRequest) {
   try {
     // Get the authenticated user session
     const session = await getServerSession();
@@ -148,11 +146,12 @@ export async function POST(request: NextRequest) {
         userId: user.id,
         mode: validatedData.mode,
         interactionType: validatedData.action,
-        context: validatedData.context || {},
+        context: {
+          ...validatedData.context || {},
+          feedbackText: validatedData.feedbackText,
+          aiGenerated: validatedData.aiGenerated || false
+        },
         routePath: body.metadata?.path,
-        helpful: validatedData.helpful,
-        feedbackText: validatedData.feedbackText,
-        aiGenerated: validatedData.aiGenerated || false,
       },
     });
 
@@ -180,21 +179,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ data: memoryLog });
   } catch (error) {
     console.error("Error creating memory log:", error);
-    return NextResponse.json(
-      { error: "Failed to create memory log" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
   }
-}
+});
 
 /**
  * PUT /api/assistant/memory/:id/feedback
  * Updates a memory log with user feedback
  */
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Fix PUT handler signature to match expected parameters
+export const PUT = withAIRateLimit(async function PUT(request: NextRequest) {
   try {
     // Get the authenticated user session
     const session = await getServerSession();
@@ -211,13 +205,18 @@ export async function PUT(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Parse request body
+    // Parse request body and extract ID from URL
     const body = await request.json();
-    const { helpful, feedbackText } = body;
+    const { feedbackText } = body;
+    
+    // Get ID from URL path
+    const url = new URL(request.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 2]; // Extract ID from path
 
     // Find memory log
     const memoryLog = await prisma.assistantMemoryLog.findUnique({
-      where: { id: params.id },
+      where: { id },
     });
 
     if (!memoryLog) {
@@ -228,12 +227,14 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Update memory log with feedback
+    // Update memory log with feedback by storing in context
     const updatedMemoryLog = await prisma.assistantMemoryLog.update({
-      where: { id: params.id },
+      where: { id },
       data: {
-        helpful,
-        feedbackText,
+        context: {
+          ...(memoryLog.context as object || {}),
+          feedbackText
+        }
       },
     });
 
@@ -245,4 +246,4 @@ export async function PUT(
       { status: 500 }
     );
   }
-}
+});

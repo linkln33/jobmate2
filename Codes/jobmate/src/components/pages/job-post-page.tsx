@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
@@ -62,12 +62,13 @@ export function JobPostPage() {
     defaultValues: {
       title: "",
       description: "",
+      serviceCategory: "",
       city: "",
       state: "",
       zipCode: "",
       isRemote: false,
-      budgetMin: "",
-      budgetMax: "",
+      budgetMin: null,
+      budgetMax: null,
       urgencyLevel: "MEDIUM",
     },
   });
@@ -276,7 +277,15 @@ export function JobPostPage() {
                       <FormItem>
                         <FormLabel>Minimum Budget ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input 
+                            type="number" 
+                            placeholder="0" 
+                            value={field.value === null ? '' : field.value} 
+                            onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -290,7 +299,15 @@ export function JobPostPage() {
                       <FormItem>
                         <FormLabel>Maximum Budget ($)</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="100" {...field} />
+                          <Input 
+                            type="number" 
+                            placeholder="100" 
+                            value={field.value === null ? '' : field.value} 
+                            onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                            ref={field.ref}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

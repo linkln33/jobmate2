@@ -100,11 +100,12 @@ const PromptSuggestions: React.FC<PromptSuggestionsProps> = ({
   };
 
   // Combine mode-based and context-specific prompts, removing duplicates
-  const prompts = [...new Set([...getPrompts(), ...getContextPrompts()])];
+  const allPrompts = [...getPrompts(), ...getContextPrompts()];
+  const uniquePrompts = Array.from(new Set(allPrompts));
 
   return (
     <div className="flex flex-wrap gap-2 my-3">
-      {prompts.map((prompt, index) => (
+      {uniquePrompts.map((prompt: string, index: number) => (
         <motion.button
           key={prompt}
           onClick={() => onSelectPrompt(prompt)}

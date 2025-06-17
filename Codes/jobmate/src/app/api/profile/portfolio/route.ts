@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         userId: user.id
       },
       include: {
-        category: {
+        serviceCategory: {
           select: {
             id: true,
             name: true,
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         }
       },
       orderBy: {
-        displayOrder: 'asc'
+        createdAt: 'asc'
       }
     });
     
@@ -104,15 +104,12 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         title,
         description,
-        imageUrl,
-        projectUrl,
-        categoryId,
-        completionDate: completionDate ? new Date(completionDate) : null,
-        displayOrder: displayOrder || 0,
+        mediaUrls: imageUrl ? [imageUrl] : [],
+        serviceCategoryId: categoryId,
         isPublic: isPublic !== undefined ? isPublic : true
       },
       include: {
-        category: {
+        serviceCategory: {
           select: {
             id: true,
             name: true,
@@ -182,15 +179,12 @@ export async function PUT(req: NextRequest) {
           data: {
             title: item.title,
             description: item.description,
-            imageUrl: item.imageUrl,
-            projectUrl: item.projectUrl,
-            categoryId: item.categoryId,
-            completionDate: item.completionDate ? new Date(item.completionDate) : null,
-            displayOrder: item.displayOrder,
+            mediaUrls: item.imageUrl ? [item.imageUrl] : [],
+            serviceCategoryId: item.categoryId,
             isPublic: item.isPublic
           },
           include: {
-            category: {
+            serviceCategory: {
               select: {
                 id: true,
                 name: true,
