@@ -7,46 +7,46 @@ import { TestimonialCard } from '@/components/ui/testimonial-card';
 export function TestimonialsSection() {
   const testimonials = [
     {
-      quote: "JobMate's AI matched me with a job that perfectly aligned with my skills and career goals. The interview preparation was incredibly helpful and gave me the confidence I needed.",
+      quote: "JobMate's AI matched me with clients who needed exactly the web development services I offer. The proposal builder helped me win more projects than ever before.",
       name: "Sarah Johnson",
-      role: "Software Developer",
+      role: "Freelance Developer",
       avatarUrl: "https://randomuser.me/api/portraits/women/32.jpg",
-      badges: ["Tech Industry", "Career Changer"]
+      badges: ["Service Provider", "Tech Services"]
     },
     {
-      quote: "As a hiring manager, JobMate has revolutionized our recruitment process. The AI-vetted candidates have been consistently high quality, saving us countless hours.",
+      quote: "As a small business owner, JobMate has revolutionized how I find skilled professionals. The escrow system gives me peace of mind when hiring freelancers.",
       name: "Michael Rodriguez",
-      role: "HR Director",
+      role: "Business Owner",
       avatarUrl: "https://randomuser.me/api/portraits/men/54.jpg",
-      badges: ["Enterprise", "Hiring Manager"]
+      badges: ["Customer", "Small Business"]
     },
     {
-      quote: "The resume optimization tool helped me highlight my transferable skills when switching industries. I received more interview requests in one week than I had in months!",
+      quote: "I've been able to rent out my camera equipment when I'm not using it, creating a nice passive income stream. The secure payment system makes transactions worry-free.",
       name: "Emily Chen",
-      role: "Marketing Specialist",
+      role: "Photographer",
       avatarUrl: "https://randomuser.me/api/portraits/women/68.jpg",
-      badges: ["Industry Switch", "Remote Work"]
+      badges: ["Rentals", "Equipment Owner"]
     },
     {
-      quote: "JobMate's salary negotiation coach gave me the data and confidence to ask for 15% more than I would have otherwise. That's real value!",
+      quote: "JobMate's negotiation tools helped me secure better rates for my consulting services. The milestone payment system ensures I get paid fairly for completed work.",
       name: "David Okafor",
-      role: "Financial Analyst",
+      role: "Business Consultant",
       avatarUrl: "https://randomuser.me/api/portraits/men/22.jpg",
-      badges: ["Finance", "Negotiation Win"]
+      badges: ["Service Provider", "Negotiation Win"]
     },
     {
-      quote: "As someone returning to the workforce after parental leave, JobMate's personalized approach helped me find flexible opportunities that matched my experience.",
+      quote: "As someone with a busy schedule, JobMate's marketplace made it easy to find local help for home renovation projects. I could compare quotes and reviews all in one place.",
       name: "Priya Sharma",
-      role: "Project Manager",
+      role: "Homeowner",
       avatarUrl: "https://randomuser.me/api/portraits/women/89.jpg",
-      badges: ["Work-Life Balance", "Returning Professional"]
+      badges: ["Customer", "Local Services"]
     },
     {
-      quote: "The AI interview coach prepared me for questions I never would have anticipated. When those exact topics came up in my real interview, I was ready!",
+      quote: "The AI assistant helped me create a compelling service listing that highlighted my design skills. I've connected with clients globally that I never would have found otherwise!",
       name: "James Wilson",
       role: "UX Designer",
       avatarUrl: "https://randomuser.me/api/portraits/men/42.jpg",
-      badges: ["Creative Field", "First Job"]
+      badges: ["Service Provider", "Creative Field"]
     }
   ];
 
@@ -66,11 +66,11 @@ export function TestimonialsSection() {
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text from-blue-600 to-purple-600">
-              Success Stories
+              Marketplace Success Stories
             </span>
           </h2>
           <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-            Hear from professionals and employers who have transformed their hiring and job search experience with JobMate.
+            Hear from service providers and customers who have transformed their business and hiring experience with our AI-powered marketplace.
           </p>
         </motion.div>
         

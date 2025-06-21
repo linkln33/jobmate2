@@ -28,10 +28,10 @@ export function CTASection() {
           className="max-w-4xl mx-auto text-center"
         >
           <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
-            Ready to Transform Your Career Journey?
+            Ready to Join Our AI-Powered Marketplace?
           </h2>
           <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
-            Join thousands of professionals who have already discovered the power of AI-assisted job matching and career development.
+            Join thousands of service providers and customers who have discovered the power of AI-assisted matching, secure transactions, and seamless collaboration.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
@@ -45,14 +45,14 @@ export function CTASection() {
                   <Link href="/signup">Get Started Free</Link>
                 </Button>
                 <Button asChild variant="outline" size="lg" className="border-white text-white hover:bg-white/10">
-                  <Link href="/login">Sign In</Link>
+                  <Link href="/marketplace">Explore Marketplace</Link>
                 </Button>
               </>
             )}
           </div>
           
           <p className="mt-6 text-white/80 text-sm">
-            No credit card required. Free plan includes all essential features.
+            No credit card required. List services or find help with our free basic plan.
           </p>
         </motion.div>
       </div>

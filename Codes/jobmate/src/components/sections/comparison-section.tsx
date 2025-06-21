@@ -7,60 +7,60 @@ import { ComparisonTable } from '@/components/ui/comparison-table';
 export function ComparisonSection() {
   const features = [
     {
-      name: "AI-Powered Job Matching",
+      name: "AI Skill Matching",
       jobmate: true,
       upwork: false,
       taskRabbit: false,
       airtasker: false,
-      handy: false
+      fiverr: false
     },
     {
-      name: "Resume Optimization",
+      name: "Dual User Roles",
       jobmate: true,
       upwork: false,
       taskRabbit: false,
       airtasker: false,
-      handy: false
+      fiverr: false
     },
     {
-      name: "Interview Preparation",
-      jobmate: true,
-      upwork: false,
-      taskRabbit: false,
-      airtasker: false,
-      handy: false
-    },
-    {
-      name: "Skill Assessment",
+      name: "Smart Contracts & Escrow",
       jobmate: true,
       upwork: true,
       taskRabbit: false,
       airtasker: false,
-      handy: false
+      fiverr: false
     },
     {
-      name: "Secure Payment",
+      name: "Rentals Marketplace",
+      jobmate: true,
+      upwork: false,
+      taskRabbit: true,
+      airtasker: false,
+      fiverr: false
+    },
+    {
+      name: "Proposal Builder",
+      jobmate: true,
+      upwork: false,
+      taskRabbit: false,
+      airtasker: false,
+      fiverr: false
+    },
+    {
+      name: "Multilingual Support",
+      jobmate: true,
+      upwork: true,
+      taskRabbit: false,
+      airtasker: false,
+      fiverr: true
+    },
+    {
+      name: "Reputation System",
       jobmate: true,
       upwork: true,
       taskRabbit: true,
       airtasker: true,
-      handy: true
-    },
-    {
-      name: "Mobile App",
-      jobmate: true,
-      upwork: true,
-      taskRabbit: true,
-      airtasker: true,
-      handy: true
-    },
-    {
-      name: "24/7 Support",
-      jobmate: true,
-      upwork: false,
-      taskRabbit: false,
-      airtasker: false,
-      handy: true
+      fiverr: true
     }
   ];
 
@@ -80,7 +80,7 @@ export function ComparisonSection() {
             </span>
           </h2>
           <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-            See how JobMate compares to other platforms and discover the unique advantages of our AI-powered approach.
+            See how JobMate compares to other platforms and discover the advantages of our hybrid marketplace with AI-powered matching.
           </p>
         </motion.div>
         

@@ -8,42 +8,43 @@ import { Button } from '@/components/ui/button';
 export function MarketplaceSection() {
   const marketplaceItems = [
     {
-      title: "Senior Frontend Developer",
-      description: "Looking for an experienced React developer to join our growing team. Remote position with competitive salary.",
-      category: "Tech",
-      price: "$120-150k/yr",
+      title: "Fix My WiFi Network",
+      description: "Need someone to troubleshoot and fix my home WiFi network that keeps dropping connection.",
+      category: "Any Task",
+      price: "$75",
+      location: "San Francisco, CA",
+      type: "task",
+      userName: "HomeTechHelp"
+    },
+    {
+      title: "Website Development",
+      description: "Professional web development services for businesses of all sizes. Custom designs and mobile-responsive.",
+      category: "Any Services",
+      price: "From $1,000",
       location: "Remote",
-      type: "job",
-      userName: "TechCorp Inc."
-    },
-    {
-      title: "UI/UX Designer",
-      description: "Creative designer needed for a 3-month project to redesign our mobile app interface and improve user experience.",
-      category: "Design",
-      price: "$85/hr",
-      location: "New York, NY",
-      type: "gig",
-      userName: "DesignStudio"
-    },
-    {
-      title: "Data Analysis & Visualization",
-      description: "I'll transform your raw data into actionable insights with beautiful visualizations and detailed reports.",
-      category: "Data",
-      price: "From $500",
-      location: "Worldwide",
       type: "service",
-      userName: "DataVizPro",
+      userName: "WebDevPro",
       rating: 4.9
     },
     {
-      title: "Marketing Consultant",
-      description: "Strategic marketing consultant with 10+ years experience in SaaS and B2B sectors. Available for part-time roles.",
-      category: "Marketing",
-      price: "Negotiable",
-      location: "Chicago, IL",
-      type: "service",
-      userName: "MarketingGuru",
+      title: "Professional Camera Kit",
+      description: "Rent my complete Sony A7III camera kit with lenses, tripod, and lighting equipment for your project.",
+      category: "Any Rentals",
+      price: "$75/day",
+      location: "Los Angeles, CA",
+      type: "rental",
+      userName: "CameraGear",
       rating: 4.8
+    },
+    {
+      title: "Logo Design Package",
+      description: "Quick, professional logo design with unlimited revisions. Perfect for startups and small businesses.",
+      category: "Any Micro Job",
+      price: "$150",
+      location: "Worldwide",
+      type: "gig",
+      userName: "LogoCreative",
+      rating: 5.0
     }
   ];
 
@@ -59,11 +60,11 @@ export function MarketplaceSection() {
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text from-blue-600 to-purple-600">
-              Explore the Marketplace
+              Explore Our Marketplace
             </span>
           </h2>
           <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-            Discover jobs, gigs, services, and more on our AI-powered marketplace that connects talent with opportunities.
+            Find services, tasks, rentals, and jobs all in one place - powered by AI matching and secure transactions.
           </p>
         </motion.div>
         

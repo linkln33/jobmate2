@@ -18,8 +18,7 @@ export function Footer() {
               <span className="text-2xl font-bold text-brand-500">JobMate</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground max-w-md">
-              JobMate connects customers with skilled specialists for home services, repairs, and maintenance.
-              Find trusted professionals in your area or offer your services to those who need them.
+              JobMate is an AI-powered hybrid marketplace connecting service providers and customers for any task, service, or rental need. Find what you need or offer your skills and resources securely.
             </p>
             <div className="mt-6 flex space-x-4">
               <Button variant="ghost" size="icon" className="rounded-full">
@@ -78,22 +77,22 @@ export function Footer() {
             <h3 className="text-sm font-semibold">For Customers</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/jobs/create" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Post a Job
+                <Link href="/marketplace/post" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Post a Request
                 </Link>
               </li>
               <li>
-                <Link href="/search" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Find Specialists
+                <Link href="/marketplace/search" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Find Services
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Browse Services
+                <Link href="/marketplace/rentals" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Browse Rentals
                 </Link>
               </li>
               <li>
-                <Link href="/customer-guide" className="text-sm text-muted-foreground hover:text-brand-500">
+                <Link href="/guides/customer" className="text-sm text-muted-foreground hover:text-brand-500">
                   Customer Guide
                 </Link>
               </li>
@@ -102,21 +101,26 @@ export function Footer() {
 
           {/* For Specialists */}
           <div>
-            <h3 className="text-sm font-semibold">For Specialists</h3>
+            <h3 className="text-sm font-semibold">For Service Providers</h3>
             <ul className="mt-4 space-y-2">
               <li>
-                <Link href="/register?role=specialist" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Join as Specialist
+                <Link href="/register?role=provider" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Join as Provider
                 </Link>
               </li>
               <li>
-                <Link href="/jobs" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Find Jobs
+                <Link href="/marketplace/opportunities" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Find Opportunities
                 </Link>
               </li>
               <li>
-                <Link href="/specialist-guide" className="text-sm text-muted-foreground hover:text-brand-500">
-                  Specialist Guide
+                <Link href="/marketplace/list-service" className="text-sm text-muted-foreground hover:text-brand-500">
+                  List Your Services
+                </Link>
+              </li>
+              <li>
+                <Link href="/guides/provider" className="text-sm text-muted-foreground hover:text-brand-500">
+                  Provider Guide
                 </Link>
               </li>
               <li>

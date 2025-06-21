@@ -9,16 +9,16 @@ export function OnboardingWizardSection() {
   const onboardingSteps = [
     {
       title: "Create Your Profile",
-      description: "Tell us about your skills, experience, and career goals.",
+      description: "Tell us about your skills, services you offer, and what you're looking to hire.",
       content: (
         <div className="space-y-4">
           <div className="glass-card p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Professional Summary</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">About You</h4>
             <div className="h-24 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse"></div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="glass-card p-4 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Skills</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services You Offer</h4>
               <div className="space-y-2">
                 <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md w-3/4 animate-pulse"></div>
                 <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md w-1/2 animate-pulse"></div>
@@ -26,7 +26,7 @@ export function OnboardingWizardSection() {
               </div>
             </div>
             <div className="glass-card p-4 rounded-lg">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Experience</h4>
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Services You Need</h4>
               <div className="space-y-2">
                 <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md w-full animate-pulse"></div>
                 <div className="h-4 bg-gray-100 dark:bg-gray-700 rounded-md w-3/4 animate-pulse"></div>
@@ -38,77 +38,74 @@ export function OnboardingWizardSection() {
     },
     {
       title: "Set Your Preferences",
-      description: "Tell us what you're looking for in your next opportunity.",
+      description: "Tell us how you prefer to work and collaborate in the marketplace.",
       content: (
         <div className="space-y-4">
           <div className="glass-card p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Job Preferences</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Marketplace Preferences</h4>
             <div className="grid grid-cols-2 gap-3">
               <div className="flex items-center">
                 <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" checked />
-                <span className="text-sm">Remote Work</span>
+                <span className="text-sm">Service Provider</span>
               </div>
               <div className="flex items-center">
                 <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" checked />
-                <span className="text-sm">Full-time</span>
+                <span className="text-sm">Customer</span>
               </div>
               <div className="flex items-center">
-                <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" />
-                <span className="text-sm">Contract</span>
+                <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" checked />
+                <span className="text-sm">Remote Services</span>
               </div>
               <div className="flex items-center">
-                <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" />
-                <span className="text-sm">Part-time</span>
+                <input type="checkbox" className="mr-2 h-4 w-4 accent-blue-500" checked />
+                <span className="text-sm">Local Services</span>
               </div>
             </div>
           </div>
           <div className="glass-card p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Salary Range</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Price Range</h4>
             <div className="h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full relative">
               <div className="absolute right-1/4 -top-1 w-4 h-4 bg-white dark:bg-gray-800 rounded-full border-2 border-blue-500"></div>
             </div>
             <div className="flex justify-between mt-1 text-xs text-gray-600 dark:text-gray-400">
-              <span>$50k</span>
-              <span>$100k</span>
-              <span>$150k+</span>
+              <span>$50</span>
+              <span>$500</span>
+              <span>$5000+</span>
             </div>
           </div>
         </div>
       )
     },
     {
-      title: "AI Job Matching",
-      description: "Our AI will find the perfect opportunities for you.",
+      title: "Connect & Collaborate",
+      description: "Use our tools to create proposals, negotiate terms, and secure transactions.",
       content: (
         <div className="space-y-4">
-          <div className="glass-card p-4 rounded-lg relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 animate-pulse"></div>
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 relative z-10">AI Analysis</h4>
-            <div className="flex items-center mb-3 relative z-10">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white mr-2">
-                AI
-              </div>
-              <div className="text-sm">Analyzing your profile and preferences...</div>
-            </div>
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden relative z-10">
-              <div className="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-3/4 animate-pulse"></div>
-            </div>
-            <div className="text-xs text-right mt-1 text-gray-500 dark:text-gray-400 relative z-10">75% Complete</div>
-          </div>
           <div className="glass-card p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Matching Jobs</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Marketplace Matches</h4>
             <div className="space-y-2">
               <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse"></div>
               <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse"></div>
               <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded-md animate-pulse"></div>
             </div>
           </div>
+          <div className="glass-card p-4 rounded-lg border-2 border-green-500/20">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Senior Frontend Developer</h4>
+              <span className="text-xs bg-green-500/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">98% Match</span>
+            </div>
+            <h5 className="font-medium mb-1">Website Redesign Project</h5>
+            <p className="text-xs text-gray-600 dark:text-gray-400">DigitalBrand Co. • Remote • $2,500-3,500</p>
+            <Button size="sm" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
+              Apply with AI Assistance
+            </Button>
+          </div>
         </div>
       )
     },
     {
-      title: "Ready to Apply",
-      description: "Start applying to your matched opportunities with AI assistance.",
+      title: "Secure Transactions",
+      description: "Use smart contracts and escrow to ensure secure and fair transactions.",
       content: (
         <div className="space-y-4">
           <div className="glass-card p-4 rounded-lg border-2 border-green-500/20">
@@ -116,34 +113,35 @@ export function OnboardingWizardSection() {
               <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Senior Frontend Developer</h4>
               <span className="text-xs bg-green-500/20 text-green-700 dark:text-green-300 px-2 py-1 rounded-full">98% Match</span>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-3">TechCorp Inc. • Remote • $120-150k/yr</div>
+            <h5 className="font-medium mb-1">Website Redesign Project</h5>
+            <p className="text-xs text-gray-600 dark:text-gray-400">DigitalBrand Co. • Remote • $2,500-3,500</p>
             <Button size="sm" className="w-full bg-gradient-to-r from-blue-600 to-purple-600">
               Apply with AI Assistance
             </Button>
           </div>
           <div className="glass-card p-4 rounded-lg">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">AI Application Assistant</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Smart Contract & Escrow</h4>
             <div className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-              Our AI will help you:
+              Our secure system will:
             </div>
             <ul className="text-xs space-y-1 text-gray-600 dark:text-gray-400">
               <li className="flex items-center">
                 <svg className="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Tailor your resume for this specific role
+                Hold funds securely until work is completed
               </li>
               <li className="flex items-center">
                 <svg className="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Draft a personalized cover letter
+                Release payments based on milestones
               </li>
               <li className="flex items-center">
                 <svg className="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                Prepare for interview questions
+                Provide dispute resolution if needed
               </li>
             </ul>
           </div>
@@ -164,11 +162,11 @@ export function OnboardingWizardSection() {
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="gradient-text from-blue-600 to-purple-600">
-              Seamless Onboarding Experience
+              Seamless Marketplace Experience
             </span>
           </h2>
           <p className="text-xl text-gray-700 dark:text-gray-300 max-w-3xl mx-auto">
-            Get started in minutes with our intuitive onboarding process and AI-guided setup.
+            Get started in minutes with our intuitive process for both service providers and customers.
           </p>
         </motion.div>
         
