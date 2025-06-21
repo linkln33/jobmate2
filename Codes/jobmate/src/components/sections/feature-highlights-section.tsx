@@ -3,39 +3,45 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { FeatureCard } from '@/components/ui/feature-card';
-import { Briefcase, Search, MessageSquare, Award, TrendingUp, Shield } from 'lucide-react';
+import { Brain, ShieldCheck, TrendingUp, Award, Layers, Database, Fingerprint, Zap, Sparkles, BarChart } from 'lucide-react';
 
 export function FeatureHighlightsSection() {
   const features = [
     {
-      icon: <Search className="h-6 w-6 text-blue-500" />,
-      title: "Smart Job Search",
-      description: "AI-powered job matching that understands your skills and career goals"
+      icon: <Brain className="h-6 w-6 text-white" />,
+      title: "Hyper-Personalized Matching",
+      description: "Our proprietary AI analyzes 50+ data points to connect you with the perfect match for your specific needs",
+      bgColor: "bg-gradient-to-br from-blue-500 to-blue-600"
     },
     {
-      icon: <MessageSquare className="h-6 w-6 text-purple-500" />,
-      title: "Interview Prep",
-      description: "Practice with our AI interviewer and get personalized feedback"
+      icon: <ShieldCheck className="h-6 w-6 text-white" />,
+      title: "Advanced Escrow Protection",
+      description: "Multi-stage escrow with milestone verification and automated dispute resolution using smart contracts",
+      bgColor: "bg-gradient-to-br from-purple-500 to-purple-600"
     },
     {
-      icon: <Briefcase className="h-6 w-6 text-indigo-500" />,
-      title: "Career Planning",
-      description: "Map your career path with personalized recommendations"
+      icon: <BarChart className="h-6 w-6 text-white" />,
+      title: "Dynamic Pricing Engine",
+      description: "AI-powered pricing recommendations based on market demand, skill level, and project complexity",
+      bgColor: "bg-gradient-to-br from-indigo-500 to-indigo-600"
     },
     {
-      icon: <Award className="h-6 w-6 text-green-500" />,
-      title: "Skill Assessment",
-      description: "Identify your strengths and areas for improvement"
+      icon: <Fingerprint className="h-6 w-6 text-white" />,
+      title: "Verified Skills Marketplace",
+      description: "All service providers undergo skill verification and background checks for maximum quality assurance",
+      bgColor: "bg-gradient-to-br from-amber-500 to-amber-600"
     },
     {
-      icon: <TrendingUp className="h-6 w-6 text-orange-500" />,
-      title: "Salary Insights",
-      description: "Get real-time salary data for your industry and location"
+      icon: <Layers className="h-6 w-6 text-white" />,
+      title: "Cross-Category Integration",
+      description: "Seamlessly combine services, gigs, and rentals in a single transaction with unified billing",
+      bgColor: "bg-gradient-to-br from-green-500 to-green-600"
     },
     {
-      icon: <Shield className="h-6 w-6 text-red-500" />,
-      title: "Privacy Protection",
-      description: "Your data is always secure and under your control"
+      icon: <Database className="h-6 w-6 text-white" />,
+      title: "Blockchain Transaction Ledger",
+      description: "Immutable record of all transactions with cryptographic verification for ultimate security and transparency",
+      bgColor: "bg-gradient-to-br from-red-500 to-red-600"
     }
   ];
 
@@ -50,10 +56,10 @@ export function FeatureHighlightsSection() {
           className="text-center mb-12"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Supercharge Your Job Search
+            Next-Generation Marketplace Technology
           </h2>
           <p className="text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-            JobMate combines cutting-edge AI with human expertise to help you find and land your dream job faster.
+            JobMate leverages cutting-edge AI, blockchain security, and advanced verification systems to create a marketplace experience that outperforms traditional platforms in every dimension.
           </p>
         </motion.div>
 
@@ -65,12 +71,17 @@ export function FeatureHighlightsSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
+              className="h-full"
             >
-              <FeatureCard
-                icon={feature.icon}
-                title={feature.title}
-                description={feature.description}
-              />
+              <div className="h-full flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700">
+                <div className="p-6 flex-1 flex flex-col">
+                  <div className={`${feature.bgColor} w-12 h-12 rounded-lg flex items-center justify-center mb-4 shadow-lg`}>
+                    {feature.icon}
+                  </div>
+                  <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 flex-1">{feature.description}</p>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
