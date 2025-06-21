@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { GlassmorphicSidebar } from './glassmorphic-sidebar';
 import { GlassmorphicHeader } from './glassmorphic-header';
-import { Navbar } from './navbar';
+import { StickyNavbar } from '@/components/ui/sticky-navbar';
 import { FloatingAssistant } from '@/components/assistant/FloatingAssistant';
 import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
+import { RoutePrefetcher } from '@/lib/route-prefetcher';
 
 interface UnifiedDashboardLayoutProps {
   children: React.ReactNode;
@@ -52,15 +53,15 @@ export function UnifiedDashboardLayout({
       <div className="flex h-full">
         {/* Desktop sidebar */}
         {!hideSidebar && (
-          <div className="hidden md:block">
+          <div className="hidden md:block w-64">
             <GlassmorphicSidebar />
           </div>
         )}
 
         {/* Main content area */}
         <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Only show Navbar for public pages when not authenticated */}
-          {showPublicNavbar && <Navbar />}
+          {/* Only show StickyNavbar for public pages when not authenticated */}
+          {showPublicNavbar && <StickyNavbar />}
           
           {/* Always show GlassmorphicHeader for authenticated users */}
           {isAuthenticated && (
@@ -73,9 +74,9 @@ export function UnifiedDashboardLayout({
           
           {/* Main content */}
           <main className="flex-1 overflow-hidden relative">
-            {/* Content area */}
+            {/* Content area - improved mobile responsiveness */}
             <div className="h-full overflow-auto bg-white/5 dark:bg-gray-900/5">
-              <div className="container mx-auto p-4">
+              <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
                 {showMap && mapComponent ? (
                   <div className="h-full">
                     {mapComponent}
