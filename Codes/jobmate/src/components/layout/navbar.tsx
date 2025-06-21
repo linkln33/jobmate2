@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { 
   Menu, X, User, Bell, Moon, Sun, LogOut, 
@@ -65,6 +66,15 @@ export function Navbar() {
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
               <span className="text-2xl font-bold text-brand-500">JobMate</span>
+              <div className="relative w-8 h-8">
+                <Image 
+                  src="/images/ai-hero.svg" 
+                  alt="AI Hero" 
+                  fill 
+                  className="object-contain" 
+                  priority 
+                />
+              </div>
             </Link>
           </div>
 
@@ -132,7 +142,7 @@ export function Navbar() {
                   <Link href="/login">Log in</Link>
                 </Button>
                 <Button variant="brand" asChild>
-                  <Link href="/register">Sign up</Link>
+                  <Link href="/signup">Sign up</Link>
                 </Button>
               </div>
             )}
@@ -231,7 +241,7 @@ export function Navbar() {
                     <Link href="/login" onClick={() => setIsMenuOpen(false)}>Log in</Link>
                   </Button>
                   <Button variant="brand" asChild className="w-full">
-                    <Link href="/register" onClick={() => setIsMenuOpen(false)}>Sign up</Link>
+                    <Link href="/signup" onClick={() => setIsMenuOpen(false)}>Sign up</Link>
                   </Button>
                 </div>
               )}

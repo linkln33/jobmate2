@@ -2,9 +2,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { AIRobotFace } from '@/components/ui/ai-robot-face';
+import Image from "next/image";
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Sparkles, Zap } from 'lucide-react';
+import { MessageSquare, Sparkles, Zap, Search, ShieldCheck, Star } from 'lucide-react';
 
 export function AIAssistantSection() {
   return (
@@ -18,10 +18,10 @@ export function AIAssistantSection() {
             transition={{ duration: 0.8 }}
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-6">
-              Meet Your Personal AI Career Assistant
+              MarketMind™: The Ultimate AI Marketplace Assistant
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              JobMate's AI assistant helps you navigate every step of your job search journey with personalized guidance and support.
+              JobMate's proprietary MarketMind™ AI goes beyond basic assistance to become your strategic partner in the marketplace, with capabilities that learn and evolve with every interaction.
             </p>
             
             <div className="space-y-4 mb-8">
@@ -30,9 +30,9 @@ export function AIAssistantSection() {
                   <Sparkles className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Resume Enhancement</h3>
+                  <h3 className="font-semibold mb-1">Advanced Opportunity Detection</h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Get AI-powered suggestions to optimize your resume for each job application.
+                    Identifies high-value opportunities tailored to your skills, preferences, and success patterns with predictive market analysis.
                   </p>
                 </div>
               </div>
@@ -42,21 +42,45 @@ export function AIAssistantSection() {
                   <MessageSquare className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Interview Coaching</h3>
+                  <h3 className="font-semibold mb-1">Adaptive Negotiation Coach</h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Practice interviews with our AI and receive real-time feedback to improve.
+                    Analyzes negotiation patterns to suggest optimal pricing, terms, and counteroffers with real-time market rate data and success probability.
                   </p>
                 </div>
               </div>
               
               <div className="flex items-start">
                 <div className="bg-indigo-100 dark:bg-indigo-900/30 p-2 rounded-full mr-4">
-                  <Zap className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  <ShieldCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">24/7 Career Advice</h3>
+                  <h3 className="font-semibold mb-1">Smart Contract Automation</h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Get answers to your career questions anytime, anywhere.
+                    Generates custom smart contracts with milestone verification, automated payments, and dispute prevention mechanisms tailored to your specific transaction.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-full mr-4">
+                  <Star className="h-5 w-5 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Reputation Enhancement</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Provides actionable insights to improve your marketplace standing with personalized recommendations for profile optimization and service delivery excellence.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start">
+                <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full mr-4">
+                  <Zap className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">Cross-Category Intelligence</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm">
+                    Identifies complementary service opportunities across categories to maximize your marketplace potential and create service bundles.
                   </p>
                 </div>
               </div>
@@ -67,43 +91,72 @@ export function AIAssistantSection() {
             </Button>
           </motion.div>
           
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="relative"
-          >
-            <div className="glass-card p-6 rounded-2xl relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
+          <div className="relative py-12">
+            <div className="flex flex-col items-center">
+              {/* Speech bubble above AI Hero */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2, duration: 0.5 }}
+                className="relative z-10 mb-6 max-w-lg"
+              >
+                <div className="bg-white dark:bg-gray-800 p-6 rounded-3xl shadow-lg relative speech-bubble border border-blue-200 dark:border-blue-800">
+                  <p className="text-gray-600 dark:text-gray-300 font-medium">
+                    "Found 3 premium opportunities matching your skills with 22% higher rates! Ready to prepare proposals or analyze these clients?"
+                  </p>
+                  {/* Speech bubble pointer */}
+                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 h-6 w-6 bg-white dark:bg-gray-800 border-b border-r border-blue-100 dark:border-blue-900 rotate-45"></div>
+                </div>
+              </motion.div>
               
-              <div className="flex justify-center mb-6">
-                <AIRobotFace size="lg" variant="glow" />
-              </div>
-              
-              <h3 className="text-2xl font-semibold text-center mb-4">
-                AI Career Assistant
-              </h3>
-              
-              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg mb-4">
-                <p className="text-gray-800 dark:text-gray-200">
-                  "I can help you prepare for your upcoming interview at Google. Would you like to practice some common questions?"
-                </p>
-              </div>
-              
-              <div className="flex space-x-2 mb-4">
-                <Button variant="outline" size="sm" className="flex-1">Yes, let's practice</Button>
-                <Button variant="outline" size="sm" className="flex-1">Show me tips first</Button>
-              </div>
-              
-              <div className="text-center text-sm text-gray-500 dark:text-gray-400">
-                Your AI assistant learns from each interaction to provide better guidance.
-              </div>
+              {/* AI Hero Image */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="relative"
+              >
+                <div className="relative w-80 h-80 md:w-[500px] md:h-[500px]">
+                  <Image 
+                    src="/images/ai-hero.svg" 
+                    alt="AI Hero" 
+                    fill 
+                    className="object-contain" 
+                    priority 
+                  />
+                  <div className="absolute -inset-20 bg-blue-500/25 rounded-full blur-3xl -z-10"></div>
+                  <div className="absolute -inset-12 bg-indigo-400/15 rounded-full blur-2xl -z-10 animate-pulse"></div>
+                  <div className="absolute -inset-8 bg-purple-500/10 rounded-full blur-xl -z-10"></div>
+                </div>
+              </motion.div>
+
+              {/* Buttons below */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5, duration: 0.5 }}
+                className="mt-8 flex flex-col items-center"
+              >
+                <div className="flex flex-wrap justify-center gap-3 mb-4">
+                  <Button size="sm" variant="outline">
+                    Prepare proposals
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    Analyze clients
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    Show opportunities
+                  </Button>
+                </div>
+                
+                <div className="text-sm text-gray-500 dark:text-gray-400 text-center max-w-md">
+                  Your AI assistant learns from each interaction to provide better guidance.
+                </div>
+              </motion.div>
             </div>
-            
-            {/* Decorative elements */}
-            <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl" />
-          </motion.div>
+          </div>
+          {/* Decorative elements */}
+          <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-3xl" />
         </div>
       </div>
     </section>
