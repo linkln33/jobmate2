@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { GoogleMap, LoadScript, OverlayView } from '@react-google-maps/api';
+import { useState, useEffect, useMemo } from 'react';
+import { GoogleMap, LoadScript, OverlayView, useLoadScript } from '@react-google-maps/api';
 import { Job } from '@/types/job';
 import { MapSearchBar } from './map-search-bar';
 import { MapFilterChips } from './map-filter-chips';
@@ -321,25 +321,20 @@ export function InteractiveMapWithFilters({
         fillColor = '#3b82f6'; // blue
         break; 
       case 'accepted': 
-        fillColor = '#60a5fa'; // light blue
-        break; 
-      case 'new':
-        switch(job.urgency.toLowerCase()) {
-          case 'high': 
-            fillColor = '#ef4444'; // red
-            break;
-          case 'medium': 
-            fillColor = '#f97316'; // orange
-            break;
-          case 'low': 
-            fillColor = '#10b981'; // teal
-            break;
-          default: 
-            fillColor = '#9333ea'; // purple default
+        fillColor = '#f59e0b'; // amber
+        break;
+      case 'new': 
+        // For new jobs, check urgency
+        if (job.urgency && job.urgency === 'high') {
+          fillColor = '#ef4444'; // red for high urgency
+        } else if (job.urgency && job.urgency === 'medium') {
+          fillColor = '#f97316'; // orange for medium urgency
+        } else {
+          fillColor = '#9333ea'; // purple for low/default urgency
         }
         break;
-      default: 
-        fillColor = '#9333ea'; // Default purple
+      default:
+        fillColor = '#9333ea'; // purple
     }
     
     return fillColor;
@@ -380,40 +375,74 @@ export function InteractiveMapWithFilters({
     );
   };
 
+  // Use the useLoadScript hook instead of LoadScript component to prevent reloads
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || DEFAULT_API_KEY,
+    // This prevents the script from being loaded multiple times
+    // which is a common cause of full page reloads
+    libraries: ['places'],
+  });
+  
+  // Memoize the map component to prevent unnecessary re-renders
+  // IMPORTANT: Always define useMemo before any conditional returns to avoid React hooks errors
+  const mapComponent = useMemo(() => {
+    if (!isLoaded) return null;
+    
+    return (
+      <GoogleMap
+        mapContainerStyle={{ width: '100%', height: '100%' }}
+        center={center}
+        zoom={zoom}
+        options={{
+          fullscreenControl: false,
+          streetViewControl: false,
+          mapTypeControl: false,
+          zoomControl: true,
+          styles: [
+            {
+              featureType: 'poi',
+              elementType: 'labels',
+              stylers: [{ visibility: 'off' }]
+            }
+          ]
+        }}
+      >
+        {/* Render pulsing markers for each job */}
+        {jobs.map((job) => (
+          <PulsingMarker
+            key={job.id}
+            job={job}
+            onClick={() => handleJobSelect(job)}
+          />
+        ))}
+      </GoogleMap>
+    );
+  }, [center, zoom, jobs, handleJobSelect]);
+  
+  // Handle loading and error states after all hooks are defined
   return (
     <div className="relative w-full" style={{ height }}>
-      <LoadScript 
-        googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || DEFAULT_API_KEY}
-        loadingElement={<div className="h-full w-full" />}
-      >
-        <GoogleMap
-          mapContainerStyle={{ width: '100%', height: '100%' }}
-          center={center}
-          zoom={zoom}
-          options={{
-            fullscreenControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
-            zoomControl: true,
-            styles: [
-              {
-                featureType: 'poi',
-                elementType: 'labels',
-                stylers: [{ visibility: 'off' }]
-              }
-            ]
-          }}
-        >
-          {/* Render pulsing markers for each job */}
-          {jobs.map((job) => (
-            <PulsingMarker
-              key={job.id}
-              job={job}
-              onClick={() => handleJobSelect(job)}
-            />
-          ))}
-        </GoogleMap>
-      </LoadScript>
+      {/* Show error state */}
+      {loadError && (
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-lg font-medium text-red-500">Error loading maps. Please check your connection.</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Show loading state */}
+      {!isLoaded && !loadError && (
+        <div className="h-full w-full flex items-center justify-center">
+          <div className="text-center">
+            <div className="h-12 w-12 border-4 border-t-brand-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-lg font-medium">Loading map...</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Main map component */}
+      {mapComponent}
       
       {/* Search bar */}
       <MapSearchBar 

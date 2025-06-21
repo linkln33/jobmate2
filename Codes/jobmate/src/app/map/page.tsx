@@ -1,31 +1,32 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { MapViewPage } from '@/components/pages/map-view-page';
+import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import { usePathname, useSearchParams } from 'next/navigation';
+import { UnifiedMapViewPage } from '@/components/pages/unified-map-view-page';
 
 export default function MapPage() {
-  const [isLoading, setIsLoading] = useState(true);
-  const [key, setKey] = useState(Date.now()); // Unique key for forcing remount
+  const { isLoading: authLoading } = useAuth();
+  const [isMapLoading, setIsMapLoading] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Reset component when pathname or search params change
+  // Handle map initialization without forcing remount
   useEffect(() => {
-    // Force component to remount with a new key
-    setKey(Date.now());
-    setIsLoading(true);
-    
-    // Short timeout to ensure component mounts properly
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 800); // Slightly longer timeout to ensure Google Maps API loads properly
-
-    return () => clearTimeout(timer);
+    // Only show loading indicator briefly when params change
+    if (searchParams.toString()) {
+      setIsMapLoading(true);
+      const timer = setTimeout(() => {
+        setIsMapLoading(false);
+      }, 300); // Shorter timeout for better UX
+      
+      return () => clearTimeout(timer);
+    }
   }, [pathname, searchParams]);
 
-  if (isLoading) {
+  // Show loading spinner while checking authentication or loading map
+  if (authLoading || isMapLoading) {
     return (
       <div className="h-[calc(100vh-120px)] flex items-center justify-center">
         <div className="text-center">
@@ -36,6 +37,6 @@ export default function MapPage() {
     );
   }
 
-  // Use the key to force a complete remount of MapViewPage
-  return <MapViewPage key={key} />;
+  // Render map without forcing remount
+  return <UnifiedMapViewPage />;
 }
