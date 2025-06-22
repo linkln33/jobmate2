@@ -1,0 +1,21 @@
+{
+  "name": "jobmate-root",
+  "version": "1.0.0",
+  "description": "Root package for JobMate Netlify deployment",
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/linkln33/JobMate.git"
+  },
+  "keywords": [
+    "jobmate",
+    "deployment"
+  ],
+  "author": "",
+  "license": "ISC"
+}
