@@ -1,16 +1,40 @@
 [build]
   command = "npm run build"
-  publish = ".next"
+  publish = "out"
+  ignore = "git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF ./"
 
 [build.environment]
   NODE_VERSION = "18"
   NEXT_TELEMETRY_DISABLED = "1"
 
+# Use the Next.js plugin for Netlify
 [[plugins]]
   package = "@netlify/plugin-nextjs"
-
-# Single redirect rule for all paths to ensure SPA routing works
+  
+# Handle all routes for client-side routing
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+  force = true
+
+# Explicitly handle 404 errors
+[[redirects]]
+  from = "/*"
+  to = "/404"
+  status = 404
+
+# Set cache headers for static assets
+[[headers]]
+  for = "/static/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# Set security headers for all pages
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-XSS-Protection = "1; mode=block"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
