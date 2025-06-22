@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { 
@@ -19,6 +19,18 @@ import { useAuth } from '@/contexts/AuthContext';
 export function UnifiedJobsPage() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('active');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Handle tab change with loading state
+  const handleTabChange = useCallback((value: string) => {
+    setIsLoading(true);
+    // Use a small timeout to allow the UI to update before loading the new content
+    // This creates a smoother transition
+    setTimeout(() => {
+      setActiveTab(value);
+      setIsLoading(false);
+    }, 100);
+  }, []);
   
   // Mock jobs data
   const jobs = [
@@ -84,8 +96,10 @@ export function UnifiedJobsPage() {
     },
   ];
 
-  // Filter jobs based on active tab
-  const filteredJobs = jobs.filter(job => job.status === activeTab);
+  // Filter jobs based on active tab - memoized to prevent unnecessary recalculations
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => job.status === activeTab);
+  }, [jobs, activeTab]);
 
   // Get status badge variant
   const getStatusVariant = (status: string) => {
@@ -123,7 +137,7 @@ export function UnifiedJobsPage() {
           {/* Jobs Tabs */}
           <GlassCard className="mb-6" intensity="low">
             <GlassCardContent className="p-0">
-              <Tabs defaultValue="active" value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs defaultValue="active" value={activeTab} onValueChange={handleTabChange} className="w-full">
                 <TabsList className="w-full grid grid-cols-3 rounded-none bg-transparent">
                   <TabsTrigger value="active" className="data-[state=active]:bg-white/20 dark:data-[state=active]:bg-gray-800/30">
                     Active Jobs
@@ -141,7 +155,11 @@ export function UnifiedJobsPage() {
           
           {/* Jobs Content */}
           <div className="space-y-6">
-            {filteredJobs.length > 0 ? (
+            {isLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-brand-500"></div>
+              </div>
+            ) : filteredJobs.length > 0 ? (
               filteredJobs.map(job => (
                 <GlassCard key={job.id} intensity="medium">
                   <GlassCardHeader>
@@ -221,6 +239,28 @@ export function UnifiedJobsPage() {
                     </div>
                   </GlassCardFooter>
                 </GlassCard>
+              ))
+            ) : (
+              <GlassCard intensity="low">
+                <GlassCardContent className="text-center py-12">
+                  <h3 className="text-lg font-medium">No {activeTab} jobs found</h3>
+                  <p className="text-muted-foreground mt-1">
+                    {activeTab === 'active' 
+                      ? "You don't have any active jobs. Post a new job to get started." 
+                      : activeTab === 'completed'
+                      ? "You don't have any completed jobs yet."
+                      : "You don't have any draft jobs. Start creating a new job posting."}
+                  </p>
+                  {(activeTab === 'active' || activeTab === 'draft') && (
+                    <Button className="mt-4" asChild>
+                      <Link href="/jobs/create">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Post a New Job
+                      </Link>
+                    </Button>
+                  )}
+                </GlassCardContent>
+              </GlassCard>
               ))
             ) : (
               <GlassCard intensity="low">

@@ -32,6 +32,11 @@ export function VerificationTabs() {
   const [activeTab, setActiveTab] = useState('basic');
   const { toast } = useToast();
   
+  // Allow direct access to any tab without restrictions
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+  };
+  
   // Mock user verification status
   const [verificationStatus, setVerificationStatus] = useState({
     basic: {
@@ -54,7 +59,7 @@ export function VerificationTabs() {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="basic" className="relative">
             Basic Verification
@@ -185,10 +190,14 @@ export function VerificationTabs() {
 
 // Helper function to calculate progress percentage
 function calculateProgress(status: Record<string, boolean | number>): number {
-  const totalFields = Object.keys(status).filter(key => key !== 'progress').length;
+  // Phone verification is optional, so we exclude it from the total count
+  const totalFields = Object.keys(status).filter(key => key !== 'progress' && key !== 'phone').length;
   const completedFields = Object.entries(status)
-    .filter(([key, value]) => key !== 'progress' && value === true)
+    .filter(([key, value]) => key !== 'progress' && key !== 'phone' && value === true)
     .length;
   
-  return Math.round((completedFields / totalFields) * 100);
+  // If phone is verified, add it to completed fields but don't count it in the denominator
+  const phoneVerified = status.phone === true ? 1 : 0;
+  
+  return Math.round(((completedFields + phoneVerified) / (totalFields + (phoneVerified ? 1 : 0))) * 100);
 }

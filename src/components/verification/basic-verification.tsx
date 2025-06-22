@@ -48,6 +48,16 @@ export function BasicVerification({ verificationStatus, setVerificationStatus }:
       return;
     }
     
+    // Allow skipping phone verification
+    const skipVerification = window.confirm("Would you like to skip phone verification? (It's optional)");
+    if (skipVerification) {
+      toast({
+        title: "Verification Skipped",
+        description: "Phone verification has been marked as optional"
+      });
+      return;
+    }
+    
     // Simulate OTP sending
     toast({
       title: "OTP Sent",
@@ -163,9 +173,9 @@ export function BasicVerification({ verificationStatus, setVerificationStatus }:
               <span>Verified</span>
             </div>
           ) : (
-            <div className="flex items-center text-yellow-500">
+            <div className="flex items-center text-muted-foreground">
               <Clock className="h-5 w-5 mr-1" />
-              <span>Pending</span>
+              <span>Optional</span>
             </div>
           )}
         </div>
@@ -175,7 +185,7 @@ export function BasicVerification({ verificationStatus, setVerificationStatus }:
         ) : (
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone">Phone Number (Optional)</Label>
               <div className="flex space-x-2">
                 <Input 
                   id="phone" 

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Home, 
@@ -45,10 +45,36 @@ if (typeof getInitials !== 'function') {
   };
 }
 
-export function GlassmorphicSidebar() {
+// Memoize the sidebar to prevent unnecessary re-renders
+export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const { sidebarCollapsed, setSidebarCollapsed } = useLayout();
+  
+  // Track navigation state to show loading indicators
+  const [isNavigating, setIsNavigating] = useState(false);
+  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+  
+  // Create a navigation handler function - no verification locks
+  const createNavigationHandler = useCallback((itemHref: string) => {
+    return (e: React.MouseEvent) => {
+      // Only handle navigation if not already on the page
+      if (itemHref !== pathname) {
+        e.preventDefault();
+        setIsNavigating(true);
+        setNavigatingTo(itemHref);
+        
+        // Prefetch the route before navigating
+        router.prefetch(itemHref);
+        
+        // Navigate after a short delay to allow for visual feedback
+        setTimeout(() => {
+          router.push(itemHref);
+        }, 100);
+      }
+    };
+  }, [pathname, router, setIsNavigating, setNavigatingTo]);
   
   // Define the type for navigation items
   type NavItem = {
@@ -204,7 +230,8 @@ export function GlassmorphicSidebar() {
   const navItems = getNavItems();
   
   // Get user verification level (mock - replace with actual data)
-  const userVerificationLevel = user?.verificationLevel || 0;
+  // Using type assertion to handle the User type
+  const userVerificationLevel = (user as any)?.verificationLevel || 0;
   
   return (
     <div className={cn(
@@ -238,13 +265,13 @@ export function GlassmorphicSidebar() {
           sidebarCollapsed ? "justify-center" : "space-x-3"
         )}>
           <Avatar className="h-10 w-10">
-            <AvatarImage src={user?.avatarUrl || ""} alt={user?.name || "User"} />
-            <AvatarFallback>{getInitials(user?.name || "User")}</AvatarFallback>
+            <AvatarImage src={(user as any)?.avatarUrl || ""} alt={(user as any)?.name || "User"} />
+            <AvatarFallback>{getInitials((user as any)?.name || "User")}</AvatarFallback>
           </Avatar>
           
           {!sidebarCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name}</p>
+              <p className="text-sm font-medium truncate">{(user as any)?.name}</p>
               <div className="flex items-center mt-1">
                 <div className="flex-1 bg-gray-200 dark:bg-gray-700 h-1.5 rounded-full overflow-hidden">
                   <div 
@@ -259,33 +286,36 @@ export function GlassmorphicSidebar() {
         </div>
       )}
       
+
+
       {/* Navigation items */}
       <div className="flex-1 overflow-y-auto py-2">
         <nav className="px-2 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;
-            const isLocked = item.verificationLevel > userVerificationLevel;
+            // Remove verification level check - all items accessible
+            
+            // Get the navigation handler for this item
+            const handleNavigation = createNavigationHandler(item.href);
             
             return (
               <TooltipProvider key={item.href}>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href={isLocked ? "/verifications" : item.href}
+                      href={item.href}
+                      onClick={handleNavigation}
                       className={cn(
                         "flex items-center px-3 py-2 rounded-lg transition-colors group relative",
                         isActive 
                           ? "bg-white/20 dark:bg-gray-800/40 text-brand-600 dark:text-brand-400" 
                           : "text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-800/20",
-                        isLocked && "opacity-50"
+                        isNavigating && navigatingTo === item.href && "animate-pulse"
                       )}
                     >
                       <div className="flex items-center">
                         <span className="flex-shrink-0 relative">
                           {item.icon}
-                          {isLocked && (
-                            <Shield className="h-3 w-3 absolute -top-1 -right-1 text-amber-500" />
-                          )}
                         </span>
                         
                         {!sidebarCollapsed && (
@@ -312,9 +342,6 @@ export function GlassmorphicSidebar() {
                   <TooltipContent side="right" className="z-[1000]">
                     <div>
                       <p>{item.label}</p>
-                      {isLocked && (
-                        <p className="text-xs text-amber-500">Requires verification level {item.verificationLevel}</p>
-                      )}
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -345,4 +372,4 @@ export function GlassmorphicSidebar() {
       )}
     </div>
   );
-}
+});

@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Copy, Users, DollarSign, Award, Share2, TrendingUp, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
+import { UnifiedDashboardLayout } from "@/components/layout/unified-dashboard-layout";
+import { AffiliateProgramClient } from "@/components/pages/affiliate-program-client";
 
 export default function AffiliateProgram() {
   const { user } = useAuth();
@@ -62,14 +64,15 @@ export default function AffiliateProgram() {
   };
   
   return (
-    <div className="container mx-auto py-6 max-w-7xl">
-      <div className="flex flex-col space-y-6">
-        <div className="flex flex-col space-y-2">
-          <h1 className="text-3xl font-bold">Affiliate Program</h1>
-          <p className="text-muted-foreground">
-            Earn rewards by referring new users and specialists to JobMate
-          </p>
-        </div>
+    <UnifiedDashboardLayout title="Affiliate Program" hideSidebar={false} showMap={false} isPublicPage={false}>
+      <div className="container mx-auto py-6 max-w-7xl">
+        <div className="flex flex-col space-y-6">
+          <div className="flex flex-col space-y-2">
+            <h1 className="text-3xl font-bold">Affiliate Program</h1>
+            <p className="text-muted-foreground">
+              Earn rewards by referring new users and specialists to JobMate
+            </p>
+          </div>
         
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid grid-cols-4 mb-8">
@@ -583,5 +586,6 @@ export default function AffiliateProgram() {
         </Tabs>
       </div>
     </div>
+    </UnifiedDashboardLayout>
   );
 }

@@ -93,22 +93,42 @@ export function ExpertiseBadge({
 
 export function ExpertiseBadgeGroup({ 
   skills,
+  expertise,
   className,
   size = 'md',
   showLabels = true
 }: { 
-  skills: Array<{
+  skills?: Array<{
     skill: { name: string };
     proficiencyLevel: string;
     yearsOfExperience?: number;
   }>;
+  expertise?: string[];
   className?: string;
   size?: 'sm' | 'md' | 'lg';
   showLabels?: boolean;
 }) {
+  // Handle both skills objects and expertise string arrays
+  if (expertise && expertise.length > 0) {
+    return (
+      <div className={cn("flex flex-wrap gap-4", className)}>
+        {expertise.map((item, index) => (
+          <ExpertiseBadge
+            key={index}
+            skill={item}
+            level="INTERMEDIATE" // Default level for string arrays
+            size={size}
+            showLabel={showLabels}
+          />
+        ))}
+      </div>
+    );
+  }
+  
+  // Original implementation for skills objects
   return (
     <div className={cn("flex flex-wrap gap-4", className)}>
-      {skills.map((skillItem, index) => (
+      {skills?.map((skillItem, index) => (
         <ExpertiseBadge
           key={index}
           skill={skillItem.skill.name}
