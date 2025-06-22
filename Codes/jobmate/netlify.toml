@@ -1,8 +1,8 @@
-# Netlify configuration for Next.js with path correction
+# Netlify configuration with adaptive build script
 [build]
-  base = "Codes/jobmate"
-  command = "npm run build"
-  publish = "out"
+  base = "/"
+  command = "chmod +x ./build.sh && ./build.sh"
+  publish = "Codes/jobmate/out"
 
 [build.environment]
   NODE_VERSION = "18"
