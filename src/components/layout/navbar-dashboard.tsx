@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from "@/contexts/AuthContext";
 import { 
   Search, 
@@ -11,7 +11,9 @@ import {
   User,
   LogOut,
   HelpCircle,
-  MessageSquare
+  MessageSquare,
+  Moon,
+  Sun
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -28,19 +30,35 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 
-interface GlassmorphicHeaderProps {
+interface NavBarDashboardProps {
   title?: string;
   showSearch?: boolean;
   onMobileMenuClick?: () => void;
 }
 
-export function GlassmorphicHeader({ 
+export function NavBarDashboard({ 
   title, 
   showSearch = true,
   onMobileMenuClick 
-}: GlassmorphicHeaderProps) {
+}: NavBarDashboardProps) {
   const { user, logout, isAuthenticated } = useAuth();
   const { sidebarCollapsed } = useLayout();
+  const [darkMode, setDarkMode] = useState(false);
+  
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+    document.documentElement.classList.toggle('dark');
+  };
+  
+  // Check system preference on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches || 
+                         document.documentElement.classList.contains('dark');
+      setDarkMode(isDarkMode);
+    }
+  }, []);
   
   // Helper function to get initials if not available in utils
   const getInitialsLocal = (name: string) => {
@@ -57,8 +75,7 @@ export function GlassmorphicHeader({
   return (
     <header className={cn(
       "h-16 border-b border-white/20 dark:border-gray-800/30 flex items-center justify-between px-4",
-      "bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl backdrop-saturate-150 sticky top-0 z-10",
-      "shadow-[0_4px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_30px_rgba(0,0,0,0.3)]"
+      "bg-white/30 dark:bg-gray-900/30 backdrop-blur-xl backdrop-saturate-150 sticky top-0 z-10"
     )}>
       <div className="flex items-center space-x-4">
         {/* Mobile menu button */}
@@ -71,33 +88,7 @@ export function GlassmorphicHeader({
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Logo with AI Badge */}
-        <a href="/" className="flex items-center">
-          <div className="flex items-center">
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-              JobMate
-            </span>
-            <span className="ml-1 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-md font-medium">
-              AI
-            </span>
-          </div>
-        </a>
-
-        {/* Navigation links for authenticated users */}
-        <div className="hidden md:flex items-center space-x-6">
-          <a href="/dashboard" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            Dashboard
-          </a>
-          <a href="/jobs" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            Jobs
-          </a>
-          <a href="/marketplace" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            Marketplace
-          </a>
-          <a href="/messages" className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-            Messages
-          </a>
-        </div>
+        {/* Navigation links removed as requested */}
       </div>
       
       <div className="flex items-center space-x-2">
@@ -112,6 +103,21 @@ export function GlassmorphicHeader({
             />
           </div>
         )}
+        
+        {/* Dark mode toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleDarkMode}
+          className="rounded-full hover:bg-white/10 dark:hover:bg-gray-800/50"
+          aria-label="Toggle dark mode"
+        >
+          {darkMode ? (
+            <Sun className="h-5 w-5 text-yellow-400" />
+          ) : (
+            <Moon className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+          )}
+        </Button>
         
         {/* Messages */}
         {isAuthenticated && (
@@ -222,12 +228,12 @@ export function GlassmorphicHeader({
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user?.avatarUrl || ""} alt={user?.name || "User"} />
-                  <AvatarFallback>{getInitialsLocal(user?.name || "User")}</AvatarFallback>
+                  <AvatarImage src={user?.profileImageUrl || ""} alt={`${user?.firstName} ${user?.lastName}` || "User"} />
+                  <AvatarFallback>{getInitialsLocal(`${user?.firstName || ''} ${user?.lastName || ''}` || "User")}</AvatarFallback>
                 </Avatar>
                 {!sidebarCollapsed && (
                   <div className="flex items-center">
-                    <span className="text-sm font-medium hidden lg:block">{user?.name}</span>
+                    <span className="text-sm font-medium hidden lg:block">{user ? `${user.firstName} ${user.lastName}` : 'User'}</span>
                     <ChevronDown className="h-4 w-4 ml-1" />
                   </div>
                 )}

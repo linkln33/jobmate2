@@ -120,7 +120,7 @@ export function StickyNavbar({ className = '', hideDashboardButton = false }: St
             {isAuthenticated ? (
               !hideDashboardButton && (
                 <Link href="/dashboard">
-                  <Button variant="outline">Go to Dashboard</Button>
+                  <Button>Go to Dashboard</Button>
                 </Link>
               )
             ) : (
@@ -208,7 +208,7 @@ export function StickyNavbar({ className = '', hideDashboardButton = false }: St
                 {isAuthenticated ? (
                   !hideDashboardButton && (
                     <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full">Go to Dashboard</Button>
+                      <Button className="w-full">Go to Dashboard</Button>
                     </Link>
                   )
                 ) : (

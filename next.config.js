@@ -10,11 +10,6 @@ const nextConfig = {
       'lh3.googleusercontent.com',
     ],
   },
-  
-  // Always use port 3000
-  server: {
-    port: 3000,
-  },
 };
 
 module.exports = nextConfig;

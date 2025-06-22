@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { InteractiveMapWithFilters } from '@/components/map/interactive-map-with-filters';
+import { HomepageMap } from '@/components/map/homepage-map';
 import { Job } from '@/types/job';
 
 // Import all sections individually
@@ -138,7 +138,7 @@ export function UnifiedHomePageFinal() {
               className="relative h-[500px]"
             >
               <div className="absolute inset-0 rounded-2xl overflow-hidden shadow-xl">
-                <InteractiveMapWithFilters height="100%" />
+                <HomepageMap />
               </div>
               
 

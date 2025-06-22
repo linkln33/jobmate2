@@ -1,68 +1,75 @@
 "use client";
 
-import { Flame, CheckCircle, Home, Tag as TagIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+// Import marketplace categories
+const MARKETPLACE_CATEGORIES = [
+  { id: 'handy-man', name: 'Handy Man', color: '#4CAF50' },  // Green
+  { id: 'skilled-jobs', name: 'Skilled Jobs', color: '#2196F3' }, // Blue
+  { id: 'digital-plus', name: 'Digital +', color: '#9C27B0' }, // Purple
+  { id: 'healthcare', name: 'Healthcare', color: '#F44336' }, // Red
+  { id: 'transport', name: 'Transport', color: '#A1887F' }, // Light Brown
+  { id: 'other', name: 'Other', color: '#FF9800' }, // Orange
+];
+
 interface MapFilterChipsProps {
-  showUrgent: boolean;
-  showVerified: boolean;
-  showNeighbors: boolean;
-  showCategories: boolean;
-  onToggleUrgent: () => void;
-  onToggleVerified: () => void;
-  onToggleNeighbors: () => void;
-  onToggleCategories: () => void;
+  selectedCategories: string[];
+  onToggleCategory: (categoryId: string) => void;
+  setSelectedCategories: (categories: string[]) => void;
+  chipStyle?: {
+    chipWidth?: string;
+    useFullName?: boolean;
+    paddingLeft?: string;
+    paddingRight?: string;
+  };
 }
 
+
 export function MapFilterChips({
-  showUrgent,
-  showVerified,
-  showNeighbors,
-  showCategories,
-  onToggleUrgent,
-  onToggleVerified,
-  onToggleNeighbors,
-  onToggleCategories
+  selectedCategories,
+  onToggleCategory,
+  setSelectedCategories,
+  chipStyle
 }: MapFilterChipsProps) {
   return (
-    <div className="absolute top-16 left-0 right-0 z-10 px-4 overflow-x-auto">
-      <div className="flex justify-center sm:justify-start gap-2 pb-2">
-        <Button 
-          variant={showUrgent ? "default" : "outline"}
-          size="sm"
-          className={`whitespace-nowrap text-xs sm:text-sm h-8 sm:h-10 ${showUrgent ? 'bg-red-500 hover:bg-red-600' : 'bg-white/90 backdrop-blur-sm'}`}
-          onClick={onToggleUrgent}
-        >
-          <Flame className="mr-1 h-4 w-4 text-red-500" />
-          Hot
-        </Button>
-        <Button 
-          variant={showVerified ? "default" : "outline"}
-          size="sm"
-          className={`whitespace-nowrap text-xs sm:text-sm h-8 sm:h-10 ${showVerified ? 'bg-green-500 hover:bg-green-600' : 'bg-white/90 backdrop-blur-sm'}`}
-          onClick={onToggleVerified}
-        >
-          <CheckCircle className="mr-1 h-4 w-4 text-green-500" />
-          Verified
-        </Button>
-        <Button 
-          variant={showNeighbors ? "default" : "outline"}
-          size="sm"
-          className={`whitespace-nowrap text-xs sm:text-sm h-8 sm:h-10 ${showNeighbors ? 'bg-blue-500 hover:bg-blue-600' : 'bg-white/90 backdrop-blur-sm'}`}
-          onClick={onToggleNeighbors}
-        >
-          <Home className="mr-1 h-4 w-4 text-orange-500" />
-          Neighbors
-        </Button>
-        <Button 
-          variant={showCategories ? "default" : "outline"}
-          size="sm"
-          className={`whitespace-nowrap text-xs sm:text-sm h-8 sm:h-10 ${showCategories ? 'bg-purple-500 hover:bg-purple-600' : 'bg-white/90 backdrop-blur-sm'}`}
-          onClick={onToggleCategories}
-        >
-          <TagIcon className="mr-1 h-4 w-4 text-purple-800" />
-          Categories
-        </Button>
+    <div className="absolute bottom-4 left-0 right-0 z-10 px-4 overflow-x-auto">
+      <div className="flex flex-col items-start ml-2">
+        <div className="flex gap-1 flex-wrap">
+          {/* All categories in one row */}
+          {MARKETPLACE_CATEGORIES.map((category) => {
+            const isSelected = selectedCategories.includes(category.id);
+            // Get display name based on chipStyle
+            const displayName = chipStyle?.useFullName ? category.name : category.name.split(' ')[0];
+            
+            return (
+              <button 
+                key={category.id}
+                className={`rounded-md flex items-center text-xs transition-all duration-200`}
+                style={{
+                  backgroundColor: isSelected ? category.color : 'rgba(255,255,255,0.9)',
+                  color: isSelected ? 'white' : category.color,
+                  borderLeft: `3px solid ${category.color}`,
+                  width: chipStyle?.chipWidth || '60px',
+                  height: '24px',
+                  fontWeight: isSelected ? 'bold' : 'normal',
+                  boxShadow: isSelected ? '0 2px 4px rgba(0, 0, 0, 0.2)' : '0 1px 2px rgba(0, 0, 0, 0.1)',
+                  paddingLeft: chipStyle?.paddingLeft || '6px',
+                  paddingRight: chipStyle?.paddingRight || '2px',
+                  justifyContent: 'flex-start'
+                }}
+                onClick={() => onToggleCategory(category.id)}
+                title={category.name}
+                aria-pressed={isSelected}
+              >
+                <span 
+                  className="h-2 w-2 rounded-full mr-1 flex-shrink-0" 
+                  style={{ backgroundColor: category.color }}
+                />
+                <span className="truncate">{displayName}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

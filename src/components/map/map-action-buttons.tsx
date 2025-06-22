@@ -24,7 +24,7 @@ export function MapActionButtons({
   onToggleNewest
 }: MapActionButtonsProps) {
   return (
-    <div className="absolute top-1/4 right-4 z-10 flex flex-col gap-2">
+    <div className="absolute top-1/4 right-4 z-[5] flex flex-col gap-2">
       <button
         onClick={onToggleAccepted}
         style={{

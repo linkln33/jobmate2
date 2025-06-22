@@ -136,7 +136,7 @@ export function UnifiedDashboardPage() {
   ];
 
   return (
-    <UnifiedDashboardLayout title="Dashboard" showMap={false}>
+    <UnifiedDashboardLayout title="Dashboard" showMap={false} isPublicPage={false}>
       {/* Main content with glassmorphic cards */}
       <div className="p-6">
         {/* Verification Banner - Dismissible */}
@@ -231,6 +231,13 @@ export function UnifiedDashboardPage() {
                 <InteractiveMapWithFilters
                   height="100%"
                   onJobSelect={(job) => console.log('Selected job:', job)}
+                  filterChipStyle={{
+                    chipWidth: '120px',  // Increased length for better visibility
+                    useFullName: false,  // Use single-word names like homepage
+                    paddingLeft: '12px', // More padding on the left
+                    paddingRight: '10px', // More padding on the right
+                  }}
+                  showActivityDotsOnMap={true}
                 />
               </div>
             </GlassCardContent>
