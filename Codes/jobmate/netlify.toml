@@ -9,14 +9,8 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Force trailing slashes
+# Single redirect rule for all paths to ensure SPA routing works
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-
-# Handle 404s
-[[redirects]]
-  from = "/*"
-  to = "/404.html"
-  status = 404
