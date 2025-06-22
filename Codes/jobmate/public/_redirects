@@ -1,1 +1,8 @@
-/* /index.html 200
+# Netlify redirects file for Next.js client-side routing
+# These rules ensure all routes are handled properly
+
+# Redirect all routes to index.html with 200 status code
+/*  /index.html  200
+
+# Specific API routes should bypass the SPA redirect
+/api/*  /api/:splat  200

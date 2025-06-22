@@ -8,7 +8,7 @@ const nextConfig = {
       'images.unsplash.com',
       'lh3.googleusercontent.com',
     ],
-    // Keep this for Netlify compatibility
+    // Required for Netlify compatibility
     unoptimized: true,
   },
   // Server Actions are enabled by default in Next.js 14
@@ -20,8 +20,17 @@ const nextConfig = {
     // number of pages that should be kept simultaneously without being disposed
     pagesBufferLength: 5,
   },
-  // Disable static export to use Netlify's Next.js plugin
-  // output: 'export',
+  // Enable SPA-like behavior for better Netlify compatibility
+  trailingSlash: true,
+  // This helps with client-side routing on Netlify
+  async rewrites() {
+    return [
+      {
+        source: '/:path*',
+        destination: '/:path*',
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;
