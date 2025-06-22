@@ -1,7 +1,7 @@
-# Netlify configuration for Next.js with custom deployment script
+# Netlify configuration for Next.js with path correction
 [build]
-  base = "/"
-  command = "chmod +x ./netlify-deploy.sh && ./netlify-deploy.sh"
+  base = "Codes/jobmate"
+  command = "npm run build"
   publish = "out"
 
 [build.environment]
