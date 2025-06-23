@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { SmartJobMatches } from '@/components/match/smart-job-matches';
-import { EnhancedJobMap, Job } from '@/components/map/enhanced-job-map';
+import { InteractiveJobMap } from '@/components/map/interactive-job-map';
+import { Job as MapJob } from '@/types/job';
+import { Job } from '@/types/job-match-types';
 import { Specialist } from '@/types/job-match-types';
 import { matchService } from '@/services/match-service';
 import { fetchJobMatches } from '@/utils/api/match-api';
@@ -276,18 +278,27 @@ export function SmartMatchesPage() {
                         <Skeleton className="h-full w-full" />
                       </div>
                     ) : (
-                      <EnhancedJobMap 
-                        initialJobs={jobs}
-                        initialCenter={{
+                      <InteractiveJobMap 
+                        jobs={jobs.map((job): MapJob => ({
+                          id: job.id,
+                          title: job.title,
+                          status: job.status,
+                          urgency: job.urgencyLevel || 'normal',
+                          address: `${job.city}, ${job.state || ''} ${job.zipCode}`,
+                          price: job.budgetMax ? `$${job.budgetMin || 0}-$${job.budgetMax}` : `$${job.budgetMin || 0}+`,
+                          time: job.createdAt,
+                          customer: job.customer ? `${job.customer.firstName} ${job.customer.lastName}` : 'Unknown',
+                          lat: job.lat,
+                          lng: job.lng,
+                          category: job.serviceCategory?.id,
+                        }))}
+                        defaultCenter={{
                           lat: mockSpecialist.location?.lat || 40.7128,
                           lng: mockSpecialist.location?.lng || -74.006
                         }}
-                        initialZoom={12}
-                        height="700px"
-                        categories={sampleCategories}
-                        showFilters={true}
+                        defaultZoom={12}
                         selectedJobId={selectedJobId}
-                        onJobSelected={setSelectedJobId}
+                        onJobSelect={(job) => setSelectedJobId(job.id.toString())}
                       />
                     )}
                   </div>
