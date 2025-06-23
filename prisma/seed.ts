@@ -1,18 +1,15 @@
-// Empty seed file to prevent build errors
-// Original seed functionality is preserved in prisma/backup/seed.ts
+// Minimal seed file for deployment
+// Original seed file is preserved in prisma_backup directory
 
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Empty seed file - not executing any database operations');
+  // Empty seed function for deployment
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
+  .catch(e => console.error(e))
   .finally(async () => {
     await prisma.$disconnect();
   });

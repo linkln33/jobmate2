@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
+  "buildCommand": "npm run vercel-build",
   "devCommand": "npm run dev",
   "outputDirectory": ".next",
   "framework": "nextjs",

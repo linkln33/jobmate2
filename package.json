@@ -4,9 +4,10 @@
   "description": "JobMate - AI-powered job marketplace application",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint --no-typescript-check",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "vercel-build": "prisma generate && next build"
   },
   "repository": {
     "type": "git",
