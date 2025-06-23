@@ -11,9 +11,8 @@ const nextConfig = {
     ],
   },
   
-  experimental: {
-    serverActions: true,
-  },
+  // Next.js 14+ has server actions enabled by default
+  // No need for experimental flags
 };
 
 module.exports = nextConfig;
