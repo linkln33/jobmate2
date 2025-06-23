@@ -1,8 +1,18 @@
+// This is a simplified seed file for build compatibility
+// Original seed functionality is preserved but modified to avoid build errors
+
 import { PrismaClient } from '@prisma/client';
 
-// This is a simplified seed file that won't be used during build
-// The full seed file is stored in prisma/backup/seed.ts
-console.log('This is a placeholder seed file for build compatibility');
+// Define JobStatus enum locally instead of importing it
+enum JobStatus {
+  DRAFT = 'DRAFT',
+  OPEN = 'OPEN',
+  ASSIGNED = 'ASSIGNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  DISPUTED = 'DISPUTED'
+}
 
 const prisma = new PrismaClient();
 
