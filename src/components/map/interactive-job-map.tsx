@@ -24,9 +24,9 @@ const mapContainerStyle = {
   height: '100%'
 };
 
+// Default Google Maps API key for demo purposes
 // In production, always use environment variables instead of hardcoded values
-// This is a placeholder API key that will be replaced during deployment
-const DEFAULT_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+const DEFAULT_API_KEY = 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y';
 
 export function InteractiveJobMap({
   jobs,
@@ -36,8 +36,6 @@ export function InteractiveJobMap({
   defaultCenter = { lat: 37.7749, lng: -122.4194 }, // Default to San Francisco
   defaultZoom = 12
 }: InteractiveJobMapProps) {
-  // Check if API key is available
-  const hasValidApiKey = apiKey && apiKey.length > 0;
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [center, setCenter] = useState(defaultCenter);
@@ -165,49 +163,6 @@ export function InteractiveJobMap({
       default: return 'bg-gray-500 text-white';
     }
   };
-
-  if (!hasValidApiKey) {
-    return (
-      <div className="h-full w-full flex flex-col items-center justify-center bg-gray-100 p-4 text-center">
-        <div className="bg-white p-6 rounded-lg shadow-md max-w-md">
-          <h3 className="text-xl font-semibold mb-2">Map Unavailable</h3>
-          <p className="text-gray-600 mb-4">
-            The map cannot be displayed because a valid Google Maps API key is not configured.
-          </p>
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">
-              For development or production use, please add your Google Maps API key to the environment variables:
-            </p>
-            <div className="bg-gray-100 p-2 rounded text-sm font-mono text-left">
-              NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=your_api_key_here
-            </div>
-          </div>
-          
-          {jobs.length > 0 && (
-            <div className="mt-6">
-              <h4 className="font-medium mb-2 text-left">Available Jobs ({jobs.length})</h4>
-              <div className="max-h-96 overflow-y-auto">
-                {jobs.map(job => (
-                  <div 
-                    key={job.id} 
-                    className={`p-3 mb-2 rounded-md cursor-pointer ${job.id === selectedJobId ? 'bg-blue-50 border border-blue-200' : 'bg-gray-50 hover:bg-gray-100'}`}
-                    onClick={() => onJobSelect && onJobSelect(job)}
-                  >
-                    <div className="font-medium">{job.title}</div>
-                    <div className="text-sm text-gray-600">{job.address}</div>
-                    <div className="flex justify-between items-center mt-1">
-                      <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">{job.status}</span>
-                      <span className="text-sm font-medium">{job.price}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="relative w-full h-full">

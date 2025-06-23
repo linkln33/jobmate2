@@ -4,9 +4,10 @@
   "description": "Root package for JobMate Netlify deployment",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "netlify-build": "prisma generate && next build"
   },
   "repository": {
     "type": "git",

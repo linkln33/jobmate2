@@ -1,16 +1,5 @@
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient, UserRole, JobStatus } from '@prisma/client';
 import { hash } from 'bcryptjs';
-
-// Define JobStatus enum locally to avoid build errors
-enum JobStatus {
-  DRAFT = 'DRAFT',
-  OPEN = 'OPEN',
-  ASSIGNED = 'ASSIGNED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  DISPUTED = 'DISPUTED'
-}
 
 const prisma = new PrismaClient();
 
