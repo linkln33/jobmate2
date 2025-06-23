@@ -414,6 +414,42 @@ export function InteractiveMapWithFilters({
     libraries: ['places'],
   });
   
+  // Debug log for API key and add mobile-specific resize handler
+  useEffect(() => {
+    console.log('Google Maps API Key available:', !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY);
+    console.log('Map loading status:', isLoaded ? 'Loaded' : 'Loading...');
+    
+    // Check if we're on mobile
+    const isMobile = window.innerWidth < 768;
+    console.log('Is mobile device:', isMobile, 'Width:', window.innerWidth);
+    
+    // Force a resize event on mobile devices after a short delay to fix rendering issues
+    if (isLoaded && isMobile) {
+      const timer = setTimeout(() => {
+        console.log('Dispatching resize event for mobile map');
+        window.dispatchEvent(new Event('resize'));
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded]);
+  
+  // Detect mobile devices
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 768;
+      setIsMobile(mobile);
+      console.log('InteractiveMapWithFilters - Mobile check:', mobile, 'Width:', window.innerWidth);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+  
   // Memoize the map component to prevent unnecessary re-renders
   // IMPORTANT: Always define useMemo before any conditional returns to avoid React hooks errors
   const mapComponent = useMemo(() => {
@@ -421,13 +457,26 @@ export function InteractiveMapWithFilters({
     
     return (
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%' }}
+        mapContainerStyle={{ 
+          width: '100%', 
+          height: '100%',
+          position: 'relative'
+        }}
         center={center}
         zoom={zoom}
         onLoad={(map: google.maps.Map) => {
           // Store map reference and set initial bounds
           mapRef.current = map;
           setMapBounds(map.getBounds() || null);
+          
+          // Force a resize event after a short delay to fix rendering issues on mobile
+          if (isMobile) {
+            setTimeout(() => {
+              console.log('Forcing map resize for mobile');
+              window.dispatchEvent(new Event('resize'));
+              map.setZoom(map.getZoom() || zoom); // Trigger a re-render
+            }, 500);
+          }
         }}
         onBoundsChanged={() => {
           // Get the map instance from the ref and update bounds
@@ -478,7 +527,7 @@ export function InteractiveMapWithFilters({
   
   // Handle loading and error states after all hooks are defined
   return (
-    <div className="relative w-full" style={{ height }}>
+    <div className="relative w-full" style={{ height, position: 'relative', overflow: 'hidden' }}>
       {/* Show error state */}
       {loadError && (
         <div className="h-full w-full flex items-center justify-center">

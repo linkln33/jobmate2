@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
@@ -37,10 +37,67 @@ import { Progress } from '@/components/ui/progress';
 import { InteractiveMapWithFilters } from '@/components/map/interactive-map-with-filters';
 import { Job } from '@/types/job';
 
+// Memoized components for better performance
+const MemoizedJobsList = memo(({ jobs }: { jobs: any[] }) => {
+  return (
+    <>
+      {jobs.map(job => (
+        <div key={job.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
+          <div className="flex items-center">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mr-3">
+              <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+            </div>
+            <div>
+              <p className="text-sm font-medium">{job.title}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {new Date(job.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+          <Badge variant={job.status === 'confirmed' ? 'success' : 'outline'}>
+            {job.status === 'confirmed' ? 'Confirmed' : 'Pending'}
+          </Badge>
+        </div>
+      ))}
+    </>
+  );
+});
+
+const MemoizedServicesList = memo(() => {
+  return (
+    <>
+      <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
+        <div className="flex items-center">
+          <div className="bg-green-100 dark:bg-green-900/30 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3">
+            <MapPin className="h-4 w-4 text-green-600 dark:text-green-300" />
+          </div>
+          <div>
+            <p className="text-xs sm:text-sm font-medium">Home Cleaning Service</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">New listing in your area</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-xs">New</Badge>
+      </div>
+      <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
+        <div className="flex items-center">
+          <div className="bg-green-100 dark:bg-green-900/30 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3">
+            <MapPin className="h-4 w-4 text-green-600 dark:text-green-300" />
+          </div>
+          <div>
+            <p className="text-xs sm:text-sm font-medium">Lawn Maintenance</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Price updated</p>
+          </div>
+        </div>
+        <Badge variant="outline" className="text-xs">Updated</Badge>
+      </div>
+    </>
+  );
+});
+
 export function UnifiedDashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('jobs');
   const [showVerificationBanner, setShowVerificationBanner] = useState(true);
   
   // Mock verification level (replace with actual user data)
@@ -228,17 +285,20 @@ export function UnifiedDashboardPage() {
 
             <GlassCardContent className="p-0 pb-2">
               <div className="h-[500px] sm:h-[455px] md:h-[585px] w-full">
-                <InteractiveMapWithFilters
-                  height="100%"
-                  onJobSelect={(job) => console.log('Selected job:', job)}
-                  filterChipStyle={{
-                    chipWidth: '120px',  // Increased length for better visibility
-                    useFullName: false,  // Use single-word names like homepage
-                    paddingLeft: '12px', // More padding on the left
-                    paddingRight: '10px', // More padding on the right
-                  }}
-                  showActivityDotsOnMap={true}
-                />
+                {/* Lazy load the map component to improve initial load time */}
+                {useMemo(() => (
+                  <InteractiveMapWithFilters
+                    height="100%"
+                    onJobSelect={(job) => console.log('Selected job:', job)}
+                    filterChipStyle={{
+                      chipWidth: '120px',  // Increased length for better visibility
+                      useFullName: false,  // Use single-word names like homepage
+                      paddingLeft: '12px', // More padding on the left
+                      paddingRight: '10px', // More padding on the right
+                    }}
+                    showActivityDotsOnMap={true}
+                  />
+                ), [])} {/* Empty dependency array ensures map only renders once */}
               </div>
             </GlassCardContent>
             <GlassCardFooter className="pt-1 pb-3">
@@ -345,58 +405,18 @@ export function UnifiedDashboardPage() {
               <GlassCardTitle>Recent Activity</GlassCardTitle>
             </GlassCardHeader>
             <GlassCardContent>
-              <Tabs defaultValue="jobs" className="w-full">
+              <Tabs defaultValue="jobs" className="w-full" value={activeTab} onValueChange={(value) => setActiveTab(value)}>
                 <TabsList className="grid grid-cols-2 mb-2 sm:mb-4 w-full text-xs sm:text-sm">
                   <TabsTrigger value="jobs">Jobs</TabsTrigger>
                   <TabsTrigger value="services">Services</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="jobs" className="space-y-4">
-                  {upcomingJobs.map(job => (
-                    <div key={job.id} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
-                      <div className="flex items-center">
-                        <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-full mr-3">
-                          <Briefcase className="h-4 w-4 text-blue-600 dark:text-blue-300" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">{job.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {new Date(job.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                          </p>
-                        </div>
-                      </div>
-                      <Badge variant={job.status === 'confirmed' ? 'success' : 'outline'}>
-                        {job.status === 'confirmed' ? 'Confirmed' : 'Pending'}
-                      </Badge>
-                    </div>
-                  ))}
+                  <MemoizedJobsList jobs={upcomingJobs} />
                 </TabsContent>
                 
                 <TabsContent value="services" className="space-y-4">
-                  <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
-                    <div className="flex items-center">
-                      <div className="bg-green-100 dark:bg-green-900/30 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3">
-                        <MapPin className="h-4 w-4 text-green-600 dark:text-green-300" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-medium">Home Cleaning Service</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">New listing in your area</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">New</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-white/10 dark:bg-gray-800/20">
-                    <div className="flex items-center">
-                      <div className="bg-green-100 dark:bg-green-900/30 p-1.5 sm:p-2 rounded-full mr-2 sm:mr-3">
-                        <MapPin className="h-4 w-4 text-green-600 dark:text-green-300" />
-                      </div>
-                      <div>
-                        <p className="text-xs sm:text-sm font-medium">Lawn Maintenance</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">Price updated</p>
-                      </div>
-                    </div>
-                    <Badge variant="outline" className="text-xs">Updated</Badge>
-                  </div>
+                  <MemoizedServicesList />
                 </TabsContent>
                 
 

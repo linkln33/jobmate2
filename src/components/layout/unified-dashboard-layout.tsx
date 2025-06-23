@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { GlassmorphicSidebar } from './glassmorphic-sidebar';
 import { NavBarDashboard } from './navbar-dashboard';
 import { StickyNavbar } from '@/components/ui/sticky-navbar';
 import { FloatingAssistant } from '@/components/assistant/FloatingAssistant';
 import { cn } from '@/lib/utils';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { X } from 'lucide-react';
+// Removed Sheet import
 import { useAuth } from '@/contexts/AuthContext';
 import { RoutePrefetcher } from '@/lib/route-prefetcher';
 
@@ -32,28 +33,48 @@ export function UnifiedDashboardLayout({
   hideDashboardButton = false
 }: UnifiedDashboardLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  
+  // Debug mobile menu state changes
+  useEffect(() => {
+    console.log('Mobile menu state changed:', mobileMenuOpen);
+  }, [mobileMenuOpen]);
   const { isAuthenticated } = useAuth();
   
   // We no longer need this variable as we've simplified the logic below
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Mobile sidebar */}
+      {/* Mobile sidebar with backdrop */}
       {!hideSidebar && (
-        <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-          <SheetContent side="left" className="p-0 w-64 bg-transparent">
-            <div className="h-full">
-              <GlassmorphicSidebar />
+        <div 
+          className={`fixed inset-0 z-[100] md:hidden transition-opacity duration-300 ${mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        >
+          {/* Invisible backdrop for click handling only */}
+          <div 
+            className="fixed inset-0" 
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
+          
+          {/* Sidebar panel with slide-in animation */}
+          <div 
+            className={`fixed inset-y-0 left-0 shadow-xl overflow-y-auto scrollbar-hide transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}
+          >
+            <div className="h-full overflow-y-auto scrollbar-hide pb-20">
+              <GlassmorphicSidebar isMobile={true} onMobileClose={() => setMobileMenuOpen(false)} />
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </div>
       )}
 
+      {/* Route prefetcher for optimized navigation */}
+      <RoutePrefetcher />
+      
       {/* Desktop layout */}
       <div className="flex h-full">
         {/* Desktop sidebar */}
         {!hideSidebar && (
-          <div className="hidden md:block w-64">
+          <div className="hidden md:block">
             <GlassmorphicSidebar />
           </div>
         )}

@@ -282,11 +282,34 @@ export function UnifiedMapViewPage() {
   const mapComponent = (
     <div className="h-full w-full relative">
       {isMobileView ? (
-        /* Mobile View - Using same approach as desktop */
-        <>
+        /* Mobile View - Use the same InteractiveMapWithFilters component for consistency */
+        <div className="h-full w-full flex flex-col">
+          {/* Mobile search and filter bar */}
+          <div className="p-2 bg-white dark:bg-gray-800 z-10 flex gap-2">
+            <div className="flex-1 relative">
+              <input
+                type="text"
+                placeholder="Search jobs or locations..."
+                className="w-full h-10 pl-10 pr-4 rounded-lg border border-gray-300 bg-white dark:bg-gray-700"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-500" />
+            </div>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-10 w-10"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="h-5 w-5" />
+            </Button>
+          </div>
           
-          {/* Mobile Map - Using adjusted height for mobile browsers */}
-          <div className="relative" style={{ height: 'calc(100vh - 56px)' }}>
+          {/* Filter buttons removed */}
+          
+          {/* Mobile Map - Simplified to match desktop implementation */}
+          <div className="flex-1" style={{ height: 'calc(100vh - 60px)' }}>
             {mapLoaded ? (
               <InteractiveMapWithFilters
                 key={`mobile-map-view-${mapLoaded}`}
@@ -300,20 +323,20 @@ export function UnifiedMapViewPage() {
                   paddingRight: '6px'
                 }}
                 mapOptions={{
-                  zoomControl: false, /* Remove zoom buttons */
-                  scrollwheel: true, /* Keep scroll zoom */
-                  gestureHandling: 'greedy' /* Better touch handling */
+                  zoomControl: true,
+                  scrollwheel: true
                 }}
                 initialZoom={12}
                 showSearchBar={false}
               />
             ) : (
-              <div className="h-[calc(100vh-60px)] w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+              <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
                 <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
               </div>
             )}
+            </div>
           </div>
-        </>
+        </div>
       ) : (
         /* Desktop View */
         <>

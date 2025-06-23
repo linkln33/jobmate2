@@ -22,7 +22,8 @@ import {
   Shield,
   BarChart,
   Wrench,
-  Share2
+  Share2,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -41,7 +42,12 @@ if (typeof getInitials !== 'function') {
   };
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isMobile?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function Sidebar({ isMobile = false, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
   const { user, logout, isAuthenticated } = useAuth();
   const { sidebarCollapsed, setSidebarCollapsed } = useLayout();
@@ -176,23 +182,35 @@ export function Sidebar() {
   
   return (
     <div className={cn(
-      "hidden md:flex flex-col h-screen border-r border-border bg-background transition-all duration-300",
-      sidebarCollapsed ? "w-[5rem]" : "w-64"
+      "flex flex-col h-screen border-r border-border bg-background transition-all duration-300",
+      isMobile ? "w-[280px]" : (sidebarCollapsed ? "w-[5rem]" : "w-64"),
+      !isMobile && "hidden md:flex"
     )}>
       {/* Logo and collapse button */}
       <div className="flex items-center justify-between p-4 h-16 border-b border-border">
         <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
-          {!sidebarCollapsed && <span className="text-2xl font-bold text-brand-500">JobMate</span>}
-          {sidebarCollapsed && <span className="text-2xl font-bold text-brand-500">JM</span>}
+          {(!sidebarCollapsed || isMobile) && <span className="text-2xl font-bold text-brand-500">JobMate</span>}
+          {sidebarCollapsed && !isMobile && <span className="text-2xl font-bold text-brand-500">JM</span>}
         </Link>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="rounded-full"
-        >
-          {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
-        </Button>
+        {isMobile ? (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onMobileClose}
+            className="rounded-full"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        ) : (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="rounded-full"
+          >
+            {sidebarCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
+          </Button>
+        )}
       </div>
       
       {/* User profile section */}

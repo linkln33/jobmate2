@@ -133,7 +133,7 @@ export function UnifiedProfilePage() {
   const fetchProfileData = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
+      // Restore the setTimeout to fix syntax errors
       setTimeout(() => {
         setProfileData({
           id: "user123",
@@ -143,7 +143,7 @@ export function UnifiedProfilePage() {
           phone: "+1 (555) 123-4567",
           location: "San Francisco, CA",
           bio: "Experienced handyman with 10+ years in residential and commercial repairs. Specialized in plumbing, electrical, and carpentry work.",
-          avatar: user?.avatar || "/avatars/avatar-1.jpg",
+          avatar: user && user.profileImageUrl ? user.profileImageUrl : "/avatars/avatar-1.jpg",
           coverImage: "/images/profile-cover.jpg",
           jobTitle: "Professional Handyman",
           hourlyRate: 45,
@@ -338,7 +338,7 @@ export function UnifiedProfilePage() {
           }
         });
         setIsLoading(false);
-      }, 1000);
+      }, 100); // Using a very short delay to minimize waiting time
     } catch (error) {
       console.error("Error fetching profile data:", error);
       toast({

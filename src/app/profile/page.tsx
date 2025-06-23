@@ -73,5 +73,5 @@ export default function Profile() {
   }
 
   // Show profile page only if authenticated
-  return isAuthenticated ? <UnifiedProfilePage user={user} /> : null;
+  return isAuthenticated ? <UnifiedProfilePage /> : null;
 }

@@ -31,17 +31,10 @@ export function SettingsPage() {
       <div className="container mx-auto py-6 max-w-7xl">
         <h1 className="text-3xl font-bold mb-6">Settings</h1>
         
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid grid-cols-5 mb-8">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="account">Account</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy & Security</TabsTrigger>
-            <TabsTrigger value="assistant">Assistant</TabsTrigger>
-          </TabsList>
-          
+        <div className="space-y-8">
           {/* General Settings */}
-          <TabsContent value="general">
+          <div id="general" className="pt-2">
+            <h2 className="text-2xl font-semibold mb-4">General Settings</h2>
             <div className="grid gap-6">
               <GlassCard>
                 <GlassCardHeader>
@@ -130,10 +123,10 @@ export function SettingsPage() {
                 </GlassCardContent>
               </GlassCard>
             </div>
-          </TabsContent>
+          </div>
           
           {/* Account Settings */}
-          <TabsContent value="account">
+          <div id="account" className="pt-2">
             <div className="grid gap-6">
               <GlassCard>
                 <GlassCardHeader>
@@ -214,10 +207,10 @@ export function SettingsPage() {
                 </GlassCardContent>
               </GlassCard>
             </div>
-          </TabsContent>
+          </div>
           
           {/* Notification Settings */}
-          <TabsContent value="notifications">
+          <div id="notifications" className="pt-2">
             <div className="grid gap-6">
               <GlassCard>
                 <GlassCardHeader>
@@ -291,10 +284,10 @@ export function SettingsPage() {
                 </GlassCardContent>
               </GlassCard>
             </div>
-          </TabsContent>
+          </div>
           
           {/* Privacy & Security Settings */}
-          <TabsContent value="privacy">
+          <div id="privacy" className="pt-2">
             <div className="grid gap-6">
               <GlassCard>
                 <GlassCardHeader>
@@ -388,10 +381,10 @@ export function SettingsPage() {
                 </GlassCardContent>
               </GlassCard>
             </div>
-          </TabsContent>
+          </div>
           
           {/* Assistant Settings */}
-          <TabsContent value="assistant">
+          <div id="assistant" className="pt-2">
             <div className="grid gap-6">
               <GlassCard>
                 <GlassCardHeader>
@@ -483,8 +476,8 @@ export function SettingsPage() {
                 </GlassCardContent>
               </GlassCard>
             </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
     </UnifiedDashboardLayout>
   );

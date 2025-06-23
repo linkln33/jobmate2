@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { 
@@ -23,13 +23,8 @@ export function UnifiedJobsPage() {
   
   // Handle tab change with loading state
   const handleTabChange = useCallback((value: string) => {
-    setIsLoading(true);
-    // Use a small timeout to allow the UI to update before loading the new content
-    // This creates a smoother transition
-    setTimeout(() => {
-      setActiveTab(value);
-      setIsLoading(false);
-    }, 100);
+    // Remove artificial delay
+    setActiveTab(value);
   }, []);
   
   // Mock jobs data
@@ -239,28 +234,6 @@ export function UnifiedJobsPage() {
                     </div>
                   </GlassCardFooter>
                 </GlassCard>
-              ))
-            ) : (
-              <GlassCard intensity="low">
-                <GlassCardContent className="text-center py-12">
-                  <h3 className="text-lg font-medium">No {activeTab} jobs found</h3>
-                  <p className="text-muted-foreground mt-1">
-                    {activeTab === 'active' 
-                      ? "You don't have any active jobs. Post a new job to get started." 
-                      : activeTab === 'completed'
-                      ? "You don't have any completed jobs yet."
-                      : "You don't have any draft jobs. Start creating a new job posting."}
-                  </p>
-                  {(activeTab === 'active' || activeTab === 'draft') && (
-                    <Button className="mt-4" asChild>
-                      <Link href="/jobs/create">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Post a New Job
-                      </Link>
-                    </Button>
-                  )}
-                </GlassCardContent>
-              </GlassCard>
               ))
             ) : (
               <GlassCard intensity="low">

@@ -1,20 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ArrowUpRight, BarChart2, PieChart as PieChartIcon, LineChart, Calendar, Zap } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { ArrowUpRight, BarChart2, PieChart as PieChartIcon, LineChart as LineChartIcon, Calendar, Zap } from 'lucide-react';
 import analyticsService from '@/services/assistant/analyticsService';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AssistantAnalyticsDashboard() {
-  const { data: session } = useSession();
-  const userId = session?.user?.id;
+  const { user } = useAuth();
+  const userId = user?.id;
   
   const [timeRange, setTimeRange] = useState('30');
   const [usageByMode, setUsageByMode] = useState<any[]>([]);
@@ -175,7 +175,7 @@ export default function AssistantAnalyticsDashboard() {
                       <YAxis />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="count" fill="#8884d8" name="Interactions" />
+                      <Line type="monotone" dataKey="count" stroke="#8884d8" name="Interactions" />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>

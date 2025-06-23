@@ -56,8 +56,8 @@ export default function Dashboard() {
         console.error('Error checking auth:', error);
         redirectToLogin();
       } finally {
-        // Reduce the artificial delay
-        setTimeout(() => setIsLoading(false), 100);
+        // Remove artificial delay completely
+        setIsLoading(false);
       }
     };
     

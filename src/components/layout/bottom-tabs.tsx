@@ -289,10 +289,10 @@ export function BottomTabs() {
         </div>
       </div>
       
-      {/* Backdrop for closing the menu */}
+      {/* Invisible click capture layer (no visual styling) */}
       {(showAddMenu || showMenu) && (
         <div 
-          className="fixed inset-0 bg-black/20 backdrop-blur-sm z-30"
+          className="fixed inset-0 z-30"
           onClick={() => {
             setShowAddMenu(false);
             setShowMenu(false);

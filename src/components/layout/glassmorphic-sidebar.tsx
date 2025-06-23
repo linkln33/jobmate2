@@ -24,7 +24,8 @@ import {
   Wrench,
   Share2,
   Users,
-  DollarSign
+  DollarSign,
+  X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,8 +46,16 @@ if (typeof getInitials !== 'function') {
   };
 }
 
+interface GlassmorphicSidebarProps {
+  isMobile?: boolean;
+  onMobileClose?: () => void;
+}
+
 // Memoize the sidebar to prevent unnecessary re-renders
-export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
+export const GlassmorphicSidebar = memo(function GlassmorphicSidebar({
+  isMobile = false,
+  onMobileClose
+}: GlassmorphicSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
@@ -56,7 +65,7 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
   const [isNavigating, setIsNavigating] = useState(false);
   const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
   
-  // Create a navigation handler function - no verification locks
+  // Create an optimized navigation handler function
   const createNavigationHandler = useCallback((itemHref: string) => {
     return (e: React.MouseEvent) => {
       // Only handle navigation if not already on the page
@@ -65,16 +74,24 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
         setIsNavigating(true);
         setNavigatingTo(itemHref);
         
-        // Prefetch the route before navigating
-        router.prefetch(itemHref);
-        
-        // Navigate after a short delay to allow for visual feedback
-        setTimeout(() => {
-          router.push(itemHref);
-        }, 100);
+        // Navigate immediately without artificial delay
+        router.push(itemHref);
       }
     };
   }, [pathname, router, setIsNavigating, setNavigatingTo]);
+  
+  // Prefetch all navigation routes on component mount
+  useEffect(() => {
+    // Get all navigation items
+    const items = getNavItems();
+    
+    // Prefetch all routes in the background
+    items.forEach(item => {
+      if (item.href !== pathname) {
+        router.prefetch(item.href);
+      }
+    });
+  }, [pathname, router]);
   
   // Define the type for navigation items
   type NavItem = {
@@ -235,27 +252,39 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
   
   return (
     <div className={cn(
-      "hidden md:flex flex-col h-screen border-r border-white/20 dark:border-gray-800/30 transition-all duration-300",
+      "flex flex-col h-screen border-r border-white/20 dark:border-gray-800/30 transition-all duration-300",
       "bg-white/10 dark:bg-gray-900/20 backdrop-blur-md",
-      sidebarCollapsed ? "w-[5rem]" : "w-64"
+      isMobile ? "w-[238px]" : (sidebarCollapsed ? "w-[5rem]" : "w-64"),
+      !isMobile && "hidden md:flex"
     )}>
-      {/* Logo and collapse button */}
+      {/* Logo and collapse/close button */}
       <div className="flex items-center justify-between p-4 h-16 border-b border-white/10 dark:border-gray-800/20">
         <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
-          {!sidebarCollapsed && <span className="text-2xl font-bold text-brand-500">JobMate</span>}
-          {sidebarCollapsed && <span className="text-2xl font-bold text-brand-500">JM</span>}
+          {(!sidebarCollapsed || isMobile) && <span className="text-2xl font-bold text-brand-500">JobMate</span>}
+          {sidebarCollapsed && !isMobile && <span className="text-2xl font-bold text-brand-500">JM</span>}
         </Link>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="h-8 w-8 rounded-full hover:bg-white/20 dark:hover:bg-gray-800/20"
-        >
-          {sidebarCollapsed ? 
-            <ChevronRight className="h-4 w-4" /> : 
-            <ChevronLeft className="h-4 w-4" />
-          }
-        </Button>
+        {isMobile ? (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onMobileClose}
+            className="h-8 w-8 rounded-full hover:bg-white/20 dark:hover:bg-gray-800/20"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        ) : (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="h-8 w-8 rounded-full hover:bg-white/20 dark:hover:bg-gray-800/20"
+          >
+            {sidebarCollapsed ? 
+              <ChevronRight className="h-4 w-4" /> : 
+              <ChevronLeft className="h-4 w-4" />
+            }
+          </Button>
+        )}
       </div>
       
       {/* User profile section */}
@@ -289,7 +318,7 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar() {
 
 
       {/* Navigation items */}
-      <div className="flex-1 overflow-y-auto py-2">
+      <div className={`flex-1 overflow-y-auto ${isMobile ? 'scrollbar-hide' : ''} py-2`}>
         <nav className="px-2 space-y-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href;

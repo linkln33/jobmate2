@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { MainLayout } from '@/components/layout/main-layout';
+import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -70,7 +70,7 @@ export function MessagesPage() {
   };
 
   return (
-    <MainLayout>
+    <UnifiedDashboardLayout title="Messages">
       <div className="container mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold mb-6">Messages</h1>
         
@@ -190,6 +190,6 @@ export function MessagesPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </UnifiedDashboardLayout>
   );
 }
