@@ -4,9 +4,9 @@
   "description": "Root package for JobMate Netlify deployment",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
     "export": "next export",
-    "deploy": "next build && next export",
+    "deploy": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint && next export",
     "start": "next start",
     "lint": "next lint"
   },

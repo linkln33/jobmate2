@@ -1,7 +1,7 @@
 # Netlify configuration for Next.js static export
 [build]
   base = "/"
-  command = "npm install && npm run build"
+  command = "npm install && npm run deploy"
   publish = "out"
 
 [build.environment]
