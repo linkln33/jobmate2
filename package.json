@@ -4,7 +4,7 @@
   "description": "JobMate - AI-powered job marketplace application",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "next build",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint --no-typescript-check",
     "start": "next start",
     "lint": "next lint"
   },

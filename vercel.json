@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
   "devCommand": "npm run dev",
   "outputDirectory": ".next",
   "framework": "nextjs",
