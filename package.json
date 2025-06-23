@@ -1,12 +1,10 @@
 {
   "name": "jobmate-root",
   "version": "1.0.0",
-  "description": "Root package for JobMate Netlify deployment",
+  "description": "JobMate - AI-powered job marketplace application",
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
-    "export": "next export",
-    "deploy": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint && next export",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },

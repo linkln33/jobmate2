@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { SmartJobMatches } from '@/components/match/smart-job-matches';
-import { InteractiveMapWithFilters } from '@/components/map/interactive-map-with-filters';
-import { Job } from '@/services/match-service';
+import { EnhancedJobMap, Job } from '@/components/map/enhanced-job-map';
 import { Specialist } from '@/types/job-match-types';
 import { matchService } from '@/services/match-service';
 import { fetchJobMatches } from '@/utils/api/match-api';
@@ -277,16 +276,18 @@ export function SmartMatchesPage() {
                         <Skeleton className="h-full w-full" />
                       </div>
                     ) : (
-                      <InteractiveMapWithFilters 
+                      <EnhancedJobMap 
+                        initialJobs={jobs}
                         initialCenter={{
                           lat: mockSpecialist.location?.lat || 40.7128,
                           lng: mockSpecialist.location?.lng || -74.006
                         }}
                         initialZoom={12}
                         height="700px"
-                        onJobSelect={(job) => setSelectedJobId(job.id)}
+                        categories={sampleCategories}
+                        showFilters={true}
                         selectedJobId={selectedJobId}
-                        showSearchBar={true}
+                        onJobSelected={setSelectedJobId}
                       />
                     )}
                   </div>

@@ -1,12 +1,16 @@
-import { PrismaClient, JobStatus } from '@prisma/client';
-
-// Define UserRole enum to match schema.prisma
-enum UserRole {
-  CUSTOMER = 'CUSTOMER',
-  SPECIALIST = 'SPECIALIST',
-  ADMIN = 'ADMIN'
-}
+import { PrismaClient, UserRole } from '@prisma/client';
 import { hash } from 'bcryptjs';
+
+// Define JobStatus enum to match schema.prisma
+enum JobStatus {
+  DRAFT = 'DRAFT',
+  OPEN = 'OPEN',
+  ASSIGNED = 'ASSIGNED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED',
+  DISPUTED = 'DISPUTED'
+}
 
 const prisma = new PrismaClient();
 

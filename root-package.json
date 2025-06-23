@@ -1,7 +1,7 @@
 {
   "name": "jobmate-root",
   "version": "1.0.0",
-  "description": "Root package for JobMate Netlify deployment",
+  "description": "JobMate - AI-powered job marketplace application",
   "scripts": {
     "build": "cd Codes/jobmate && npm install && npm run build",
     "start": "cd Codes/jobmate && npm start"
