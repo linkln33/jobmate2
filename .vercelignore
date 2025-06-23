@@ -1,5 +1,0 @@
-# Ignore prisma directory to avoid build errors
-prisma/
-.git/
-node_modules/
-.next/

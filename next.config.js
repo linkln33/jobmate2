@@ -5,14 +5,11 @@ const nextConfig = {
   images: {
     domains: [
       'localhost',
-      'jobmate.app',
+      'res.cloudinary.com',
       'images.unsplash.com',
       'lh3.googleusercontent.com',
     ],
   },
-  
-  // Next.js 14+ has server actions enabled by default
-  // No need for experimental flags
 };
 
 module.exports = nextConfig;
