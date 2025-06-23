@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   
+  // Configure images for static export
   images: {
     domains: [
       'localhost',
@@ -9,6 +10,15 @@ const nextConfig = {
       'images.unsplash.com',
       'lh3.googleusercontent.com',
     ],
+    unoptimized: true, // Required for static export
+  },
+  
+  // Enable static exports
+  output: 'export',
+  
+  // Disable server components for static export
+  experimental: {
+    appDir: true,
   },
 };
 
