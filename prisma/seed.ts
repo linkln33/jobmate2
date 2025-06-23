@@ -1,4 +1,11 @@
-import { PrismaClient, UserRole, JobStatus } from '@prisma/client';
+import { PrismaClient, JobStatus } from '@prisma/client';
+
+// Define UserRole enum to match schema.prisma
+enum UserRole {
+  CUSTOMER = 'CUSTOMER',
+  SPECIALIST = 'SPECIALIST',
+  ADMIN = 'ADMIN'
+}
 import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
