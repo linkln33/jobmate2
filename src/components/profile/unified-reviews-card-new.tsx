@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { mockAchievements, mockReviews } from '@/data/mock-data';
 // Update ProfileReview interface to include needed properties
 import { ProfileReview as BaseProfileReview } from '@/types/profile';
 
@@ -43,17 +44,27 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Award, 
   BadgeCheck, 
+  Briefcase,
   Calendar, 
   ChevronDown, 
+  Clock,
   ExternalLink, 
   Filter, 
+  Gift,
+  Heart,
   HelpCircle, 
   Shield, 
   Star, 
   StarHalf, 
+  Target,
   ThumbsDown, 
   ThumbsUp, 
-  Users 
+  Trophy,
+  Truck,
+  Users,
+  Wallet,
+  Wrench,
+  Zap
 } from 'lucide-react';
 
 // Interfaces
@@ -121,11 +132,95 @@ interface UnifiedReviewsCardProps {
 export function UnifiedReviewsCard({
   userId,
   userType,
-  reputation,
-  reviews,
-  reviewStats,
+  reputation: initialReputation,
+  reviews: initialReviews,
+  reviewStats: initialReviewStats,
   onLoadMore
 }: UnifiedReviewsCardProps) {
+  // Use mock data for demonstration
+  const [reputation, setReputation] = useState(initialReputation);
+  const [reviews, setReviews] = useState(initialReviews);
+  const [reviewStats, setReviewStats] = useState(initialReviewStats);
+  
+  // Load mock data on component mount
+  useEffect(() => {
+    // Add mock achievements to reputation
+    setReputation(prev => ({
+      ...prev,
+      achievements: mockAchievements.map(achievement => {
+        // Convert string icon name to the appropriate icon component
+        const iconMap: Record<string, React.ReactNode> = {
+          'Star': <Star className="h-5 w-5" />,
+          'Heart': <Heart className="h-5 w-5" />,
+          'Clock': <Clock className="h-5 w-5" />,
+          'Shield': <Shield className="h-5 w-5" />,
+          'Zap': <Zap className="h-5 w-5" />,
+          'Target': <Target className="h-5 w-5" />,
+          'Trophy': <Trophy className="h-5 w-5" />,
+          'ThumbsUp': <ThumbsUp className="h-5 w-5" />,
+          'Briefcase': <Briefcase className="h-5 w-5" />,
+          'Wrench': <Wrench className="h-5 w-5" />,
+          'Users': <Users className="h-5 w-5" />,
+          'Truck': <Truck className="h-5 w-5" />,
+          'Wallet': <Wallet className="h-5 w-5" />,
+          'Gift': <Gift className="h-5 w-5" />,
+          'Award': <Award className="h-5 w-5" />
+        };
+        
+        return {
+          ...achievement,
+          icon: iconMap[achievement.iconName] || <Award className="h-5 w-5" />
+        };
+      })
+    }));
+    
+    // Use mock reviews and convert to ProfileReview type
+    setReviews(mockReviews.map(review => ({
+      ...review,
+      id: review.id,
+      rating: review.rating,
+      comment: review.comment,
+      date: review.date,
+      reviewerName: review.reviewerName,
+      reviewerAvatar: review.reviewerAvatar,
+      reviewerLocation: review.reviewerLocation,
+      reviewerJobsCompleted: review.reviewerJobsCompleted,
+      verified: review.verified,
+      title: review.title,
+      tags: review.tags,
+      type: review.type,
+      response: review.response,
+      detailedRatings: review.detailedRatings,
+      completionRate: review.detailedRatings?.completionRate,
+      timing: review.detailedRatings?.timing,
+      satisfaction: review.detailedRatings?.satisfaction,
+      cost: review.detailedRatings?.cost,
+      overallExperience: review.detailedRatings?.overallExperience,
+      // Add required properties from ProfileReview interface
+      clientName: review.reviewerName || 'Client',
+      clientAvatar: review.reviewerAvatar || '/images/avatars/default.jpg'
+    })));
+    
+    // Update review stats based on mock reviews
+    const totalReviews = mockReviews.length;
+    const averageRating = mockReviews.reduce((sum, review) => sum + review.rating, 0) / totalReviews;
+    
+    // Calculate rating breakdown
+    const ratingBreakdown: Record<string, number> = {
+      '1': 0, '2': 0, '3': 0, '4': 0, '5': 0
+    };
+    
+    mockReviews.forEach(review => {
+      const rating = review.rating.toString();
+      ratingBreakdown[rating] = (ratingBreakdown[rating] || 0) + 1;
+    });
+    
+    setReviewStats({
+      averageRating,
+      totalReviews,
+      ratingBreakdown
+    });
+  }, []);
   const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
   const [isAchievementDialogOpen, setIsAchievementDialogOpen] = useState(false);
   const [filterRating, setFilterRating] = useState<number | null>(null);
@@ -133,12 +228,7 @@ export function UnifiedReviewsCard({
   const reviewsPerPage = 5;
   
   // Review form state variables
-  const [overallRating, setOverallRating] = useState<number>(0);
-  const [satisfactionRating, setSatisfactionRating] = useState<number>(0);
-  const [costRating, setCostRating] = useState<number>(0);
-  const [completionRating, setCompletionRating] = useState<number>(0);
-  const [reviewTitle, setReviewTitle] = useState<string>('');
-  const [reviewComment, setReviewComment] = useState<string>('');
+  // Review state variables moved to LeaveReviewForm component
 
   // Get color based on specialist level
   const getLevelColor = (level: string) => {
@@ -217,41 +307,10 @@ export function UnifiedReviewsCard({
     );
   };
 
-  // Component for users to leave ratings
-  const RatingInput = ({ 
-    label, 
-    value, 
-    onChange 
-  }: { 
-    label: string; 
-    value: number; 
-    onChange: (value: number) => void 
-  }) => {
-    return (
-      <div className="mb-3">
-        <div className="flex justify-between mb-1">
-          <label className="text-sm font-medium">{label}</label>
-          <span className="text-sm text-muted-foreground">{value}/5</span>
-        </div>
-        <div className="flex">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => onChange(star)}
-              className="p-1"
-            >
-              <Star
-                className={`h-6 w-6 ${star <= value ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`}
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  };
+  // RatingInput component moved to LeaveReviewForm component
 
   // Badge thresholds based on eBay's star system with base colors first, then middle colors
+  // Now using dollar amounts instead of jobs completed
   const BADGE_THRESHOLDS = [
     { points: 0, name: 'New Member', icon: null },
     { points: 10, name: 'Red Star', icon: <Star className="h-5 w-5 text-red-500" fill="currentColor" /> },
@@ -379,339 +438,295 @@ export function UnifiedReviewsCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Reviews & Reputation</CardTitle>
       </CardHeader>
       <CardContent className="p-6 space-y-8">
-        {/* Reputation Stats Overview */}
-        <div className="bg-white rounded-lg border">
-          <div className="p-4 border-b">
+        {/* Achievement Badges - eBay Style Star System */}
+        <div className="border rounded-md p-4">
+          <div className="flex justify-between items-center mb-3">
             <div className="flex items-center">
-              <Shield className="h-5 w-5 mr-2 text-brand-600" />
-              <h3 className="text-lg font-medium">Reputation Overview</h3>
+              <Award className="h-5 w-5 mr-2 text-amber-500" />
+              <span className="text-sm font-medium">Achievement Badges</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {userType === 'specialist' 
-                ? 'Professional reputation and performance metrics'
-                : 'Customer reputation and platform engagement'}
-            </p>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                    <HelpCircle className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left" className="max-w-xs">
+                  <p className="text-xs">
+                    Badges are awarded based on dollar amount earned from completed jobs.
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
           
-          <div className="p-4 space-y-6">
-            {/* Detailed Rating Metrics */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-gray-50 p-3 rounded-md text-center">
-                <div className="text-2xl font-bold">{reputation.stats.overallRating.toFixed(1)}</div>
-                <div className="flex justify-center my-1">{renderStars(Math.round(reputation.stats.overallRating))}</div>
-                <div className="text-sm font-medium">Overall Experience</div>
+          {/* Current Badge */}
+          <div className="flex items-center mb-3">
+            <div className="flex items-center justify-center w-10 h-10 bg-gray-50 rounded-full">
+              {getFeedbackBadge(reputation.stats.totalJobsCompleted)}
+            </div>
+            <div className="ml-3">
+              <div className="text-sm font-medium">
+                {getFeedbackBadgeName(reputation.stats.totalJobsCompleted)}
               </div>
-              
-              <div className="bg-gray-50 p-3 rounded-md text-center">
-                <div className="text-2xl font-bold">
-                  {reviewStats.averageRating ? (reviewStats.averageRating * 20).toFixed(0) : 0}%
-                </div>
-                <div className="flex justify-center my-1">{renderStars(Math.round(reviewStats.averageRating || 0))}</div>
-                <div className="text-sm font-medium">Satisfaction</div>
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded-md text-center">
-                <div className="text-2xl font-bold">
-                  {reviewStats.averageRating ? ((reviewStats.averageRating - 1) * 25).toFixed(0) : 0}%
-                </div>
-                <div className="flex justify-center my-1">{renderStars(Math.round(reviewStats.averageRating || 0))}</div>
-                <div className="text-sm font-medium">Cost</div>
-              </div>
-              
-              <div className="bg-gray-50 p-3 rounded-md text-center">
-                <div className="text-2xl font-bold">{reputation.stats.completionRate}%</div>
-                <div className="flex justify-center my-1">{renderStars(Math.round(reputation.stats.completionRate / 20))}</div>
-                <div className="text-sm font-medium">Completion in Time</div>
+              <div className="text-xs text-muted-foreground">
+                $650+ earned
               </div>
             </div>
-            
-            {/* Achievement Badges - eBay Style Star System */}
-            <div className="border rounded-md p-4">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center">
-                  <Award className="h-5 w-5 mr-2 text-amber-500" />
-                  <span className="text-sm font-medium">Achievement Badges</span>
-                </div>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-6 w-6">
-                        <HelpCircle className="h-4 w-4" />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-xs">
-                      <p className="text-xs">
-                        Badges are awarded based on feedback points earned from completed jobs and reviews.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              
-              {/* Current Badge */}
-              <div className="flex items-center mb-3">
-                <div className="flex items-center justify-center w-10 h-10 bg-gray-50 rounded-full">
-                  {getFeedbackBadge(reputation.stats.totalJobsCompleted)}
-                </div>
-                <div className="ml-3">
-                  <div className="text-sm font-medium">
-                    {getFeedbackBadgeName(reputation.stats.totalJobsCompleted)}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {reputation.stats.totalJobsCompleted} jobs completed
-                  </div>
+          </div>
+          
+          {/* Progress to next badge */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs">
+              <span>Current Badge</span>
+              <span>Next Badge: {getNextBadgeName(reputation.stats.totalJobsCompleted)}</span>
+            </div>
+            <div className="relative">
+              <div className="mt-2 relative h-4 w-full bg-gray-100 rounded-full overflow-hidden">
+                <div 
+                  className="h-full rounded-full" 
+                  style={{ 
+                    width: `${getProgressToNextBadge(reputation.stats.totalJobsCompleted)}%`,
+                    backgroundColor: getBadgeColor(reputation.stats.totalJobsCompleted)
+                  }}
+                ></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span 
+                    className="text-[10px] font-medium" 
+                    style={{ 
+                      color: getBadgeColor(reputation.stats.totalJobsCompleted)
+                    }}
+                  >
+                    {Math.round(getProgressToNextBadge(reputation.stats.totalJobsCompleted))}%
+                  </span>
                 </div>
               </div>
-              
-              {/* Progress to next badge */}
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs">
-                  <span>Current Badge</span>
-                  <span>Next Badge: {getNextBadgeName(reputation.stats.totalJobsCompleted)}</span>
-                </div>
-                <div className="relative">
-                  <div className="mt-2 relative h-4 w-full bg-gray-100 rounded-full overflow-hidden">
+            </div>
+            <div className="text-xs text-muted-foreground">
+              ${getPointsToNextBadge(reputation.stats.totalJobsCompleted)} more needed
+            </div>
+          </div>
+          
+          {/* All Achievement Badges */}
+          <div className="mt-4 pt-3 border-t">
+            <div className="text-xs font-medium mb-2">$650+ earned</div>
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                  {BADGE_THRESHOLDS.slice(1).map((badge, index) => {
+                    // Format job count with k+ or M+ notation
+                    let formattedJobs;
+                    if (badge.points >= 1000000) {
+                      formattedJobs = `${(badge.points / 1000000).toLocaleString()}M+`;
+                    } else if (badge.points >= 1000) {
+                      formattedJobs = `${(badge.points / 1000).toLocaleString()}k+`;
+                    } else {
+                      formattedJobs = `${badge.points}+`;
+                    }
+                    
+                    return (
                     <div 
-                      className="h-full rounded-full" 
-                      style={{ 
-                        width: `${getProgressToNextBadge(reputation.stats.totalJobsCompleted)}%`,
-                        backgroundColor: getBadgeColor(reputation.stats.totalJobsCompleted)
-                      }}
-                    ></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <span 
-                        className="text-[10px] font-medium" 
-                        style={{ 
-                          color: getBadgeColor(reputation.stats.totalJobsCompleted)
-                        }}
-                      >
-                        {Math.round(getProgressToNextBadge(reputation.stats.totalJobsCompleted))}%
+                      key={index} 
+                      className="flex items-center gap-2 mr-2"
+                    >
+                      {badge.icon ? (
+                        <div className={`h-5 w-5 ${reputation.stats.totalJobsCompleted >= badge.points ? '' : 'text-gray-400'}`}>
+                          {badge.icon}
+                        </div>
+                      ) : (
+                        <div className="h-5 w-5 text-gray-400">
+                          <Award size={20} />
+                        </div>
+                      )}
+                      <span className="text-xs font-medium text-black">
+                        ${formattedJobs}
                       </span>
                     </div>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {getPointsToNextBadge(reputation.stats.totalJobsCompleted)} more jobs completed needed
-                </div>
-              </div>
-              
-              {/* All Achievement Badges */}
-              <div className="mt-4 pt-3 border-t">
-                <div className="text-xs font-medium mb-2">Achievement Progress</div>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap gap-2">
-                    {BADGE_THRESHOLDS.slice(1).map((badge, index) => {
-                      // Format job count with k+ notation
-                      const formattedJobs = badge.points >= 1000 ? 
-                        `${(badge.points / 1000).toLocaleString()}k+` : 
-                        `${badge.points}+`;
-                        
-                      return (
-                        <div 
-                          key={index} 
-                          className="flex items-center gap-2 mr-2"
-                        >
-                          {badge.icon ? (
-                            <div className={`h-5 w-5 ${reputation.stats.totalJobsCompleted >= badge.points ? '' : 'text-gray-400'}`}>
-                              {badge.icon}
-                            </div>
-                          ) : (
-                            <div className="h-5 w-5 text-gray-400">
-                              <Award size={20} />
-                            </div>
-                          )}
-                          <span className="text-xs font-medium text-black">
-                            {formattedJobs}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* We don't need a separate legend anymore */}
-                </div>
+                  );
+                })}
               </div>
             </div>
           </div>
         </div>
         
-        {/* Detailed Reviews Section (eBay-style) */}
+        {/* eBay-style Feedback Header */}
         <div className="bg-white rounded-lg border">
           <div className="p-4 border-b">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
-                  <Star className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-medium">Feedback</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Last 12 months: {Math.round((reviewStats.averageRating / 5) * 100)}% Positive
-                  </p>
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Star className="h-5 w-5 mr-2 text-green-500" fill="currentColor" />
+                <h3 className="text-lg font-medium">Feedback</h3>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="text-2xl font-bold">{Math.round((reviewStats.averageRating / 5) * 100)}%</div>
-                <div className="text-sm text-muted-foreground">
-                  <div>Positive Feedback</div>
-                  <div className="text-xs">({reviewStats.totalReviews} total reviews)</div>
-                </div>
+              <div className="text-sm text-muted-foreground">
+                Last 12 months: 95% Positive
               </div>
             </div>
           </div>
           
-          <div className="p-4">
-            {/* eBay-style layout with two columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Left column: Rating summary */}
-              <div className="col-span-1">
-                <div className="space-y-6">
-                  {/* Overall rating */}
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="text-4xl font-bold">{reviewStats.averageRating.toFixed(1)}</div>
-                    <div className="flex">
-                      {renderStars(Math.round(reviewStats.averageRating))}
-                    </div>
-                    <div className="text-sm text-muted-foreground">
-                      Based on {reviewStats.totalReviews} reviews
-                    </div>
-                  </div>
-                  
-                  {/* Rating breakdown bars */}
-                  <div className="space-y-2">
-                    {[5, 4, 3, 2, 1].map((rating) => {
-                      const count = reviewStats.ratingBreakdown[rating.toString()] || 0;
-                      const percentage = reviewStats.totalReviews > 0 
-                        ? Math.round((count / reviewStats.totalReviews) * 100) 
-                        : 0;
-                      
-                      return (
-                        <div key={rating} className="flex items-center space-x-2">
-                          <div className="w-8 text-sm">{rating} ★</div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-yellow-400 h-2 rounded-full" 
-                              style={{ width: `${percentage}%` }}
-                            ></div>
-                          </div>
-                          <div className="w-8 text-sm text-right">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`px-2 py-0 h-6 ${filterRating === rating ? 'bg-yellow-100' : ''}`}
-                              onClick={() => handleFilterChange(rating)}
-                            >
-                              {count}
-                            </Button>
-                          </div>
+          <div className="p-4 space-y-6">
+            {/* Rating Overview */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+              <div className="flex flex-col items-center">
+                <div className="text-4xl font-bold">4.8</div>
+                <div className="flex my-1">
+                  {Array(5).fill(0).map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className="h-5 w-5" 
+                      fill={i < Math.round(4.8) ? "#FFB800" : "#E5E7EB"} 
+                    />
+                  ))}
+                </div>
+                <div className="text-sm text-muted-foreground">Based on 47 reviews</div>
+              </div>
+              
+              <div className="flex-1 max-w-md">
+                {/* Rating Bars */}
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map(rating => {
+                    const count = rating === 5 ? 35 : 
+                                 rating === 4 ? 5 : 
+                                 rating === 3 ? 2 : 
+                                 rating === 2 ? 0 : 0;
+                    const percentage = Math.round((count / 47) * 100);
+                    
+                    return (
+                      <div key={rating} className="flex items-center gap-2">
+                        <div className="flex items-center w-4">
+                          <span className="text-sm font-medium">{rating}</span>
+                          <Star className="h-3 w-3 ml-0.5" />
                         </div>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Recent feedback summary */}
-                  <div>
-                    <h3 className="text-lg font-medium mb-3">Recent Feedback</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Last 30 days:</span>
-                        <span>{Math.round((reviewStats.averageRating / 5) * 100)}% Positive</span>
+                        <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-yellow-400 h-full" 
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <div className="w-8 text-right text-xs">{count}</div>
                       </div>
-                      <div className="flex justify-between">
-                        <span>Last 6 months:</span>
-                        <span>{Math.round((reviewStats.averageRating / 5) * 100)}% Positive</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Last 12 months:</span>
-                        <span>{Math.round((reviewStats.averageRating / 5) * 100)}% Positive</span>
-                      </div>
-                    </div>
-                  </div>
+                    );
+                  })}
                 </div>
               </div>
               
-              {/* Right column: Reviews filters and summary */}
-              <div className="col-span-1 md:col-span-2">
-                {/* Filters */}
-                <div className="flex flex-wrap gap-3 mb-6">
-                  <Select 
-                    defaultValue="all"
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Time period" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All feedback</SelectItem>
-                      <SelectItem value="1month">Last month</SelectItem>
-                      <SelectItem value="6months">Last 6 months</SelectItem>
-                      <SelectItem value="12months">Last 12 months</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  
-                  <Select 
-                    defaultValue="all"
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Feedback type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All feedback</SelectItem>
-                      <SelectItem value="positive">Positive</SelectItem>
-                      <SelectItem value="neutral">Neutral</SelectItem>
-                      <SelectItem value="negative">Negative</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                {/* Reviews summary */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="rounded-lg bg-green-50 p-4 text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {Object.entries(reviewStats.ratingBreakdown)
-                        .filter(([rating]) => parseInt(rating) >= 4)
-                        .reduce((sum, [_, count]) => sum + count, 0)}
-                    </div>
-                    <div className="text-sm text-green-700">Positive</div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div className="bg-green-50 p-3 rounded-md">
+                    <div className="text-xl font-bold text-green-600">40</div>
+                    <div className="text-xs text-green-700">Positive</div>
                   </div>
-                  <div className="rounded-lg bg-gray-50 p-4 text-center">
-                    <div className="text-2xl font-bold text-gray-600">
-                      {reviewStats.ratingBreakdown['3'] || 0}
-                    </div>
-                    <div className="text-sm text-gray-700">Neutral</div>
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="text-xl font-bold text-gray-600">2</div>
+                    <div className="text-xs text-gray-700">Neutral</div>
                   </div>
-                  <div className="rounded-lg bg-red-50 p-4 text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      {Object.entries(reviewStats.ratingBreakdown)
-                        .filter(([rating]) => parseInt(rating) <= 2)
-                        .reduce((sum, [_, count]) => sum + count, 0)}
-                    </div>
-                    <div className="text-sm text-red-700">Negative</div>
+                  <div className="bg-red-50 p-3 rounded-md">
+                    <div className="text-xl font-bold text-red-600">0</div>
+                    <div className="text-xs text-red-700">Negative</div>
                   </div>
                 </div>
-                
-                {filterRating && (
-                  <div className="flex justify-between items-center mb-4 bg-yellow-50 p-2 rounded-md">
-                    <div className="text-sm">
-                      Showing {filterRating}-star reviews only
-                    </div>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 px-2"
-                      onClick={() => handleFilterChange(null)}
-                    >
-                      Clear filter
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
             
+            {/* Recent Feedback Table */}
+            <div>
+              <h4 className="font-medium mb-3">Recent Feedback</h4>
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">Last 30 days:</td>
+                      <td className="py-2 px-4 font-medium">95% Positive</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">Last 6 months:</td>
+                      <td className="py-2 px-4 font-medium">95% Positive</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-4">Last 12 months:</td>
+                      <td className="py-2 px-4 font-medium">95% Positive</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Detailed Seller Ratings */}
+            <div>
+              <div className="flex justify-between items-center mb-3">
+                <h4 className="font-medium">Detailed seller ratings</h4>
+                <span className="text-sm text-muted-foreground">(last 12 months)</span>
+              </div>
+              
+              <div className="border rounded-md overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr className="border-b">
+                      <th className="py-2 px-4 text-left font-medium">Criteria</th>
+                      <th className="py-2 px-4 text-left font-medium">Average rating</th>
+                      <th className="py-2 px-4 text-left font-medium">Number of ratings</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">Service as described</td>
+                      <td className="py-2 px-4">
+                        <div className="flex">
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 px-4">42</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">Communication</td>
+                      <td className="py-2 px-4">
+                        <div className="flex">
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 px-4">40</td>
+                    </tr>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">Timeliness</td>
+                      <td className="py-2 px-4">
+                        <div className="flex">
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 px-4">39</td>
+                    </tr>
+                    <tr>
+                      <td className="py-2 px-4">Value for money</td>
+                      <td className="py-2 px-4">
+                        <div className="flex">
+                          {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className="h-4 w-4 text-yellow-400" fill="currentColor" />
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-2 px-4">41</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            {/* Additional feedback metrics can go here if needed */}
+          </div>
+        </div>
+        
+        {/* Review List Section */}
+        <div className="bg-white rounded-lg border mt-6">
+          <div className="p-4">
             {/* Review List - eBay Style with Detailed Ratings */}
-            <div className="space-y-6 mt-6">
+            <div className="space-y-6">
               {currentReviews.length > 0 ? (
                 currentReviews.map((review, index) => (
                   <div key={index} className="border rounded-md p-4 bg-white hover:bg-gray-50 transition-colors">
@@ -860,108 +875,7 @@ export function UnifiedReviewsCard({
                   </Button>
                 </div>
               )}
-              
-              {/* Leave a Review Section */}
-              <div className="mt-8 border-t pt-6">
-                <h3 className="text-lg font-semibold mb-4">Leave a Review</h3>
-                <div className="space-y-4">
-                  {/* Overall Experience */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Overall Experience</div>
-                    <div className="flex items-center mt-1">
-                      <RatingInput 
-                        label="" 
-                        value={overallRating} 
-                        onChange={setOverallRating} 
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Satisfaction */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Satisfaction</div>
-                    <div className="flex items-center mt-1">
-                      <RatingInput 
-                        label="" 
-                        value={satisfactionRating} 
-                        onChange={setSatisfactionRating} 
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Cost */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Cost</div>
-                    <div className="flex items-center mt-1">
-                      <RatingInput 
-                        label="" 
-                        value={costRating} 
-                        onChange={setCostRating} 
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Completion in Time */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Completion in Time</div>
-                    <div className="flex items-center mt-1">
-                      <RatingInput 
-                        label="" 
-                        value={completionRating} 
-                        onChange={setCompletionRating} 
-                      />
-                    </div>
-                  </div>
-                  
-                  {/* Review Title */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Title</div>
-                    <input 
-                      type="text" 
-                      id="review-title"
-                      className="w-full p-2 border rounded-md" 
-                      placeholder="Summarize your experience"
-                      value={reviewTitle}
-                      onChange={(e) => setReviewTitle(e.target.value)}
-                    />
-                  </div>
-                  
-                  {/* Review Comment */}
-                  <div>
-                    <div className="text-sm font-medium mb-1">Comment</div>
-                    <textarea 
-                      id="review-comment"
-                      className="w-full p-2 border rounded-md min-h-[100px]" 
-                      placeholder="Share details of your experience"
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                    ></textarea>
-                  </div>
-                  
-                  {/* Submit Button */}
-                  <div className="pt-2">
-                    <Button className="w-full md:w-auto" onClick={() => {
-                      console.log({
-                        overallRating,
-                        satisfactionRating,
-                        costRating,
-                        completionRating,
-                        reviewTitle,
-                        reviewComment
-                      });
-                      // Reset form
-                      setOverallRating(0);
-                      setSatisfactionRating(0);
-                      setCostRating(0);
-                      setCompletionRating(0);
-                      setReviewTitle('');
-                      setReviewComment('');
-                    }}>
-                      Submit Review
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              {/* Leave a Review section has been extracted to a separate component */}
             </div>
           </div>
         </div>
