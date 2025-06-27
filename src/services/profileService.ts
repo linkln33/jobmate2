@@ -1,7 +1,98 @@
 "use client";
 
-import { ProfileData, ProfileBasicInfo } from '@/types/profile';
-import { Certification } from '@/components/profile/editable-certifications';
+// Define types directly in this file since the imports are missing
+
+type UserRole = 'freelancer' | 'employer' | 'both';
+
+type Certification = {
+  name: string;
+  issuer: string;
+  year: string;
+  expires?: string;
+  certificateUrl?: string;
+  certificateFile?: string;
+};
+
+type Experience = {
+  id?: string;
+  title: string;
+  company: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  current?: boolean;
+  description?: string;
+  period?: string; // For backward compatibility
+};
+
+type Skill = {
+  id?: string;
+  name: string;
+  level?: number;
+};
+
+type Category = {
+  id?: string;
+  name: string;
+  skills: Skill[];
+};
+
+type ProfileBasicInfo = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  location?: string;
+  bio?: string;
+  jobTitle?: string;
+  hourlyRate?: number;
+};
+
+type ProfileData = {
+  id: string;
+  userId?: string;
+  firstName: string;
+  lastName: string;
+  name?: string;
+  role?: UserRole;
+  avatar?: string;
+  coverImage?: string;
+  title?: string;
+  bio?: string;
+  location?: string;
+  website?: string;
+  email: string;
+  phone?: string;
+  categories?: Category[];
+  skills?: string[];
+  experience?: Experience[];
+  certifications?: Certification[];
+  isVerified?: boolean;
+  joinedDate?: string;
+  completedJobs?: number;
+  totalEarnings?: number;
+  rating?: number;
+  reviewCount?: number;
+  jobTitle?: string;
+  hourlyRate?: number;
+  availability?: string;
+  expertise?: string[];
+  languages?: string[];
+  education?: Array<{ degree: string; institution: string; year: string; }>;
+  reviews?: Array<{ id: string; clientName: string; clientAvatar: string; rating: number; date: string; comment: string; }>;
+  reviewStats?: { averageRating: number; totalReviews: number; ratingBreakdown: { '5': number; '4': number; '3': number; '2': number; '1': number; } };
+  wallet?: { balance: number; pendingPayments: number; transactions: any[]; };
+  verifications?: { identity: boolean; phone: boolean; email: boolean; background: boolean; };
+  preferences?: { notifications: { jobs: boolean; messages: boolean; }; privacy: { showProfile: boolean; }; };
+  socialLinks?: {
+    linkedin?: string;
+    twitter?: string;
+    github?: string;
+    facebook?: string;
+    instagram?: string;
+  };
+  reputation?: number;
+};
 import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.jobmate.example';
@@ -11,6 +102,7 @@ const mockProfileData: ProfileData = {
   id: 'user-1',
   firstName: 'John',
   lastName: 'Doe',
+  name: 'John Doe',
   email: 'john.doe@example.com',
   phone: '+1 (555) 123-4567',
   location: 'San Francisco, CA',
@@ -21,7 +113,31 @@ const mockProfileData: ProfileData = {
   hourlyRate: 45,
   availability: 'Weekdays 9AM-5PM',
   skills: ['Plumbing', 'Electrical', 'Carpentry', 'Painting', 'Drywall Repair'],
-  categories: ['Home Repair', 'Maintenance', 'Renovation'],
+  categories: [
+    {
+      id: 'cat-1',
+      name: 'Home Repair',
+      skills: [
+        { id: 'skill-1', name: 'Plumbing', level: 5 },
+        { id: 'skill-2', name: 'Electrical', level: 4 }
+      ]
+    },
+    {
+      id: 'cat-2',
+      name: 'Maintenance',
+      skills: [
+        { id: 'skill-3', name: 'Carpentry', level: 5 },
+        { id: 'skill-4', name: 'Painting', level: 4 }
+      ]
+    },
+    {
+      id: 'cat-3',
+      name: 'Renovation',
+      skills: [
+        { id: 'skill-5', name: 'Drywall Repair', level: 5 }
+      ]
+    }
+  ],
   expertise: ['Kitchen Remodeling', 'Bathroom Renovation', 'Deck Building'],
   languages: ['English', 'Spanish'],
   education: [
@@ -38,7 +154,16 @@ const mockProfileData: ProfileData = {
     }
   ],
   experience: [
-    { title: 'Lead Handyman', company: 'Home Services Inc.', period: '2015-2020', description: 'Managed a team of handymen for residential repairs.' }
+    { 
+      id: 'exp-1',
+      title: 'Lead Handyman', 
+      company: 'Home Services Inc.', 
+      startDate: '2015-01-01',
+      endDate: '2020-12-31',
+      current: false,
+      description: 'Managed a team of handymen for residential repairs.',
+      period: '2015-2020' 
+    }
   ],
   completedJobs: 6,
   reviews: [
@@ -246,16 +371,46 @@ export const profileService = {
    * @returns Promise with updated profile data
    */
   async updatePreferences(preferences: ProfileData['preferences']): Promise<ProfileData> {
-    try {
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      // Update mock data
-      mockProfileData.preferences = preferences;
-      return mockProfileData;
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      throw error;
-    }
+    // Simulate API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const updatedProfile = {
+          ...mockProfileData,
+          preferences: {
+            ...mockProfileData.preferences,
+            ...preferences
+          }
+        };
+        
+        // Update mock data
+        Object.assign(mockProfileData, updatedProfile);
+        
+        resolve(updatedProfile);
+      }, 500);
+    });
+  },
+  
+  /**
+   * Update profile data with any fields
+   * @param userId User ID to update
+   * @param data Any profile data fields to update
+   * @returns Promise with updated profile data
+   */
+  async updateProfileData(userId: string, data: Partial<ProfileData>): Promise<ProfileData> {
+    // Simulate API call delay
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const updatedProfile = {
+          ...mockProfileData,
+          ...data
+        };
+        
+        // Update mock data
+        Object.assign(mockProfileData, updatedProfile);
+        
+        resolve(updatedProfile);
+      }, 500);
+    });
   },
 
   /**

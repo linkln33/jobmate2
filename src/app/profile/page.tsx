@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { UnifiedProfilePage } from '@/components/pages/unified-profile-page';
 import { Spinner } from '@/components/ui/spinner';
+import { ProfileProvider } from '@/context/ProfileContext';
 
 export default function Profile() {
   const [isLoading, setIsLoading] = useState(true);
@@ -73,5 +74,9 @@ export default function Profile() {
   }
 
   // Show profile page only if authenticated
-  return isAuthenticated ? <UnifiedProfilePage /> : null;
+  return isAuthenticated ? (
+    <ProfileProvider>
+      <UnifiedProfilePage />
+    </ProfileProvider>
+  ) : null;
 }
