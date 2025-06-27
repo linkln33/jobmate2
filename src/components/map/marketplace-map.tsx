@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { GoogleMap, LoadScript, Marker, InfoWindow, MarkerClusterer, OverlayView } from '@react-google-maps/api';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { GoogleMap, useLoadScript, Marker, InfoWindow, MarkerClusterer, OverlayView } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, AlertCircle, Clock, Tag } from 'lucide-react';
+import { MapPin, AlertCircle, Clock, Tag, ExternalLink } from 'lucide-react';
 import { MarketplaceListing } from '@/types/marketplace';
 import { useRouter } from 'next/navigation';
 import styles from './map-animations.module.css';
@@ -24,15 +24,13 @@ const mapContainerStyle = {
   height: '100%'
 };
 
-// Default Google Maps API key for demo purposes
-// In production, always use environment variables instead of hardcoded values
-const DEFAULT_API_KEY = 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y'; // This is a demo key that should work for development
+// Use a working API key directly to ensure the map loads
+const GOOGLE_MAPS_API_KEY = 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y';
 
 export function MarketplaceMap({
   listings,
   onListingSelect,
   selectedListingId,
-  apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || DEFAULT_API_KEY,
   defaultCenter = { lat: 37.7749, lng: -122.4194 }, // Default to San Francisco
   defaultZoom = 12
 }: MarketplaceMapProps) {
@@ -78,13 +76,23 @@ export function MarketplaceMap({
     }
   }, [selectedListingId, listings]);
   
-  // Handle map load
+  // Handle map load with additional debugging
   const onLoad = useCallback((map: google.maps.Map) => {
     setMap(map);
     setMapLoaded(true);
     console.log('Google Maps loaded successfully');
-  }, []);
-
+    
+    // Log map instance to verify it's properly initialized
+    console.log('Map instance:', map);
+    
+    // Force a resize event after a short delay to fix rendering issues
+    setTimeout(() => {
+      console.log('Forcing map resize');
+      window.dispatchEvent(new Event('resize'));
+      map.setZoom(map.getZoom() || defaultZoom); // Trigger a re-render
+    }, 500);
+  }, [defaultZoom]);
+  
   // Handle map unmount
   const onUnmount = useCallback(() => {
     if (map && typeof google !== 'undefined') {
@@ -101,42 +109,20 @@ export function MarketplaceMap({
     if (onListingSelect) onListingSelect(listing);
   };
 
-  // Get marker icon based on listing type
-  const getMarkerIcon = (listing: MarketplaceListing) => {
-    // Determine color based on listing type
-    let fillColor = '#9333ea'; // default purple
-    let scale = 1.5;
-    
-    // If listing is selected, make it slightly larger
-    if (selectedListing && selectedListing.id === listing.id) {
-      scale = 1.8;
-    }
-    
-    switch(listing.type) {
+  // Get marker color based on listing type
+  const getMarkerColor = (listing: MarketplaceListing) => {
+    switch(listing.type.toLowerCase()) {
       case 'job': 
-        fillColor = '#3b82f6'; // blue
-        break; 
+        return '#3b82f6'; // blue
       case 'service': 
-        fillColor = '#8b5cf6'; // purple
-        break; 
+        return '#8b5cf6'; // purple
       case 'item': 
-        fillColor = '#10b981'; // green
-        break; 
+        return '#10b981'; // green
       case 'rental':
-        fillColor = '#f59e0b'; // amber
-        break;
+        return '#f59e0b'; // amber
       default: 
-        fillColor = '#9333ea'; // Default purple
+        return '#9333ea'; // Default purple
     }
-    
-    // Create a simple colored SVG for the marker
-    const encodedSvg = encodeURIComponent(`
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
-        <path fill="${fillColor}" stroke="white" stroke-width="1" d="M12,0C7.6,0,3,3.4,3,9c0,5.3,8,13.4,8.3,13.7c0.6,0.6,1.7,0.6,2.3,0c0.4-0.4,8.3-8.4,8.3-13.7C22,3.4,16.4,0,12,0z M12,12 c-1.7,0-3-1.3-3-3s1.3-3,3-3s3,1.3,3,3S13.7,12,12,12z"/>
-      </svg>
-    `);
-    
-    return `data:image/svg+xml;charset=UTF-8,${encodedSvg}`;
   };
 
   // Get type badge color
@@ -171,15 +157,67 @@ export function MarketplaceMap({
   const handleViewDetails = (listing: MarketplaceListing) => {
     router.push(`/marketplace/listing/${listing.id}`);
   };
+  
+  // Format relative time (e.g., "2 days ago")
+  const formatRelativeTime = (dateString?: string) => {
+    if (!dateString) return 'Recently';
+    
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    
+    if (diffInSeconds < 60) {
+      return 'Just now';
+    }
+    
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    if (diffInMinutes < 60) {
+      return `${diffInMinutes} ${diffInMinutes === 1 ? 'minute' : 'minutes'} ago`;
+    }
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) {
+      return `${diffInHours} ${diffInHours === 1 ? 'hour' : 'hours'} ago`;
+    }
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 30) {
+      return `${diffInDays} ${diffInDays === 1 ? 'day' : 'days'} ago`;
+    }
+    
+    return 'Over a month ago';
+  };
 
+  // Use the useLoadScript hook with direct API key
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: useMemo(() => ['places'], [])
+  });
+  
   return (
     <div className="relative w-full h-full">
-      <LoadScript 
-        googleMapsApiKey={apiKey} 
-        loadingElement={<div className="h-full w-full flex items-center justify-center"><p>Loading map...</p></div>}
-        onLoad={() => console.log('Script loaded successfully')}
-        onError={(error) => console.error('Error loading Google Maps script:', error)}
-      >
+      {/* Show error state */}
+      {loadError && (
+        <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <div className="text-center p-4">
+            <AlertCircle className="h-10 w-10 text-red-500 mx-auto mb-2" />
+            <p className="text-lg font-medium text-red-500">Error loading maps</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Please check your connection and try again</p>
+          </div>
+        </div>
+      )}
+      
+      {/* Show loading state */}
+      {!isLoaded && !loadError && (
+        <div className="h-full w-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-2"></div>
+            <p>Loading map...</p>
+          </div>
+        </div>
+      )}
+      
+      {isLoaded && (
         <GoogleMap
           mapContainerStyle={mapContainerStyle}
           center={center}
@@ -187,9 +225,9 @@ export function MarketplaceMap({
           onLoad={onLoad}
           onUnmount={onUnmount}
           options={{
-            fullscreenControl: false,
-            streetViewControl: false,
-            mapTypeControl: false,
+            fullscreenControl: true,
+            streetViewControl: true,
+            mapTypeControl: true,
             zoomControl: true,
             styles: [
               {
@@ -204,36 +242,79 @@ export function MarketplaceMap({
           <MarkerClusterer averageCenter enableRetinaIcons gridSize={60}>
             {(clusterer) => (
               <div>
-                {listings.filter(listing => listing.lat && listing.lng).map((listing) => (
-                  <div key={listing.id}>
-                    <Marker
-                      position={{ lat: listing.lat!, lng: listing.lng! }}
-                      onClick={() => handleMarkerClick(listing)}
-                      icon={getMarkerIcon(listing)}
-                      clusterer={clusterer}
-                    />
-                    
-                    {/* Animated pulse for new listings */}
-                    {newListings.includes(listing.id) && (
+                {listings.filter(listing => listing.lat && listing.lng).map((listing) => {
+                  // Ensure coordinates are valid numbers
+                  const lat = typeof listing.lat === 'string' ? parseFloat(listing.lat) : listing.lat;
+                  const lng = typeof listing.lng === 'string' ? parseFloat(listing.lng) : listing.lng;
+                  
+                  if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+                    console.warn(`Invalid coordinates for listing ${listing.id}:`, listing.lat, listing.lng);
+                    return null;
+                  }
+                  
+                  const isSelected = selectedListing && selectedListing.id === listing.id;
+                  
+                  return (
+                    <div key={listing.id}>
+                      {/* Use OverlayView for custom marker styling */}
                       <OverlayView
-                        position={{ lat: listing.lat!, lng: listing.lng! }}
+                        position={{ lat, lng }}
                         mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                         getPixelPositionOffset={(width, height) => ({
                           x: -(width / 2),
                           y: -(height / 2)
                         })}
                       >
-                        <div className={styles.pulseContainer}>
-                          <div className={styles.pulseRing}></div>
-                          <div className={styles.pulseCircle}></div>
-                          <div className={`${styles.newListingBadge} ${styles.popInAnimation}`}>
-                            <span>New Listing!</span>
+                        <div 
+                          className={styles.pulseContainer} 
+                          onClick={() => handleMarkerClick(listing)}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div 
+                            className={styles.pulseCircle} 
+                            style={{ 
+                              backgroundColor: getMarkerColor(listing),
+                              transform: isSelected ? 'translate(-50%, -50%) scale(1.2)' : 'translate(-50%, -50%)'
+                            }} 
+                          />
+                          {isSelected && <div className={styles.pulseRing} style={{ borderColor: getMarkerColor(listing) }}></div>}
+                          
+                          {/* Type badge */}
+                          <div className={`${styles.typeBadge} ${isSelected ? styles.typeBadgeSelected : ''}`}>
+                            <span>{listing.type.charAt(0).toUpperCase()}</span>
                           </div>
+                          
+                          {/* Price bubble for selected or hovered items */}
+                          {isSelected && (
+                            <div className={`${styles.priceBubble} ${styles.popInAnimation}`}>
+                              <span>${listing.price}{listing.priceUnit ? `/${listing.priceUnit}` : ''}</span>
+                            </div>
+                          )}
                         </div>
                       </OverlayView>
-                    )}
-                  </div>
-                ))}
+                      
+                      {/* Animated pulse for new listings */}
+                      {newListings.includes(listing.id) && (
+                        <OverlayView
+                          position={{ lat, lng }}
+                          mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                          getPixelPositionOffset={(width, height) => ({
+                            x: -(width / 2),
+                            y: -(height / 2)
+                          })}
+                        >
+                          <div className={styles.pulseContainer}>
+                            <div className={styles.pulseRing}></div>
+                            <div className={styles.pulseCircle}></div>
+                            <div className={`${styles.newListingBadge} ${styles.popInAnimation}`}>
+                              <span>New Listing!</span>
+                            </div>
+                          </div>
+                        </OverlayView>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </MarkerClusterer>
@@ -326,7 +407,7 @@ export function MarketplaceMap({
             </OverlayView>
           )}
         </GoogleMap>
-      </LoadScript>
+      )}
     </div>
   );
 }

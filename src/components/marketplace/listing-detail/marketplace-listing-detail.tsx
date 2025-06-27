@@ -77,6 +77,9 @@ export function MarketplaceListingDetail({ listing }: MarketplaceListingDetailPr
             lat={listing.lat}
             lng={listing.lng}
             title={listing.title}
+            type={listing.type}
+            price={listing.price}
+            priceUnit={listing.priceUnit}
           />
           
           <ListingReviews 

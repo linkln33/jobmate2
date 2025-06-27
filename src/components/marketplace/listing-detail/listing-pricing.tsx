@@ -4,7 +4,18 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Clock, AlertCircle } from "lucide-react";
+import { Clock, AlertCircle, DollarSign } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ListingPricingProps {
   price: number;
@@ -171,9 +182,63 @@ export function ListingPricing({
         {renderPricingContent()}
         
         {pricingType === "fixed" && (
-          <Button className="w-full">
-            Buy Now
-          </Button>
+          <div className="flex gap-2">
+            <Button className="flex-1">
+              Buy Now
+            </Button>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                >
+                  Make an Offer
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Make an Offer</DialogTitle>
+                </DialogHeader>
+                <form className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="offerAmount">Your Offer</Label>
+                    <div className="relative">
+                      <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="offerAmount"
+                        type="number"
+                        placeholder="Enter your offer amount"
+                        className="pl-8"
+                        defaultValue={Math.floor(price * 0.9)}
+                        min={1}
+                        step="1"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Suggested: {formatPrice(Math.floor(price * 0.9))} - {formatPrice(price)}</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="message">Message (Optional)</Label>
+                    <Textarea
+                      id="message"
+                      placeholder="Include any details about your offer..."
+                      className="min-h-[100px]"
+                    />
+                  </div>
+                </form>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button variant="outline">Cancel</Button>
+                  </DialogClose>
+                  <Button onClick={() => {
+                    // In a real app, this would submit the offer to an API
+                    alert('Your offer has been sent to the seller!');
+                  }}>
+                    Send Offer
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
         
         <div className="text-sm text-muted-foreground flex items-center gap-2">
