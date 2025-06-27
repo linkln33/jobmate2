@@ -53,9 +53,15 @@ export function ListingLocation({ address, lat, lng, title }: ListingLocationPro
     ]
   };
   
-  // Handle map load
-  const handleMapLoad = useCallback(() => {
+  // Handle map load and unload
+  const onLoad = useCallback(() => {
+    console.log('Map loaded successfully');
     setMapLoaded(true);
+  }, []);
+  
+  const onUnmount = useCallback(() => {
+    console.log('Map unmounted');
+    setMapLoaded(false);
   }, []);
   
   // Open directions in Google Maps
@@ -82,7 +88,7 @@ export function ListingLocation({ address, lat, lng, title }: ListingLocationPro
       toast({
         title: "Address copied",
         description: "The address has been copied to your clipboard.",
-        duration: 3000,
+        duration: 3000
       });
     });
   };
@@ -110,13 +116,19 @@ export function ListingLocation({ address, lat, lng, title }: ListingLocationPro
       </div>
       
       <div className="mb-4 overflow-hidden rounded-lg border shadow-sm">
-        <LoadScript googleMapsApiKey={apiKey}>
+        <LoadScript 
+          googleMapsApiKey={apiKey}
+          loadingElement={<div className="h-full w-full flex items-center justify-center"><p>Loading map...</p></div>}
+          onLoad={() => console.log('Script loaded successfully')}
+          onError={(error) => console.error('Error loading Google Maps script:', error)}
+        >
           <GoogleMap
             mapContainerStyle={mapContainerStyle}
             center={center}
             zoom={15}
             options={mapOptions}
-            onLoad={handleMapLoad}
+            onLoad={onLoad}
+            onUnmount={onUnmount}
           >
             <Marker 
               position={center} 
@@ -150,7 +162,7 @@ export function ListingLocation({ address, lat, lng, title }: ListingLocationPro
         
         <Button 
           variant="outline" 
-          className="flex items-center justify-center gap-2"
+          className="flex-1 flex items-center justify-center gap-2"
           onClick={handleOpenInGoogleMaps}
         >
           <ExternalLink className="h-4 w-4" />

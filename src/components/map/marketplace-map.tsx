@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { GoogleMap, LoadScript, Marker, InfoWindow, MarkerClusterer, OverlayView } from '@react-google-maps/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MapPin, AlertCircle, Clock, Tag } from 'lucide-react';
 import { MarketplaceListing } from '@/types/marketplace';
 import { useRouter } from 'next/navigation';
+import styles from './map-animations.module.css';
 
 interface MarketplaceMapProps {
   listings: MarketplaceListing[];
@@ -25,7 +26,7 @@ const mapContainerStyle = {
 
 // Default Google Maps API key for demo purposes
 // In production, always use environment variables instead of hardcoded values
-const DEFAULT_API_KEY = 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y';
+const DEFAULT_API_KEY = 'AIzaSyAn3xgB_REOmDBofSgNJsDvTkHSUE3Vy1Y'; // This is a demo key that should work for development
 
 export function MarketplaceMap({
   listings,
@@ -40,6 +41,31 @@ export function MarketplaceMap({
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [center, setCenter] = useState(defaultCenter);
   const [mapLoaded, setMapLoaded] = useState(false);
+  const [newListings, setNewListings] = useState<string[]>([]);
+  const previousListingsRef = useRef<string[]>([]);
+  
+  // Detect new listings by comparing current listings with previous listings
+  useEffect(() => {
+    const currentListingIds = listings.map(listing => listing.id);
+    const previousListingIds = previousListingsRef.current;
+    
+    // Find new listings (present in current but not in previous)
+    const newlyAddedListings = currentListingIds.filter(id => !previousListingIds.includes(id));
+    
+    if (newlyAddedListings.length > 0) {
+      setNewListings(newlyAddedListings);
+      
+      // Clear new listings after animation duration
+      const timer = setTimeout(() => {
+        setNewListings([]);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+    
+    // Update reference for next comparison
+    previousListingsRef.current = currentListingIds;
+  }, [listings]);
   
   // Update selected listing when selectedListingId changes
   useEffect(() => {
@@ -150,7 +176,7 @@ export function MarketplaceMap({
     <div className="relative w-full h-full">
       <LoadScript 
         googleMapsApiKey={apiKey} 
-        loadingElement={<div className="h-full w-full" />}
+        loadingElement={<div className="h-full w-full flex items-center justify-center"><p>Loading map...</p></div>}
         onLoad={() => console.log('Script loaded successfully')}
         onError={(error) => console.error('Error loading Google Maps script:', error)}
       >
@@ -179,13 +205,34 @@ export function MarketplaceMap({
             {(clusterer) => (
               <div>
                 {listings.filter(listing => listing.lat && listing.lng).map((listing) => (
-                  <Marker
-                    key={listing.id}
-                    position={{ lat: listing.lat!, lng: listing.lng! }}
-                    onClick={() => handleMarkerClick(listing)}
-                    icon={getMarkerIcon(listing)}
-                    clusterer={clusterer}
-                  />
+                  <div key={listing.id}>
+                    <Marker
+                      position={{ lat: listing.lat!, lng: listing.lng! }}
+                      onClick={() => handleMarkerClick(listing)}
+                      icon={getMarkerIcon(listing)}
+                      clusterer={clusterer}
+                    />
+                    
+                    {/* Animated pulse for new listings */}
+                    {newListings.includes(listing.id) && (
+                      <OverlayView
+                        position={{ lat: listing.lat!, lng: listing.lng! }}
+                        mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                        getPixelPositionOffset={(width, height) => ({
+                          x: -(width / 2),
+                          y: -(height / 2)
+                        })}
+                      >
+                        <div className={styles.pulseContainer}>
+                          <div className={styles.pulseRing}></div>
+                          <div className={styles.pulseCircle}></div>
+                          <div className={`${styles.newListingBadge} ${styles.popInAnimation}`}>
+                            <span>New Listing!</span>
+                          </div>
+                        </div>
+                      </OverlayView>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

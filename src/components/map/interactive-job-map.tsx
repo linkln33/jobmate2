@@ -168,7 +168,14 @@ export function InteractiveJobMap({
     <div className="relative w-full h-full">
       <LoadScript 
         googleMapsApiKey={apiKey} 
-        loadingElement={<div className="h-full w-full" />}
+        loadingElement={
+          <div className="h-full w-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mb-2"></div>
+              <p>Loading map...</p>
+            </div>
+          </div>
+        }
         onLoad={() => console.log('Script loaded successfully')}
         onError={(error) => console.error('Error loading Google Maps script:', error)}
       >

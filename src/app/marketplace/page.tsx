@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { marketplaceListings } from '@/data/marketplace-listings';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
@@ -9,7 +9,7 @@ import { MarketplaceSearch } from '@/components/marketplace/marketplace-search';
 import { MarketplaceTabs } from '@/components/marketplace/marketplace-tabs';
 import { MarketplaceGrid } from '@/components/marketplace/marketplace-grid';
 import { Button } from '@/components/ui/button';
-import { Grid, Map } from 'lucide-react';
+import { Grid, Map, Plus } from 'lucide-react';
 import { MarketplaceTabType } from '@/components/marketplace/marketplace-tabs';
 import { MarketplaceListing } from '@/types/marketplace';
 import { MarketplaceListingCardProps } from '@/components/marketplace/marketplace-listing-card';
@@ -47,11 +47,21 @@ function getListingTypeForTab(tab: MarketplaceTabType): string | null {
   }
 }
 
+const tabToListingTypeMap: Record<string, string> = {
+  items: 'item',
+  services: 'service',
+  rentals: 'rental',
+  jobs: 'job',
+  all: 'all'
+};
+
 export default function MarketplacePage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<MarketplaceTabType>('all');
-  const [filteredListings, setFilteredListings] = useState(marketplaceListings);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  // We'll use the useMemo hook instead of this state
+  // const [filteredListings, setFilteredListings] = useState(marketplaceListings);
   
   // Handle listing click
   const handleListingClick = useCallback((id: string) => {
@@ -64,89 +74,105 @@ export default function MarketplacePage() {
   }, [router]);
   
   // Handle search
-  const handleSearch = useCallback((query: string) => {
+  const handleSearch = (query: string) => {
     setSearchQuery(query);
-    
-    if (!query) {
-      // If search is cleared, just filter by tab
-      if (activeTab === 'all') {
-        setFilteredListings(marketplaceListings);
+  };
+  
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
       } else {
-        const listingType = getListingTypeForTab(activeTab);
-        setFilteredListings(marketplaceListings.filter(listing => 
-          listingType ? listing.type === listingType : true
-        ));
+        return [...prev, categoryId];
       }
-      return;
-    }
-    
-    const lowerQuery = query.toLowerCase();
-    let filtered = marketplaceListings;
-    
-    // First filter by tab if not 'all'
-    if (activeTab !== 'all') {
-      const listingType = getListingTypeForTab(activeTab);
-      filtered = filtered.filter(listing => 
-        listingType ? listing.type === listingType : true
-      );
-    }
-    
-    // Then filter by search query
-    filtered = filtered.filter(listing => (
-      listing.title.toLowerCase().includes(lowerQuery) ||
-      listing.description.toLowerCase().includes(lowerQuery) ||
-      (listing.tags && listing.tags.some(tag => tag.toLowerCase().includes(lowerQuery)))
-    ));
-    
-    setFilteredListings(filtered);
-  }, [activeTab]);
+    });
+  };  
+  
+  // Filter listings based on search query, active tab, and selected categories
+  const filteredListings = useMemo(() => {
+    return marketplaceListings
+      .filter(listing => {
+        // Filter by tab
+        if (activeTab !== 'all') {
+          return listing.type === tabToListingTypeMap[activeTab];
+        }
+        return true;
+      })
+      .filter(listing => {
+        // Filter by selected categories
+        if (selectedCategories.length > 0) {
+          return selectedCategories.some(cat => {
+            // Match either by listing type or category
+            return listing.type === cat || listing.category === cat;
+          });
+        }
+        return true;
+      })
+      .filter(listing => {
+        // Filter by search query
+        if (!searchQuery) return true;
+        
+        const query = searchQuery.toLowerCase();
+        return (
+          listing.title.toLowerCase().includes(query) ||
+          listing.description.toLowerCase().includes(query) ||
+          listing.tags.some(tag => tag.toLowerCase().includes(query))
+        );
+      });
+  }, [activeTab, searchQuery, selectedCategories]);
   
   // Handle tab change
   const handleTabChange = useCallback((tab: MarketplaceTabType) => {
     setActiveTab(tab);
-    
-    // Reset search when changing tabs
-    if (tab === 'all') {
-      setFilteredListings(marketplaceListings);
-    } else {
-      const listingType = getListingTypeForTab(tab);
-      setFilteredListings(marketplaceListings.filter(listing => 
-        listingType ? listing.type === listingType : true
-      ));
-    }
+    setSelectedCategories([]);
+    // We no longer need to set filtered listings here as we're using useMemo
   }, []);
   
   // Handle view map
   const handleViewMap = useCallback(() => {
     router.push('/marketplace/map');
   }, [router]);
-
+  
   // Convert listings to the format expected by MarketplaceGrid
-  const cardProps = convertToCardProps(filteredListings);
+  const cardProps = useMemo(() => {
+    return convertToCardProps(filteredListings);
+  }, [filteredListings]);
   
   return (
     <UnifiedDashboardLayout title="Marketplace" showMap={false}>
       <div className="flex flex-col h-full">
-        <MarketplaceHeader onCreateListing={handleCreateListing} />
-        
         <div className="flex justify-between items-center mb-4">
-          <MarketplaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
-          
+          <h1 className="text-2xl font-bold">Marketplace</h1>
           <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleViewMap}
+            <Button
+              onClick={() => router.push('/marketplace/create')}
               className="flex items-center gap-2"
             >
+              <Plus className="h-4 w-4" />
+              Create Listing
+            </Button>
+            
+            <Button
+              variant="default"
+              className="flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white"
+              onClick={handleViewMap}
+            >
               <Map className="h-4 w-4" />
-              <span>Map View</span>
+              Map View
             </Button>
           </div>
         </div>
         
         <div className="mb-4">
-          <MarketplaceSearch onSearch={handleSearch} />
+          <MarketplaceSearch 
+            onSearch={handleSearch} 
+            selectedCategories={selectedCategories}
+            onCategorySelect={handleCategorySelect}
+          />
+        </div>
+        
+        <div className="flex justify-between items-center mb-4">
+          <MarketplaceTabs activeTab={activeTab} onTabChange={handleTabChange} />
         </div>
         
         <MarketplaceGrid 

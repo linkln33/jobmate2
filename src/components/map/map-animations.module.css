@@ -301,6 +301,77 @@
   }
 }
 
+/* New Listing Badge Styles */
+.pulseContainer {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  z-index: 999;
+  cursor: pointer;
+}
+
+.pulseCircle {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  background-color: #f59e0b; /* Amber color for new listings */
+}
+
+.pulseRing {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid #f59e0b;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  animation: pulseAnimation 2s infinite;
+  pointer-events: none;
+}
+
+.newListingBadge {
+  position: absolute;
+  top: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #f59e0b;
+  color: white;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1002;
+}
+
+.popInAnimation {
+  animation: popIn 0.5s forwards;
+}
+
+@keyframes popIn {
+  0% {
+    transform: translateX(-50%) scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+}
+
 /* Category Legend Styles */
 .category-legend {
   position: absolute;
