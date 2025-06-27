@@ -9,12 +9,18 @@ import { useToast } from '@/components/ui/use-toast';
 import { useProfile } from '@/context/ProfileContext';
 import { EditableProfileImages } from '@/components/profile/EditableProfileImages';
 import { profileService } from '@/services/profileService';
+import { useRouter } from 'next/navigation';
+import { MarketplaceListingCard } from '@/components/marketplace/marketplace-listing-card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ListingCreationWizard } from '@/components/marketplace/create-listing/listing-creation-wizard';
+import { SectionHeader } from '@/components/ui/section-header';
+// Calendar component import removed
 // Define interfaces for component props to help TypeScript
 // These interfaces define the expected props for components without proper type declarations
 interface ScrollAreaProps {
@@ -126,33 +132,21 @@ import { ProfileSettingsForm } from '@/components/profile/profile-settings-form'
 
 // Icons
 import { 
-  Briefcase, Star, X, Settings, Edit, Check, ChevronRight, MapPin, Calendar, Clock, DollarSign, 
+  Briefcase, Star, X, Settings, Edit, Check, ChevronLeft, ChevronRight, MapPin, Calendar, Clock, DollarSign, 
   Package2, MessageSquare, UserPlus, MoreHorizontal, ThumbsUp, Share2, Users, Key, LogOut, CreditCard, Trash2 
 } from 'lucide-react';
 
-// Simple SectionHeader component
-const SectionHeader = ({ 
-  title, 
-  description
-}: { 
-  title: string; 
-  description?: string;
-}) => {
-  return (
-    <div className="mb-6">
-      <h3 className="text-xl font-semibold">{title}</h3>
-      {description && <p className="text-muted-foreground mt-1">{description}</p>}
-    </div>
-  );
-};
+// Using the imported SectionHeader component from @/components/ui/section-header
 
-export function UnifiedProfilePage() {
-  const { profileData, saveProfile } = useProfile();
-  const [isUploading, setIsUploading] = useState(false);
+export default function UnifiedProfilePageNew() {
+  const { profileData, error, saveProfile } = useProfile();
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const { toast } = useToast();
+  const [isListingWizardOpen, setIsListingWizardOpen] = useState(false);
+  const router = useRouter();
   
   // Add a useEffect to handle loading state
   useEffect(() => {
@@ -318,12 +312,11 @@ export function UnifiedProfilePage() {
         
         {/* Profile Tabs */}
         <Tabs defaultValue="profile" value={activeTab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="grid grid-cols-7 md:w-fit">
+          <TabsList className="grid grid-cols-6 md:w-fit">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="reviews">Reviews</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
             <TabsTrigger value="marketplace">Marketplace</TabsTrigger>
-            <TabsTrigger value="rentals">Rentals</TabsTrigger>
             <TabsTrigger value="social">Social</TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
@@ -343,11 +336,9 @@ export function UnifiedProfilePage() {
                         description="Tell us about yourself and your professional background"
                       />
                     </div>
-                    {isEditing && (
-                      <Button variant="ghost" size="sm">
-                        <Edit size={16} className="mr-2" /> Edit
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -369,11 +360,9 @@ export function UnifiedProfilePage() {
                     <div>
                       <SectionHeader title="Skills & Expertise" />
                     </div>
-                    {isEditing && (
-                      <Button variant="ghost" size="sm">
-                        <Edit size={16} className="mr-2" /> Edit
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -406,11 +395,9 @@ export function UnifiedProfilePage() {
                         description="Your professional experience"
                       />
                     </div>
-                    {isEditing && (
-                      <Button variant="ghost" size="sm">
-                        <Edit size={16} className="mr-2" /> Edit
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -454,11 +441,9 @@ export function UnifiedProfilePage() {
                         description="Your academic background"
                       />
                     </div>
-                    {isEditing && (
-                      <Button variant="ghost" size="sm">
-                        <Edit size={16} className="mr-2" /> Edit
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -497,11 +482,9 @@ export function UnifiedProfilePage() {
                         description="Professional certifications and credentials"
                       />
                     </div>
-                    {isEditing && (
-                      <Button variant="ghost" size="sm">
-                        <Edit size={16} className="mr-2" /> Edit
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     {isEditing ? (
@@ -536,6 +519,102 @@ export function UnifiedProfilePage() {
                         )}
                       </div>
                     )}
+                  </CardContent>
+                </Card>
+
+                {/* Availability Calendar */}
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <SectionHeader 
+                        title="Availability Calendar" 
+                        description="Manage your available, booked and holiday dates"
+                      />
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)}>
+                      <Edit size={16} className="mr-2" /> Edit
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center mb-4">
+                        <Button variant="outline" size="sm">
+                          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                        </Button>
+                        <h3 className="text-lg font-medium">July 2025</h3>
+                        <Button variant="outline" size="sm">
+                          Next <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </div>
+                      
+                      <div className="border rounded-md p-4">
+                        <div className="grid grid-cols-7 gap-1 mb-2">
+                          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => (
+                            <div key={i} className="text-center text-sm font-medium py-2">
+                              {day}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-7 gap-1">
+                          {/* Empty cells for days before month starts */}
+                          {Array.from({ length: 2 }, (_, i) => (
+                            <div key={`empty-${i}`} className="h-16 w-full"></div>
+                          ))}
+                          
+                          {/* Actual days */}
+                          {Array.from({ length: 31 }, (_, i) => {
+                            // Determine the type of day (available, booked, holiday)
+                            const isAvailable = i % 7 === 1 || i % 7 === 2;
+                            const isBooked = i % 7 === 3 || i % 7 === 4;
+                            const isHoliday = i % 7 === 5;
+                            
+                            let bgClass = '';
+                            if (isAvailable) bgClass = 'bg-green-100 dark:bg-green-900/20';
+                            if (isBooked) bgClass = 'bg-red-100 dark:bg-red-900/20';
+                            if (isHoliday) bgClass = 'bg-blue-100 dark:bg-blue-900/20';
+                            
+                            return (
+                              <div 
+                                key={i} 
+                                className={`h-16 w-full border rounded-md p-1 relative ${bgClass}`}
+                              >
+                                <div className="absolute top-1 left-1 font-medium">{i + 1}</div>
+                                {isAvailable && (
+                                  <div className="absolute bottom-1 left-1 right-1 text-xs text-green-700 dark:text-green-300">
+                                    Available
+                                  </div>
+                                )}
+                                {isBooked && (
+                                  <div className="absolute bottom-1 left-1 right-1 text-xs text-red-700 dark:text-red-300">
+                                    Booked
+                                  </div>
+                                )}
+                                {isHoliday && (
+                                  <div className="absolute bottom-1 left-1 right-1 text-xs text-blue-700 dark:text-blue-300">
+                                    Holiday
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                          <span className="text-sm text-muted-foreground">Available</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                          <span className="text-sm text-muted-foreground">Booked</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                          <span className="text-sm text-muted-foreground">Holiday</span>
+                        </div>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -746,7 +825,11 @@ export function UnifiedProfilePage() {
                         description="Items and services you're offering"
                       />
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setIsListingWizardOpen(true)}
+                    >
                       Create New Listing
                     </Button>
                   </CardHeader>
@@ -754,40 +837,40 @@ export function UnifiedProfilePage() {
                     {profileData?.marketplaceListings?.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {profileData.marketplaceListings.map((listing: any, index: number) => (
-                          <div key={index} className="border rounded-lg overflow-hidden">
-                            <div className="aspect-video relative overflow-hidden bg-muted">
-                              {listing.media && listing.media[0] ? (
-                                <img 
-                                  src={listing.media[0]} 
-                                  alt={listing.title} 
-                                  className="object-cover w-full h-full"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <p className="text-muted-foreground">No image</p>
-                                </div>
-                              )}
-                              {listing.isFeatured && (
-                                <Badge className="absolute top-2 right-2">
-                                  Featured
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="p-4">
-                              <h4 className="font-medium truncate">{listing.title}</h4>
-                              <p className="text-sm text-muted-foreground truncate">{listing.description}</p>
-                              <div className="flex justify-between items-center mt-2">
-                                <span className="font-medium">${listing.pricing?.price || '0'}</span>
-                                <Badge variant="outline">{listing.status || 'Active'}</Badge>
-                              </div>
-                            </div>
-                          </div>
+                          <MarketplaceListingCard
+                            key={listing.id || index}
+                            id={listing.id || `listing-${index}`}
+                            title={listing.title}
+                            description={listing.description}
+                            price={listing.pricing?.price?.toString() || '0'}
+                            priceUnit={listing.pricing?.unit || 'fixed'}
+                            imageUrl={listing.media && listing.media[0] ? listing.media[0] : ''}
+                            tags={listing.category ? [listing.category] : []}
+                            type={listing.type || 'item'}
+                            isFeatured={listing.isFeatured}
+                            isVerified={true}
+                            user={{
+                              name: profileData?.name || 'User',
+                              avatar: profileData?.avatar
+                            }}
+                            stats={{
+                              views: listing.views || 0,
+                              likes: listing.saves || 0
+                            }}
+                            onClick={() => router.push(`/marketplace/listing/${listing.id}`)}
+                          />
                         ))}
                       </div>
                     ) : (
                       <div className="text-center py-8">
                         <p className="text-muted-foreground">You don't have any marketplace listings yet</p>
-                        <Button variant="outline" className="mt-4">Create Your First Listing</Button>
+                        <Button 
+                          variant="outline" 
+                          className="mt-4"
+                          onClick={() => setIsListingWizardOpen(true)}
+                        >
+                          Create Your First Listing
+                        </Button>
                       </div>
                     )}
                   </CardContent>
@@ -832,197 +915,6 @@ export function UnifiedProfilePage() {
                       Boost visibility and sales by featuring your listings
                     </p>
                     <Button className="w-full">Upgrade to Featured</Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
-          
-          {/* Rentals Tab */}
-          <TabsContent value="rentals" className="space-y-6 mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Main content - 2/3 width on desktop */}
-              <div className="md:col-span-2 space-y-6">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <SectionHeader 
-                        title="Your Rental Listings" 
-                        description="Equipment and spaces you're renting out"
-                      />
-                    </div>
-                    <Button variant="outline" size="sm">
-                      Add New Rental
-                    </Button>
-                  </CardHeader>
-                  <CardContent>
-                    {profileData?.rentalListings?.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {profileData.rentalListings.map((rental: any, index: number) => (
-                          <div key={index} className="border rounded-lg overflow-hidden">
-                            <div className="aspect-video relative overflow-hidden bg-muted">
-                              {rental.images && rental.images[0] ? (
-                                <img 
-                                  src={rental.images[0]} 
-                                  alt={rental.title} 
-                                  className="object-cover w-full h-full"
-                                />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <p className="text-muted-foreground">No image</p>
-                                </div>
-                              )}
-                              {rental.availability === 'Available' && (
-                                <Badge className="absolute top-2 right-2 bg-green-500">
-                                  Available
-                                </Badge>
-                              )}
-                              {rental.availability === 'Rented' && (
-                                <Badge className="absolute top-2 right-2 bg-orange-500">
-                                  Rented
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="p-4">
-                              <h4 className="font-medium truncate">{rental.title}</h4>
-                              <p className="text-sm text-muted-foreground truncate">{rental.description}</p>
-                              <div className="flex justify-between items-center mt-2">
-                                <span className="font-medium">${rental.rate || '0'}/{rental.rateUnit || 'day'}</span>
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <MapPin size={14} />
-                                  <span>{rental.location || 'Location not specified'}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">You don't have any rental listings yet</p>
-                        <Button variant="outline" className="mt-4">List Your First Rental</Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <SectionHeader 
-                      title="Your Rental History" 
-                      description="Equipment and spaces you've rented"
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    {profileData?.rentalHistory?.length > 0 ? (
-                      <div className="space-y-4">
-                        {profileData.rentalHistory.map((rental: any, index: number) => (
-                          <div key={index} className="flex items-start gap-4 border-b pb-4 last:border-0 last:pb-0">
-                            <div className="h-16 w-16 rounded overflow-hidden bg-muted flex-shrink-0">
-                              {rental.image ? (
-                                <img 
-                                  src={rental.image} 
-                                  alt={rental.title} 
-                                  className="h-full w-full object-cover"
-                                />
-                              ) : (
-                                <div className="h-full w-full flex items-center justify-center">
-                                  <Package2 size={24} className="text-muted-foreground" />
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex justify-between items-start">
-                                <div>
-                                  <h4 className="font-medium">{rental.title}</h4>
-                                  <p className="text-sm text-muted-foreground">{rental.owner}</p>
-                                </div>
-                                <Badge variant={rental.status === 'Completed' ? 'success' : 'secondary'}>
-                                  {rental.status}
-                                </Badge>
-                              </div>
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Calendar size={14} />
-                                  <span>{rental.dates}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <DollarSign size={14} />
-                                  <span>${rental.totalCost}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">No rental history available</p>
-                        <Button variant="outline" className="mt-4">Browse Rentals</Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              
-              {/* Sidebar - 1/3 width on desktop */}
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <SectionHeader title="Rental Stats" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Active Listings</span>
-                        <span className="font-medium">{profileData?.rentalStats?.activeListings || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Items Rented Out</span>
-                        <span className="font-medium">{profileData?.rentalStats?.itemsRentedOut || 0}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Items Rented</span>
-                        <span className="font-medium">{profileData?.rentalStats?.itemsRented || 0}</span>
-                      </div>
-                      <Separator className="my-2" />
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total Rental Income</span>
-                        <span className="font-medium">${profileData?.rentalStats?.totalRentalIncome || '0'}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Total Rental Expenses</span>
-                        <span className="font-medium">${profileData?.rentalStats?.totalRentalExpenses || '0'}</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardHeader>
-                    <SectionHeader title="Insurance Coverage" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        Protect your rentals with our comprehensive insurance coverage
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-muted-foreground">Coverage Status</span>
-                        <Badge variant={profileData?.insurance?.active ? 'success' : 'destructive'}>
-                          {profileData?.insurance?.active ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                      {profileData?.insurance?.active && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-muted-foreground">Coverage Limit</span>
-                          <span className="font-medium">${profileData?.insurance?.coverageLimit || '0'}</span>
-                        </div>
-                      )}
-                      <Button className="w-full" variant={profileData?.insurance?.active ? 'outline' : 'default'}>
-                        {profileData?.insurance?.active ? 'Manage Coverage' : 'Get Insurance'}
-                      </Button>
-                    </div>
                   </CardContent>
                 </Card>
               </div>
@@ -1474,6 +1366,24 @@ export function UnifiedProfilePage() {
           </TabsContent>
         </Tabs>
       </div>
+      {/* Listing Creation Wizard Dialog */}
+      <Dialog open={isListingWizardOpen} onOpenChange={setIsListingWizardOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0">
+          <ListingCreationWizard 
+            onClose={() => setIsListingWizardOpen(false)}
+            onSuccess={() => {
+              setIsListingWizardOpen(false);
+              toast({
+                title: "Listing created successfully",
+                description: "Your new marketplace listing has been created.",
+              });
+              // Refresh profile data to show the new listing
+              // In a real implementation, we would fetch the updated profile
+              // For now, we'll just show the toast notification
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </UnifiedDashboardLayout>
   );
 }

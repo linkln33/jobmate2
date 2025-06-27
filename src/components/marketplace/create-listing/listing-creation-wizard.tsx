@@ -10,7 +10,8 @@ import {
   ChevronRight, 
   Check, 
   AlertCircle,
-  Save
+  Save,
+  X
 } from "lucide-react";
 import { marketplaceService } from "@/services/marketplaceService";
 import { profileService } from '@/services/profileService';
@@ -52,7 +53,12 @@ const initialListingData: Partial<MarketplaceListing> = {
   }
 };
 
-export function ListingCreationWizard() {
+interface ListingCreationWizardProps {
+  onClose?: () => void;
+  onSuccess?: () => void;
+}
+
+export function ListingCreationWizard({ onClose, onSuccess }: ListingCreationWizardProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [currentStep, setCurrentStep] = useState(0);
@@ -231,8 +237,13 @@ export function ListingCreationWizard() {
           duration: 5000,
         });
         
-        // Redirect to marketplace
-        router.push("/marketplace");
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        } else {
+          // Default behavior: redirect to marketplace
+          router.push("/marketplace");
+        }
       } catch (error) {
         console.error('Error creating listing:', error);
         toast({
@@ -403,39 +414,53 @@ export function ListingCreationWizard() {
         
         {/* Navigation Buttons */}
         <div className="flex justify-between px-8 pb-8">
-        <Button
-          variant="outline"
-          onClick={handlePrevious}
-          disabled={currentStep === 0}
-        >
-          <ChevronLeft className="mr-2 h-4 w-4" />
-          Previous
-        </Button>
-        
-        {currentStep < STEPS.length - 1 ? (
-          <Button onClick={handleNext}>
-            Next
-            <ChevronRight className="ml-2 h-4 w-4" />
-          </Button>
-        ) : (
-          <Button 
-            onClick={handleSubmit} 
-            disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isSubmitting ? (
-              <>
-                <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
-                Submitting...
-              </>
+          <div className="flex gap-2">
+            {currentStep === 0 ? (
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="text-muted-foreground"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
             ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Submit Listing
-              </>
+              <Button
+                variant="outline"
+                onClick={handlePrevious}
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Previous
+              </Button>
             )}
-          </Button>
-        )}
+          </div>
+          
+          <div>
+            {currentStep < STEPS.length - 1 ? (
+              <Button onClick={handleNext}>
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="h-4 w-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
+                    Submitting...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Submit Listing
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
       </div>
       </Card>
       

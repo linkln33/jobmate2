@@ -83,7 +83,7 @@ type ProfileData = {
   reviewStats?: { averageRating: number; totalReviews: number; ratingBreakdown: { '5': number; '4': number; '3': number; '2': number; '1': number; } };
   wallet?: { balance: number; pendingPayments: number; transactions: any[]; };
   verifications?: { identity: boolean; phone: boolean; email: boolean; background: boolean; };
-  preferences?: { notifications: { jobs: boolean; messages: boolean; }; privacy: { showProfile: boolean; }; };
+  preferences?: { notifications?: { jobs: boolean; messages: boolean; }; privacy?: { showProfile: boolean; }; };
   socialLinks?: {
     linkedin?: string;
     twitter?: string;
@@ -91,7 +91,51 @@ type ProfileData = {
     facebook?: string;
     instagram?: string;
   };
-  reputation?: number;
+  reputation?: {
+    stats: {
+      overallRating: number;
+      totalReviews: number;
+      completionRate: number;
+      responseRate: number;
+      avgResponseTime: string;
+      memberSince: string;
+      totalJobsCompleted: number;
+      repeatCustomerRate: number;
+      specialistLevel: string;
+      nextLevelProgress: number;
+      nextLevelRequirements: {
+        jobsNeeded: number;
+        ratingNeeded: number;
+      };
+    };
+    achievements: any[];
+    externalReviews: any[];
+    feedbackSystem?: {
+      positiveAttributes: Array<{ name: string; count: number; }>;
+      negativeAttributes: any[];
+      recentFeedback: any[];
+    };
+  };
+  marketplaceListings?: Array<{
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    media: string[];
+    pricing: { price: number; unit: string };
+    location: string;
+    status: string;
+    isFeatured: boolean;
+    createdAt: string;
+    views: number;
+    saves: number;
+  }>;
+  marketplaceStats?: {
+    activeListings: number;
+    totalSales: number;
+    featuredListings: number;
+    totalRevenue: number;
+  };
 };
 import axios from 'axios';
 
@@ -173,6 +217,66 @@ const mockProfileData: ProfileData = {
   wallet: { balance: 1250, pendingPayments: 350, transactions: [] },
   verifications: { identity: true, phone: true, email: true, background: true },
   preferences: { notifications: { jobs: true, messages: true }, privacy: { showProfile: true } },
+  // Add marketplace listings
+  marketplaceListings: [
+    {
+      id: 'listing-1',
+      title: 'Professional Plumbing Services',
+      description: 'Expert plumbing repairs and installations for residential homes. Fast, reliable service with 100% satisfaction guarantee.',
+      category: 'Home Services',
+      media: [
+        'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+      ],
+      pricing: { price: 85, unit: 'hour' },
+      location: 'San Francisco, CA',
+      status: 'Active',
+      isFeatured: true,
+      createdAt: '2023-05-10',
+      views: 245,
+      saves: 18
+    },
+    {
+      id: 'listing-2',
+      title: 'Bathroom Renovation Specialist',
+      description: 'Complete bathroom remodeling services. From design to installation, transform your bathroom with quality craftsmanship.',
+      category: 'Renovation',
+      media: [
+        'https://images.unsplash.com/photo-1584622650111-993a426fbf0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+      ],
+      pricing: { price: 2500, unit: 'project' },
+      location: 'San Francisco, CA',
+      status: 'Active',
+      isFeatured: false,
+      createdAt: '2023-06-15',
+      views: 187,
+      saves: 12
+    },
+    {
+      id: 'listing-3',
+      title: 'Deck Building and Repair',
+      description: 'Custom deck design, building, and repair services. Weather-resistant materials with 5-year warranty on all work.',
+      category: 'Outdoor',
+      media: [
+        'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80'
+      ],
+      pricing: { price: 35, unit: 'sqft' },
+      location: 'San Francisco, CA',
+      status: 'Active',
+      isFeatured: false,
+      createdAt: '2023-04-22',
+      views: 134,
+      saves: 8
+    }
+  ],
+  // Add marketplace stats
+  marketplaceStats: {
+    activeListings: 3,
+    totalSales: 28,
+    featuredListings: 1,
+    totalRevenue: 4850
+  },
   reputation: {
     stats: {
       overallRating: 4.8,
