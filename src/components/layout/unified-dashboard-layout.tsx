@@ -43,7 +43,7 @@ export function UnifiedDashboardLayout({
   // We no longer need this variable as we've simplified the logic below
 
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+    <div className="h-screen flex flex-col bg-background dark:bg-background">
       {/* Mobile sidebar with backdrop */}
       {!hideSidebar && (
         <div 
@@ -98,7 +98,7 @@ export function UnifiedDashboardLayout({
           {/* Main content */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide relative">
             {/* Content area - improved mobile responsiveness */}
-            <div className="h-full bg-white/5 dark:bg-gray-900/5">
+            <div className="h-full">
               <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-6">
                 {showMap && mapComponent ? (
                   <div className="h-full">

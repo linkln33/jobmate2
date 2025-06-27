@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { marketplaceListings } from "@/data/marketplace-listings";
+import { marketplaceService, MarketplaceListing as ServiceListing } from "@/services/marketplaceService";
 import { MarketplaceListing } from "@/types/marketplace";
 import { MarketplaceListingCard } from "@/components/marketplace/marketplace-listing-card";
 
@@ -10,6 +10,24 @@ interface ListingSimilarProps {
   currentListingId: string;
   currentListingType: string;
   maxItems?: number;
+}
+
+// Helper function to map service listing type to MarketplaceListingCardProps type
+function mapListingType(type: string): 'job' | 'service' | 'item' | 'rental' | undefined {
+  switch (type) {
+    case 'service':
+      return 'service';
+    case 'job':
+      return 'job';
+    case 'item':
+    case 'product': // Handle 'product' type from service
+      return 'item';
+    case 'rental':
+    case 'equipment': // Handle 'equipment' type from service
+      return 'rental';
+    default:
+      return undefined;
+  }
 }
 
 export function ListingSimilar({
@@ -22,14 +40,24 @@ export function ListingSimilar({
   
   useEffect(() => {
     // Find similar listings based on type, excluding the current listing
-    const similar = marketplaceListings
-      .filter(listing => 
-        listing.id !== currentListingId && 
-        listing.type === currentListingType
-      )
-      .slice(0, maxItems);
+    const fetchSimilarListings = async () => {
+      try {
+        const allListings = await marketplaceService.getAllListings();
+        const similar = allListings
+          .filter(listing => 
+            listing.id !== currentListingId && 
+            listing.type === currentListingType
+          )
+          .slice(0, maxItems);
+        
+        setSimilarListings(similar as unknown as MarketplaceListing[]);
+      } catch (error) {
+        console.error('Error fetching similar listings:', error);
+        setSimilarListings([]);
+      }
+    };
     
-    setSimilarListings(similar);
+    fetchSimilarListings();
   }, [currentListingId, currentListingType, maxItems]);
   
   const handleListingClick = (id: string) => {
@@ -51,14 +79,14 @@ export function ListingSimilar({
             id={listing.id}
             title={listing.title}
             description={listing.description}
-            price={String(listing.price)}
-            priceUnit={listing.priceUnit}
-            imageUrl={listing.imageUrl}
+            price={String(listing.pricing?.price || '0')}
+            priceUnit={listing.pricing?.unit}
+            imageUrl={listing.media && listing.media.length > 0 ? listing.media[0].url : '/placeholder-image.jpg'}
             tags={listing.tags || []}
-            type={listing.type}
+            type={mapListingType(listing.type)}
             user={{
-              name: listing.seller?.name || 'Unknown Seller',
-              avatar: listing.seller?.avatar
+              name: listing.contactInfo?.email || 'Unknown Seller',
+              avatar: '/images/avatars/avatar-1.png'
             }}
             onClick={() => handleListingClick(listing.id)}
           />

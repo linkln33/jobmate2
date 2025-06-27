@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { marketplaceListings } from "@/data/marketplace-listings";
+import { marketplaceService, MarketplaceListing as ServiceListing } from "@/services/marketplaceService";
 import { UnifiedDashboardLayout } from "@/components/layout/unified-dashboard-layout";
 import { MarketplaceListingDetail } from "@/components/marketplace/listing-detail/marketplace-listing-detail";
 import { MarketplaceListing } from "@/types/marketplace";
@@ -13,12 +13,20 @@ export default function MarketplaceListingPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, this would be an API call
-    const listingId = params.id as string;
-    const foundListing = marketplaceListings.find((item) => item.id === listingId);
+    const fetchListing = async () => {
+      try {
+        const listingId = params.id as string;
+        const foundListing = await marketplaceService.getListingById(listingId);
+        setListing(foundListing as unknown as MarketplaceListing || null);
+      } catch (error) {
+        console.error('Error fetching listing:', error);
+        setListing(null);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    setListing(foundListing || null);
-    setLoading(false);
+    fetchListing();
   }, [params.id]);
 
   if (loading) {

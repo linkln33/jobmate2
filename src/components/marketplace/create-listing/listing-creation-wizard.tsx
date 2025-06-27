@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { useToast } from "@/components/ui/use-toast";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -11,13 +12,14 @@ import {
   AlertCircle,
   Save
 } from "lucide-react";
+import { marketplaceService } from "@/services/marketplaceService";
+import { profileService } from '@/services/profileService';
 import { ListingTypeStep } from "@/components/marketplace/create-listing/steps/listing-type-step";
 import { ListingDetailsStep } from "@/components/marketplace/create-listing/steps/listing-details-step";
 import { ListingPricingStep } from "@/components/marketplace/create-listing/steps/listing-pricing-step";
 import { ListingLocationStep } from "@/components/marketplace/create-listing/steps/listing-location-step";
 import { ListingMediaStep } from "@/components/marketplace/create-listing/steps/listing-media-step";
 import { ListingPreviewStep } from "@/components/marketplace/create-listing/steps/listing-preview-step";
-import { useToast } from "@/components/ui/use-toast";
 import { MarketplaceListing } from "@/types/marketplace";
 
 const STEPS = [
@@ -152,25 +154,87 @@ export function ListingCreationWizard() {
     }
   };
 
+  // State to store user profile data
+  const [userData, setUserData] = useState<any>(null);
+  
+  // Fetch user profile data on component mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const profile = await profileService.profileService.getCurrentUserProfile();
+        setUserData(profile);
+      } catch (error) {
+        console.error('Error fetching user profile:', error);
+      }
+    };
+    
+    fetchUserData();
+  }, []);
+
   // Handle submit
   const handleSubmit = async () => {
     if (validateCurrentStep()) {
       setIsSubmitting(true);
       
       try {
-        // In a real app, this would be an API call to create the listing
-        // For demo purposes, we'll just simulate a successful creation
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Ensure we have user data
+        if (!userData) {
+          throw new Error('User profile data not available');
+        }
+        
+        // Prepare listing data for submission
+        const submissionData = {
+          title: listingData.title || '',
+          description: listingData.description || '',
+          type: listingData.type as any || 'service',
+          category: listingData.category || '',
+          subcategory: listingData.subcategory,
+          tags: listingData.tags || [],
+          pricing: {
+            price: parseFloat(listingData.price) || 0,
+            currency: listingData.currency || 'USD',
+            unit: listingData.priceUnit as any || 'hour',
+            negotiable: listingData.negotiable || false,
+          },
+          location: {
+            address: listingData.address || '',
+            city: listingData.city || '',
+            state: listingData.state || '',
+            zipCode: listingData.zipCode || '',
+            country: listingData.country || '',
+            latitude: listingData.latitude,
+            longitude: listingData.longitude,
+          },
+          media: (listingData.images || []).map((image: string, index: number) => ({
+            id: `image-${index}`,
+            url: image,
+            type: 'image' as const,
+            isPrimary: index === 0,
+          })),
+          features: listingData.features || [],
+          contactInfo: {
+            phone: userData.phone,
+            email: userData.email,
+          },
+          userId: userData.id,
+        };
+        
+        // Save listing to marketplace service
+        const createdListing = await marketplaceService.createListing(
+          submissionData as any,
+          userData.id
+        );
         
         toast({
           title: "Listing Created",
-          description: "Your listing has been created successfully and is pending review.",
+          description: "Your listing has been created successfully and is now visible in the marketplace.",
           duration: 5000,
         });
         
         // Redirect to marketplace
         router.push("/marketplace");
       } catch (error) {
+        console.error('Error creating listing:', error);
         toast({
           title: "Error",
           description: "There was an error creating your listing. Please try again.",

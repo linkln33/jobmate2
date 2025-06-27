@@ -71,12 +71,12 @@ export function MarketplaceSearch({
     <div className={`w-full ${className}`}>
       <form onSubmit={handleSearch} className="relative flex items-center">
         <div className="relative flex-1" ref={dropdownRef}>
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input 
             ref={inputRef}
             type="text"
-            placeholder="Search listings or select a category..."
-            className="pl-10 pr-10 h-12 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+            placeholder="Search listings..."
+            className="pl-10 pr-10 h-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={handleFocus}

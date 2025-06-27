@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import * as profileService from '@/services/profileService';
+import { profileService } from '@/services/profileService';
 
 // Define types
 export type UserRole = 'freelancer' | 'employer' | 'both';

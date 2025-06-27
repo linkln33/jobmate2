@@ -20,6 +20,7 @@ import { ProfileSkeleton } from "../skeletons/profile-skeleton";
 import { getInitials } from '@/lib/utils';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
 import { UnifiedReviewsCard } from '@/components/profile/unified-reviews-card-new';
+import { EditableProfileImages } from '@/components/profile/EditableProfileImages';
 // Creating a simple SectionHeader component inline instead of importing it
 
 // Simple SectionHeader component to replace the missing import
@@ -89,7 +90,7 @@ import { useToast } from '@/components/ui/use-toast';
 // UserRole is now defined directly in this file
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import * as profileService from '@/services/profileService';
+import { profileService } from '@/services/profileService';
 // Define ProfileData type directly since @/types/profile doesn't exist
 type UserRole = 'freelancer' | 'employer' | 'both';
 
@@ -277,8 +278,7 @@ export function UnifiedProfilePage() {
           <EditableProfileImages
             avatarUrl={profileData.avatar || ''}
             coverImageUrl={profileData.coverImage || ''}
-            firstName={profileData.firstName}
-            lastName={profileData.lastName}
+            name={profileData.name}
             onAvatarChange={(file) => {
               setIsUploading(true);
               try {
@@ -447,7 +447,8 @@ profileService.uploadCoverImage(file)
             <TabsContent value="profile" className="space-y-6 mt-6">
               <Card>
                 <CardContent className="pt-6">
-                  <EditableAbout
+                  {/* EditableAbout component commented out 
+                    <EditableAbout
                     bio={profileData.bio}
                     jobTitle={profileData.jobTitle}
                     hourlyRate={profileData.hourlyRate}
@@ -459,7 +460,7 @@ profileService.uploadCoverImage(file)
                     }}
                     isEditing={editingSections.about}
                     onEditClick={() => toggleSectionEditing('about')}
-                  />
+                    /> */}
                   {editingSections.about && (
                     <div className="mt-4 flex justify-end space-x-2">
                       <Button 
@@ -481,7 +482,7 @@ profileService.uploadCoverImage(file)
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Card>
                   <CardContent className="pt-6">
-                    <EditableExpertise
+                    {/* <EditableExpertise
                       skills={profileData.skills}
                       categories={profileData.categories}
                       expertise={profileData.expertise}
@@ -514,7 +515,7 @@ profileService.uploadCoverImage(file)
                 
                 <Card>
                   <CardContent className="pt-6">
-                    <EditableCertifications
+                    {/* <EditableCertifications
                       certifications={profileData.certifications as Certification[]}
                       onChange={(certifications) => {
                         saveProfile({
@@ -546,7 +547,7 @@ profileService.uploadCoverImage(file)
                 
                 <Card>
                   <CardContent className="pt-6">
-                    <EditableExperience
+                    {/* <EditableExperience
                       experience={profileData.experience}
                       onChange={(experience) => {
                         saveProfile({
@@ -577,7 +578,7 @@ profileService.uploadCoverImage(file)
                 
                 <Card>
                   <CardContent className="pt-6">
-                    <EditableContactInfo
+                    {/* <EditableContactInfo
                       email={profileData.email}
                       phone={profileData.phone}
                       location={profileData.location}
@@ -673,7 +674,7 @@ profileService.uploadCoverImage(file)
                   />
                 </CardHeader>
                 <CardContent>
-                  <JobsTab />
+                  {/* <JobsTab /> */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -685,7 +686,7 @@ profileService.uploadCoverImage(file)
                   <h2 className="text-2xl font-bold">Marketplace</h2>
                 </CardHeader>
                 <CardContent>
-                  <UserMarketplace userId={profileData.id} isOwnProfile={true} />
+                  {/* <UserMarketplace userId={profileData.id} isOwnProfile={true} /> */}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -716,7 +717,7 @@ profileService.uploadCoverImage(file)
             
             {/* Social Media Tab */}
             <TabsContent value="social" className="space-y-6 mt-6">
-              <SocialMediaTab />
+              {/* <SocialMediaTab /> */}
             </TabsContent>
             
             {/* Settings Tab */}

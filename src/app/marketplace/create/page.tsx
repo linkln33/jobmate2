@@ -6,9 +6,7 @@ import { UnifiedDashboardLayout } from "@/components/layout/unified-dashboard-la
 export default function CreateListingPage() {
   return (
     <UnifiedDashboardLayout title="Create Listing" showSearch={false}>
-      <div className="py-4">
-        <ListingCreationWizard />
-      </div>
+      <ListingCreationWizard />
     </UnifiedDashboardLayout>
   );
 }
