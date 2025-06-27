@@ -73,17 +73,19 @@ export function StickyNavbar({ className = '', hideDashboardButton = false }: St
         }}
       >
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          {/* Logo with AI Badge */}
-          <Link href="/" className="flex items-center">
-            <div className="flex items-center">
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
-                JobMate
-              </span>
-              <span className="ml-1 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-md font-medium">
-                AI
-              </span>
-            </div>
-          </Link>
+          {/* Logo with AI Badge - only for unauthenticated users */}
+          {!isAuthenticated && (
+            <Link href="/" className="flex items-center">
+              <div className="flex items-center">
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 text-transparent bg-clip-text">
+                  JobMate
+                </span>
+                <span className="ml-1 text-xs bg-blue-500 text-white px-1.5 py-0.5 rounded-md font-medium">
+                  AI
+                </span>
+              </div>
+            </Link>
+          )}
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">

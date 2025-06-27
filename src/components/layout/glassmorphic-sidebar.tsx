@@ -61,24 +61,16 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar({
   const { user, logout, isAuthenticated } = useAuth();
   const { sidebarCollapsed, setSidebarCollapsed } = useLayout();
   
-  // Track navigation state to show loading indicators
-  const [isNavigating, setIsNavigating] = useState(false);
-  const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
-  
-  // Create an optimized navigation handler function
+  // Create an optimized navigation handler function without state tracking
   const createNavigationHandler = useCallback((itemHref: string) => {
     return (e: React.MouseEvent) => {
       // Only handle navigation if not already on the page
       if (itemHref !== pathname) {
-        e.preventDefault();
-        setIsNavigating(true);
-        setNavigatingTo(itemHref);
-        
-        // Navigate immediately without artificial delay
-        router.push(itemHref);
+        // Use native navigation for better performance
+        // No state tracking needed
       }
     };
-  }, [pathname, router, setIsNavigating, setNavigatingTo]);
+  }, [pathname]);
   
   // Prefetch all navigation routes on component mount
   useEffect(() => {
@@ -260,8 +252,15 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar({
       {/* Logo and collapse/close button */}
       <div className="flex items-center justify-between p-4 h-16 border-b border-white/10 dark:border-gray-800/20">
         <Link href={isAuthenticated ? "/dashboard" : "/"} className="flex items-center space-x-2">
-          {(!sidebarCollapsed || isMobile) && <span className="text-2xl font-bold text-brand-500">JobMate</span>}
-          {sidebarCollapsed && !isMobile && <span className="text-2xl font-bold text-brand-500">JM</span>}
+          {(!sidebarCollapsed || isMobile) && (
+            <div className="flex items-center">
+              <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">JobMate</span>
+              <span className="ml-1 text-sm bg-blue-500 text-white px-2 py-1 rounded-md font-medium">
+                AI
+              </span>
+            </div>
+          )}
+          {sidebarCollapsed && !isMobile && <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">JM</span>}
         </Link>
         {isMobile ? (
           <Button 
@@ -328,53 +327,42 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar({
             const handleNavigation = createNavigationHandler(item.href);
             
             return (
-              <TooltipProvider key={item.href}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Link
-                      href={item.href}
-                      onClick={handleNavigation}
-                      className={cn(
-                        "flex items-center px-3 py-2 rounded-lg transition-colors group relative",
-                        isActive 
-                          ? "bg-white/20 dark:bg-gray-800/40 text-brand-600 dark:text-brand-400" 
-                          : "text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-800/20",
-                        isNavigating && navigatingTo === item.href && "animate-pulse"
-                      )}
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={handleNavigation}
+                className={cn(
+                  "flex items-center px-3 py-2 rounded-lg transition-colors group relative",
+                  isActive 
+                    ? "bg-white/20 dark:bg-gray-800/40 text-brand-600 dark:text-brand-400" 
+                    : "text-gray-700 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-gray-800/20"
+                )}
+              >
+                <div className="flex items-center">
+                  <span className="flex-shrink-0 relative">
+                    {item.icon}
+                  </span>
+                  
+                  {!sidebarCollapsed && (
+                    <span className="ml-3 flex-1 truncate">{item.label}</span>
+                  )}
+                  
+                  {!sidebarCollapsed && item.badge && (
+                    <Badge variant="secondary" className="ml-auto">
+                      {item.badge}
+                    </Badge>
+                  )}
+                  
+                  {sidebarCollapsed && item.badge && (
+                    <Badge 
+                      variant="secondary" 
+                      className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center"
                     >
-                      <div className="flex items-center">
-                        <span className="flex-shrink-0 relative">
-                          {item.icon}
-                        </span>
-                        
-                        {!sidebarCollapsed && (
-                          <span className="ml-3 flex-1 truncate">{item.label}</span>
-                        )}
-                        
-                        {!sidebarCollapsed && item.badge && (
-                          <Badge variant="secondary" className="ml-auto">
-                            {item.badge}
-                          </Badge>
-                        )}
-                        
-                        {sidebarCollapsed && item.badge && (
-                          <Badge 
-                            variant="secondary" 
-                            className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center"
-                          >
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </div>
-                    </Link>
-                  </TooltipTrigger>
-                  <TooltipContent side="right" className="z-[1000]">
-                    <div>
-                      <p>{item.label}</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                      {item.badge}
+                    </Badge>
+                  )}
+                </div>
+              </Link>
             );
           })}
         </nav>

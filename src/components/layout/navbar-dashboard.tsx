@@ -88,10 +88,9 @@ export function NavBarDashboard({
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* JobMate Logo */}
+        {/* Empty space where logo was */}
         <div className="flex items-center">
-          <span className="text-2xl font-bold text-blue-600">JobMate</span>
-          <span className="ml-1 bg-blue-600 text-white text-sm font-bold px-2 py-0.5 rounded-md">AI</span>
+          {/* Logo removed as requested */}
         </div>
       </div>
       

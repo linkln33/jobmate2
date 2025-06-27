@@ -4,7 +4,7 @@ import { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { Navbar } from './navbar';
 import { Footer } from './footer';
-import { Sidebar } from './sidebar';
+import { GlassmorphicSidebar } from './glassmorphic-sidebar';
 import { BottomTabs } from './bottom-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLayout } from '@/contexts/LayoutContext';
@@ -24,7 +24,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   return (
     <div className="flex min-h-screen">
       {/* Desktop sidebar - only visible after login */}
-      {isAuthenticated && <Sidebar />}
+      {isAuthenticated && <GlassmorphicSidebar />}
       
       {/* Main content wrapper - takes all remaining space */}
       <div className="flex-1 flex flex-col min-h-screen transition-all duration-300">
