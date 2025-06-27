@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UnifiedProfilePage } from '@/components/pages/unified-profile-page-new';
+import { UnifiedProfilePage } from '@/components/pages/unified-profile-page';
 import { Spinner } from '@/components/ui/spinner';
 import { ProfileProvider } from '@/context/ProfileContext';
 
