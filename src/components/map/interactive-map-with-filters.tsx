@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { GoogleMap, LoadScript, OverlayView, useLoadScript } from '@react-google-maps/api';
 import { Job } from '@/types/job';
 import { MapSearchBar } from './map-search-bar';
 import { MapFilterChips } from './map-filter-chips';
 import { MapActionButtons } from './map-action-buttons';
 import { ActivityAnimationOverlay } from './activity-animation-overlay';
+import { CompatibilityBadge } from '@/components/ui/compatibility-badge';
 import styles from './map-animations.module.css';
 
 // Mock job data with diverse locations and job types
@@ -375,6 +376,7 @@ export function InteractiveMapWithFilters({
   const PulsingMarker = ({ job, onClick }: { job: Job, onClick: () => void }) => {
     const isSelected = selectedJob && selectedJob.id === job.id;
     const color = getMarkerColor(job);
+    const hasCompatibilityScore = job.compatibilityScore !== undefined;
     
     return (
       <OverlayView
@@ -401,6 +403,17 @@ export function InteractiveMapWithFilters({
             className={styles['pulse-ring']} 
             style={{ borderColor: color }} 
           />
+          
+          {/* Compatibility Score Badge */}
+          {hasCompatibilityScore && (
+            <div className="absolute -top-8 -right-8">
+              <CompatibilityBadge 
+                score={job.compatibilityScore!} 
+                size="sm" 
+                primaryReason={job.compatibilityReason || ''}
+              />
+            </div>
+          )}
         </div>
       </OverlayView>
     );

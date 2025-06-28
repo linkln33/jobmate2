@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { GlassmorphicSidebar } from './glassmorphic-sidebar';
 import { NavBarDashboard } from './navbar-dashboard';
 import { StickyNavbar } from '@/components/ui/sticky-navbar';
-import { FloatingAssistant } from '@/components/assistant/FloatingAssistant';
+// AI Assistant is provided by ClientLayout
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 // Removed Sheet import
@@ -110,8 +110,7 @@ export function UnifiedDashboardLayout({
               </div>
             </div>
 
-            {/* AI Assistant */}
-            <FloatingAssistant />
+            {/* AI Assistant is provided by ClientLayout */}
           </main>
         </div>
       </div>

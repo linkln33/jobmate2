@@ -1,5 +1,5 @@
 // Add Jest setup code
-import '@testing-library/jest-dom';
+require('@testing-library/jest-dom');
 
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
@@ -18,9 +18,13 @@ jest.mock('next/navigation', () => ({
 // Mock next/image
 jest.mock('next/image', () => ({
   __esModule: true,
-  default: (props) => {
-    // eslint-disable-next-line @next/next/no-img-element
-    return <img {...props} alt={props.alt || ''} />;
+  default: function Image(props) {
+    // Return a simple mock object instead of JSX
+    return {
+      type: 'img',
+      props: { ...props, alt: props.alt || '' },
+      $$typeof: Symbol.for('react.element'),
+    };
   },
 }));
 

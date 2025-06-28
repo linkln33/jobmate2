@@ -30,12 +30,14 @@ import {
   AlertCircle,
   Users,
   TrendingUp,
-  Award
+  Award,
+  Sparkles
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { InteractiveMapWithFilters } from '@/components/map/interactive-map-with-filters';
 import { Job } from '@/types/job';
+import { CompatibilityRecommendations } from '@/components/dashboard/compatibility-recommendations';
 
 // Memoized components for better performance
 const MemoizedJobsList = memo(({ jobs }: { jobs: any[] }) => {
@@ -208,7 +210,7 @@ export function UnifiedDashboardPage() {
                     {verificationLevel <= 0 ? 'Start the verification process to unlock more features.' : 
                      `You've completed ${verificationLevel.toString()} of 3 verification steps.`}
                   </p>
-                  <Progress value={verificationProgress} className="h-1.5 mt-2 bg-orange-200/50" indicatorClassName="bg-orange-500" />
+                  <Progress value={verificationProgress} className="h-1.5 mt-2 bg-orange-200/50" />
                 </div>
                 <div className="flex items-center space-x-2">
                   <Button size="sm" variant="default" className="bg-orange-600 hover:bg-orange-700 text-white">
@@ -277,6 +279,24 @@ export function UnifiedDashboardPage() {
                   <span className="text-sm text-gray-500 dark:text-gray-400">Nearby Services</span>
                 </div>
               </div>
+            </GlassCardContent>
+          </GlassCard>
+
+          {/* Compatibility Recommendations */}
+          <GlassCard className="col-span-full">
+            <GlassCardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <GlassCardTitle className="flex items-center">
+                  <Sparkles className="h-5 w-5 mr-2 text-blue-500" />
+                  Compatibility Recommendations
+                </GlassCardTitle>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs">
+                View All <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </GlassCardHeader>
+            <GlassCardContent>
+              {user && <CompatibilityRecommendations userId={user.id} />}
             </GlassCardContent>
           </GlassCard>
 

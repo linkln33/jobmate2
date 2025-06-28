@@ -3,37 +3,58 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { marketplaceService, MarketplaceListing as ServiceListing } from '@/services/marketplaceService';
+import { useUserPreferences } from '@/hooks/use-user-preferences';
+import { useCompatibilityScores } from '@/hooks/use-compatibility-scores';
+import { CompatibilityEngine } from '@/services/compatibility/engine';
+import { compatibilityEngine } from '@/services/compatibility/engine';
+import { MainCategory, WeightPreferences } from '@/types/compatibility';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { MarketplaceHeader } from '@/components/marketplace/marketplace-header';
 import { MarketplaceSearch } from '@/components/marketplace/marketplace-search';
+// Remove the categories import as it's not needed or use the correct path
+// import { MarketplaceCategories } from '@/components/marketplace/marketplace-categories';
 import { MarketplaceTabs, MarketplaceTabType } from '@/components/marketplace/marketplace-tabs';
 import { MarketplaceGrid } from '@/components/marketplace/marketplace-grid';
 import { MarketplaceFilters } from '@/components/marketplace/marketplace-filters';
 import { Button } from '@/components/ui/button';
-import { Grid, Map, Plus } from 'lucide-react';
-import { MarketplaceListingCardProps } from '@/components/marketplace/marketplace-listing-card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { MarketplaceListingCard, MarketplaceListingCardProps } from '@/components/marketplace/marketplace-listing-card';
+import { Grid, Map, Plus, Sliders, SortAsc } from 'lucide-react';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { WeightPreferencesPanel } from '@/components/compatibility/weight-preferences-panel';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper function to convert ServiceListing to MarketplaceListingCardProps
-function convertToCardProps(listings: ServiceListing[]): MarketplaceListingCardProps[] {
-  return listings.map(listing => ({
-    id: listing.id,
-    title: listing.title,
-    description: listing.description,
-    price: listing.pricing.price.toString(),
-    priceUnit: listing.pricing.unit,
-    imageUrl: listing.media.length > 0 ? listing.media[0].url : '/placeholder-image.jpg',
-    tags: listing.tags || [],
-    type: mapListingType(listing.type),
-    isFeatured: false,
-    isVerified: true,
-    isVip: false,
-    user: {
-      name: listing.contactInfo?.email || 'Listing Owner',
-      avatar: '/images/avatars/avatar-1.png'
-    },
-    location: `${listing.location.city}, ${listing.location.state}`
-  }));
+function convertToCardProps(
+  listings: (ServiceListing & { 
+    compatibilityScore?: number;
+    compatibilityReason?: string;
+  })[] 
+): MarketplaceListingCardProps[] {
+  return listings.map(listing => {
+    return {
+      id: listing.id,
+      title: listing.title,
+      description: listing.description,
+      price: listing.pricing?.price?.toString() || '0',
+      priceUnit: listing.pricing?.unit || 'hr',
+      imageUrl: listing.media?.[0]?.url || '/placeholder-image.jpg',
+      tags: listing.tags || [],
+      type: mapListingType(listing.type) || 'item',
+      isFeatured: false,
+      isVerified: true,
+      isVip: false,
+      user: {
+        name: listing.contactInfo?.email || 'Listing Owner',
+        avatar: '/images/avatars/avatar-1.png'
+      },
+      compatibilityScore: listing.compatibilityScore,
+      compatibilityReason: listing.compatibilityReason,
+      onClick: () => {}
+    };
+  });
 }
 
 // Helper function to map MarketplaceTabType to listing type
@@ -71,12 +92,18 @@ function mapListingType(type: string): 'job' | 'service' | 'item' | 'rental' | u
 
 export default function MarketplacePage() {
   const router = useRouter();
-  const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<MarketplaceTabType>('all');
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [listings, setListings] = useState<ServiceListing[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [sortByCompatibility, setSortByCompatibility] = useState(false);
+  const [showWeightPreferences, setShowWeightPreferences] = useState(false);
+  const { preferences: userPreferences, isLoading: preferencesLoading, updatePreferences } = useUserPreferences();
   
+  // Initialize compatibility engine
+  const compatibilityEngine = new CompatibilityEngine();
+
   // Fetch listings from the marketplace service
   useEffect(() => {
     const fetchListings = async () => {
@@ -152,10 +179,33 @@ export default function MarketplacePage() {
     });
   }, [listings, activeTab, selectedCategories, searchQuery]);
   
-  // Convert to card props
+  // Use our compatibility hook to calculate scores for listings
+  const { scoredListings, isCalculating } = useCompatibilityScores(filteredListings, userPreferences);
+  
+  // Convert to card props with compatibility scores
   const listingCards = useMemo(() => {
-    return convertToCardProps(filteredListings);
-  }, [filteredListings]);
+    // Convert the scored listings to card props
+    const cards = convertToCardProps(scoredListings);
+    
+    // Sort by compatibility score if enabled
+    if (sortByCompatibility) {
+      return [...cards].sort((a, b) => {
+        // Put listings with compatibility scores at the top
+        if (a.compatibilityScore !== undefined && b.compatibilityScore === undefined) {
+          return -1;
+        }
+        if (a.compatibilityScore === undefined && b.compatibilityScore !== undefined) {
+          return 1;
+        }
+        if (a.compatibilityScore !== undefined && b.compatibilityScore !== undefined) {
+          return b.compatibilityScore - a.compatibilityScore;
+        }
+        return 0;
+      });
+    }
+    
+    return cards;
+  }, [scoredListings, sortByCompatibility]);
   
   // Handle tab change
   const handleTabChange = useCallback((tab: MarketplaceTabType) => {
@@ -168,6 +218,22 @@ export default function MarketplacePage() {
     router.push('/marketplace/map');
   }, [router]);
   
+  // Handle weight preferences update
+  const handleWeightPreferencesUpdate = useCallback((weights: WeightPreferences) => {
+    if (userPreferences) {
+      updatePreferences({
+        ...userPreferences,
+        weightPreferences: weights
+      });
+    }
+    setShowWeightPreferences(false);
+  }, [userPreferences, updatePreferences]);
+  
+  // Toggle compatibility sorting
+  const toggleCompatibilitySort = useCallback(() => {
+    setSortByCompatibility(prev => !prev);
+  }, []);
+  
   return (
     <UnifiedDashboardLayout title="Marketplace" showSearch={false}>
       <div className="flex flex-col space-y-6">
@@ -177,6 +243,44 @@ export default function MarketplacePage() {
             <div className="flex-1">
               <MarketplaceSearch onSearch={handleSearch} />
             </div>
+            
+            {/* Compatibility controls - only show if user preferences are loaded */}
+            {!preferencesLoading && userPreferences && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center space-x-2">
+                  <Switch 
+                    id="sort-compatibility" 
+                    checked={sortByCompatibility}
+                    onCheckedChange={toggleCompatibilitySort}
+                    disabled={isCalculating}
+                  />
+                  <Label htmlFor="sort-compatibility" className="text-sm whitespace-nowrap flex items-center gap-2">
+                    Sort by compatibility
+                    {isCalculating && (
+                      <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></span>
+                    )}
+                  </Label>
+                </div>
+                
+                <Dialog open={showWeightPreferences} onOpenChange={setShowWeightPreferences}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="flex items-center gap-1">
+                      <Sliders className="h-4 w-4" />
+                      <span className="hidden sm:inline">Adjust weights</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    {userPreferences?.weightPreferences && (
+                      <WeightPreferencesPanel
+                        initialWeights={userPreferences.weightPreferences}
+                        onSave={handleWeightPreferencesUpdate}
+                        onCancel={() => setShowWeightPreferences(false)}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
             
             <div className="shrink-0">
               <MarketplaceFilters 

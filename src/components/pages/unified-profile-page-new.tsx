@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ListingCreationWizard } from '@/components/marketplace/create-listing/listing-creation-wizard';
 import { SectionHeader } from '@/components/ui/section-header';
+import { CompatibilityPreferencesForm } from '@/components/compatibility/compatibility-preferences-form';
 // Calendar component import removed
 // Define interfaces for component props to help TypeScript
 // These interfaces define the expected props for components without proper type declarations
@@ -1221,6 +1222,22 @@ export default function UnifiedProfilePageNew() {
                     </div>
                   </CardContent>
                 </Card>
+                
+                {/* Compatibility Preferences Card */}
+                <CompatibilityPreferencesForm
+                  userPreferences={profileData?.userPreferences}
+                  onSave={(preferences) => {
+                    // Save the preferences to the profile
+                    saveProfile({
+                      ...profileData,
+                      userPreferences: preferences
+                    });
+                    toast({
+                      title: "Preferences Updated",
+                      description: "Your compatibility preferences have been saved."
+                    });
+                  }}
+                />
                 
                 <Card>
                   <CardHeader>

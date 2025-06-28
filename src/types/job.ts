@@ -14,4 +14,6 @@ export interface Job {
   category?: string; // Category ID
   subcategory?: string; // Subcategory ID
   icon?: string; // Custom icon for the job
+  compatibilityScore?: number; // Compatibility score between 0 and 1
+  compatibilityReason?: string; // Reason for the compatibility score
 }

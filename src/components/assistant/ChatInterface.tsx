@@ -28,7 +28,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onInsertContent }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Scroll to bottom of messages when new messages are added
   useEffect(() => {
@@ -85,18 +85,20 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onInsertContent }) => {
       // Get the full response
       const fullResponse = getSimulatedResponse(userInput, state.currentMode);
       
-      // Simulate streaming by adding one character at a time
+      // Simulate streaming but faster for better user experience
       let charIndex = 0;
+      const chunkSize = 5; // Process more characters at once for faster response
       const streamInterval = setInterval(() => {
         if (charIndex < fullResponse.length) {
+          const nextIndex = Math.min(charIndex + chunkSize, fullResponse.length);
           setMessages(prev => 
             prev.map(msg => 
               msg.id === messageId 
-                ? { ...msg, content: fullResponse.substring(0, charIndex + 1) }
+                ? { ...msg, content: fullResponse.substring(0, nextIndex) }
                 : msg
             )
           );
-          charIndex++;
+          charIndex = nextIndex;
         } else {
           // Streaming complete
           clearInterval(streamInterval);
@@ -115,7 +117,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onInsertContent }) => {
             response_length: fullResponse.length 
           });
         }
-      }, 15); // Adjust speed as needed
+      }, 10); // Faster speed
     } catch (error) {
       console.error("Error sending message:", error);
       setIsLoading(false);
@@ -230,132 +232,92 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onInsertContent }) => {
   return (
     <div className="flex flex-col h-full">
       {/* Messages container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-3 space-y-3">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-gray-400 my-8">
-            <Bot className="mx-auto h-12 w-12 mb-2 opacity-50" />
-            <p>Ask me anything about JobMate!</p>
+          <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+            <p>No messages yet. Start a conversation!</p>
           </div>
         ) : (
           messages.map((message) => (
-            <motion.div
+            <div
               key={message.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${
-                message.role === "user" ? "justify-end" : "justify-start"
-              }`}
+              className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
             >
               <div
-                className={`max-w-[80%] rounded-lg p-3 ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted"
-                }`}
+                className={`max-w-[85%] rounded-2xl p-3 ${message.role === "user" ? "bg-blue-500 text-white" : "bg-gray-100 dark:bg-gray-800"}`}
               >
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center space-x-2 mb-1">
                   {message.role === "user" ? (
-                    <User className="h-4 w-4" />
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium">You</span>
+                    </div>
                   ) : (
-                    <Bot className="h-4 w-4" />
+                    <div className="flex items-center">
+                      <span className="text-xs font-medium">Assistant</span>
+                    </div>
                   )}
                   <span className="text-xs opacity-70">
-                    {message.role === "user" ? "You" : "Assistant"}
-                  </span>
-                </div>
-                <p className="whitespace-pre-wrap">
-  {message.isStreaming ? (
-    <>
-      {message.content}
-      <span className="inline-block w-1 h-4 ml-1 bg-current animate-pulse"></span>
-    </>
-  ) : (
-    message.content
-  )}
-</p>
-                <div className="flex justify-end gap-1 mt-1">
-                  {message.role === "assistant" && (
-                    <>
-                      <button
-                        onClick={() => copyToClipboard(message.content)}
-                        className="text-xs opacity-70 hover:opacity-100"
-                        title="Copy to clipboard"
-                      >
-                        <Copy className="h-3 w-3" />
-                      </button>
-                      {onInsertContent && (
-                        <button
-                          onClick={() => handleInsert(message.content)}
-                          className="text-xs opacity-70 hover:opacity-100"
-                          title="Insert into form"
-                        >
-                          <ArrowRight className="h-3 w-3" />
-                        </button>
-                      )}
-                    </>
-                  )}
-                  <span className="text-xs opacity-50">
-                    {new Date(message.timestamp).toLocaleTimeString([], {
+                    {message.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
                   </span>
                 </div>
-              </div>
-            </motion.div>
-          ))
-        )}
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex justify-start"
-          >
-            <div className="bg-muted rounded-lg p-4 max-w-[80%]">
-              <div className="flex space-x-2">
-                <div className="w-2 h-2 rounded-full bg-gray-400 animate-bounce" />
-                <div
-                  className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                  style={{ animationDelay: "0.2s" }}
-                />
-                <div
-                  className="w-2 h-2 rounded-full bg-gray-400 animate-bounce"
-                  style={{ animationDelay: "0.4s" }}
-                />
+                <div className="whitespace-pre-wrap text-sm">
+                  {message.content}
+                  {message.isStreaming && (
+                    <span className="inline-block animate-pulse">▌</span>
+                  )}
+                </div>
+                {!message.isStreaming && message.role === "assistant" && (
+                  <div className="flex justify-end mt-1">
+                    <button
+                      onClick={() => onInsertContent?.(message.content)}
+                      className="text-xs text-blue-500 dark:text-blue-400 hover:underline flex items-center"
+                    >
+                      <ArrowRight size={12} className="mr-1" />
+                      Insert
+                    </button>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(message.content)}
+                      className="text-xs text-blue-500 dark:text-blue-400 hover:underline flex items-center ml-2"
+                    >
+                      <Copy size={12} className="mr-1" />
+                      Copy
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-          </motion.div>
+          ))
         )}
         <div ref={messagesEndRef} />
       </div>
 
       {/* Input form */}
-      <form
-        onSubmit={handleSubmit}
-        className="border-t p-4 dark:border-gray-700"
-      >
-        <div className="flex items-end gap-2">
-          <div className="flex-1 relative">
-            <textarea
-              ref={inputRef}
-              value={userInput}
-              onChange={handleTextareaChange}
-              placeholder="Ask me anything..."
-              className="w-full resize-none px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary min-h-[40px] max-h-[120px] dark:bg-gray-800 dark:border-gray-700"
-              rows={1}
-              disabled={isLoading}
-            />
-          </div>
+      <form onSubmit={handleSubmit} className="border-t p-2">
+        <div className="flex items-center bg-gray-50 dark:bg-gray-800 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
+          <input
+            ref={inputRef}
+            value={userInput}
+            onChange={(e) => setUserInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit(e);
+              }
+            }}
+            placeholder="Ask me anything..."
+            className="flex-1 bg-transparent px-4 py-2 focus:outline-none text-sm"
+            disabled={isLoading}
+          />
           <button
             type="submit"
-            className={`p-2 rounded-md ${
-              isLoading
-                ? "bg-gray-300 dark:bg-gray-700 cursor-not-allowed"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
-            }`}
-            disabled={isLoading || !userInput.trim()}
+            disabled={isLoading}
+            className="bg-blue-500 hover:bg-blue-600 text-white p-2 focus:outline-none"
+            aria-label="Send message"
           >
-            <Send className="h-5 w-5" />
+            <Send size={18} />
           </button>
         </div>
       </form>

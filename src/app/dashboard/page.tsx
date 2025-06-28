@@ -19,6 +19,9 @@ const UnifiedDashboardPage = dynamic(
   }
 );
 
+// Import the DashboardProvider
+import { DashboardProvider } from '@/contexts/DashboardContext';
+
 export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -81,7 +84,11 @@ export default function Dashboard() {
 
   // Show dashboard if authenticated
   if (isAuthenticated && user) {
-    return <UnifiedDashboardPage />;
+    return (
+      <DashboardProvider>
+        <UnifiedDashboardPage />
+      </DashboardProvider>
+    );
   }
   
   // This should never be reached as we redirect in the useEffect

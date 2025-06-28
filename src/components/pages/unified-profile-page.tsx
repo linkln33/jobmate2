@@ -21,6 +21,7 @@ import { getInitials } from '@/lib/utils';
 import { ProfileProvider, useProfile } from '@/context/ProfileContext';
 import { UnifiedReviewsCard } from '@/components/profile/unified-reviews-card-new';
 import { EditableProfileImages } from '@/components/profile/EditableProfileImages';
+import { ProfileCompatibilityCard } from '@/components/profile/profile-compatibility-card';
 // Creating a simple SectionHeader component inline instead of importing it
 
 // Simple SectionHeader component to replace the missing import
@@ -479,6 +480,10 @@ profileService.uploadCoverImage(file)
               </Card>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Only show compatibility card when viewing someone else's profile */}
+                {!isEditing && profileData.id !== 'current-user' && (
+                  <ProfileCompatibilityCard userId={profileData.id} className="h-full" />
+                )}
                 <Card>
                   <CardContent className="pt-6">
                     {/* <EditableExpertise

@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useContext, useEffect } from 'react';
-import { DashboardContext } from '@/components/pages/dashboard-page';
+import { DashboardContext, useDashboard } from '@/contexts/DashboardContext';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlusCircle, MessageSquare, Zap, Clock, MapPin, CreditCard } from 'lucide-react';
 import { InteractiveMap } from './interactive-map';
+import { CompatibilityRecommendations } from './compatibility-recommendations';
 import { formatCurrency } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -40,11 +41,9 @@ const mockRecentActivity = [
 ];
 
 export function CustomerDashboard() {
-  const dashboardContext = useContext(DashboardContext);
+  // Use the custom hook instead of directly accessing context
+  const { user, isLoading } = useDashboard();
   const [activeSpecialists, setActiveSpecialists] = useState(mockSpecialists);
-  
-  // Access user data from context
-  const user = dashboardContext?.user;
   
   return (
     <div className="space-y-6">
@@ -94,6 +93,11 @@ export function CustomerDashboard() {
           <InteractiveMap jobs={mockJobs} />
         </CardContent>
       </Card>
+      
+      {/* Compatibility Recommendations */}
+      {user && (
+        <CompatibilityRecommendations userId={user.id} className="mb-6" />
+      )}
       
       {/* Active Specialists */}
       <Card>

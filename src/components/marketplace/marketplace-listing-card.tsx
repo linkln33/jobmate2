@@ -5,6 +5,9 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { CompatibilityBadge } from '@/components/ui/compatibility-badge';
+import { EnhancedCompatibilityBadge } from '@/components/ui/enhanced-compatibility-badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export interface MarketplaceListingCardProps {
   id: string;
@@ -27,6 +30,8 @@ export interface MarketplaceListingCardProps {
     likes?: number;
     comments?: number;
   };
+  compatibilityScore?: number;
+  compatibilityReason?: string;
   className?: string;
   onClick?: () => void;
 }
@@ -45,6 +50,8 @@ export function MarketplaceListingCard({
   isVip = false,
   user,
   stats,
+  compatibilityScore,
+  compatibilityReason,
   className,
   onClick
 }: MarketplaceListingCardProps) {
@@ -130,6 +137,36 @@ export function MarketplaceListingCard({
                 {tag}
               </Badge>
             ))}
+          </div>
+        )}
+        
+        {/* Compatibility Score */}
+        {compatibilityScore !== undefined && (
+          <div className="mb-3">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2">
+                    <EnhancedCompatibilityBadge 
+                      score={compatibilityScore} 
+                      size="md" 
+                      primaryReason={compatibilityReason}
+                    />
+                    {compatibilityReason && (
+                      <span className="text-xs text-gray-600 dark:text-gray-400 line-clamp-1">
+                        {compatibilityReason}
+                      </span>
+                    )}
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs">
+                  <p className="font-medium">Compatibility Score: {Math.round(compatibilityScore * 100)}%</p>
+                  {compatibilityReason && (
+                    <p className="text-sm">{compatibilityReason}</p>
+                  )}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         )}
         

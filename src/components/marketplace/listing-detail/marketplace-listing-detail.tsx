@@ -15,6 +15,8 @@ import { ListingSellerInfo } from "./listing-seller-info";
 import { ListingActions } from "./listing-actions";
 import { ListingReviews } from "./listing-reviews";
 import { ListingSimilar } from "./listing-similar";
+import { ListingCompatibilitySidebar } from "@/components/compatibility/listing-compatibility-sidebar";
+import { Separator } from "@/components/ui/separator";
 
 // Combined interface that works with both UI components and marketplace service data
 interface MarketplaceListingDetailProps {
@@ -144,8 +146,18 @@ export function MarketplaceListingDetail({ listing }: MarketplaceListingDetailPr
           />
         </div>
         
-        {/* Right column - Pricing, Actions, and Seller */}
+        {/* Right column - Compatibility, Pricing, Actions, and Seller */}
         <div className="space-y-8">
+          {/* Compatibility Breakdown */}
+          <ListingCompatibilitySidebar
+            listingId={listing.id}
+            category="marketplace"
+            listingData={listing}
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-md"
+          />
+          
+          <Separator className="my-4" />
+          
           <ListingPricing 
             price={priceAsNumber} 
             pricingType="fixed" 
