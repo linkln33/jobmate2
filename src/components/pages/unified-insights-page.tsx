@@ -3,34 +3,68 @@
 import React, { useState } from 'react';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, LineChart, PieChart, Activity, TrendingUp, Users, DollarSign, Clock } from 'lucide-react';
+import { Activity, TrendingUp, Users, DollarSign, Clock } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ReactECharts from 'echarts-for-react';
+import { MonthlyEarningsChart } from '@/components/charts/monthly-earnings-chart';
+import { JobTypeChart } from '@/components/charts/job-type-chart';
+import { WeeklyJobsChart } from '@/components/charts/weekly-jobs-chart';
+import { PerformanceMetricsChart } from '@/components/charts/performance-metrics-chart';
+import { RevenueForecastChart } from '@/components/charts/revenue-forecast-chart';
 
 // Mock data for charts
 const monthlyEarningsData = [
-  { month: 'Jan', amount: 950 },
-  { month: 'Feb', amount: 1100 },
-  { month: 'Mar', amount: 980 },
-  { month: 'Apr', amount: 1250 },
-  { month: 'May', amount: 1400 },
-  { month: 'Jun', amount: 1240 },
+  { month: 'Jan', earnings: 2400 },
+  { month: 'Feb', earnings: 1800 },
+  { month: 'Mar', earnings: 3200 },
+  { month: 'Apr', earnings: 3800 },
+  { month: 'May', earnings: 4200 },
+  { month: 'Jun', earnings: 4800 },
 ];
 
 const jobTypeData = [
-  { type: 'Plumbing', count: 12 },
-  { type: 'Electrical', count: 8 },
-  { type: 'Cleaning', count: 15 },
-  { type: 'Moving', count: 5 },
+  { type: 'Plumbing', value: 35 },
+  { type: 'Electrical', value: 25 },
+  { type: 'Carpentry', value: 20 },
+  { type: 'Painting', value: 15 },
+  { type: 'Other', value: 5 },
 ];
 
 const weekdayData = [
-  { day: 'Mon', jobs: 4 },
-  { day: 'Tue', jobs: 6 },
-  { day: 'Wed', jobs: 8 },
-  { day: 'Thu', jobs: 5 },
-  { day: 'Fri', jobs: 7 },
-  { day: 'Sat', jobs: 10 },
-  { day: 'Sun', jobs: 3 },
+  { day: 'Mon', jobs: 12 },
+  { day: 'Tue', jobs: 8 },
+  { day: 'Wed', jobs: 15 },
+  { day: 'Thu', jobs: 10 },
+  { day: 'Fri', jobs: 18 },
+  { day: 'Sat', jobs: 22 },
+  { day: 'Sun', jobs: 6 },
+];
+
+const performanceMetricsData = [
+  { month: 'Jan', responseTime: 2.5, completionRate: 92, clientSatisfaction: 4.5 },
+  { month: 'Feb', responseTime: 2.3, completionRate: 93, clientSatisfaction: 4.6 },
+  { month: 'Mar', responseTime: 2.1, completionRate: 95, clientSatisfaction: 4.7 },
+  { month: 'Apr', responseTime: 1.9, completionRate: 96, clientSatisfaction: 4.8 },
+  { month: 'May', responseTime: 1.8, completionRate: 97, clientSatisfaction: 4.8 },
+  { month: 'Jun', responseTime: 1.7, completionRate: 98, clientSatisfaction: 4.9 },
+];
+
+const revenueForecastData = [
+  { month: 'Jan', revenue: 5000, expenses: 2000, profit: 3000 },
+  { month: 'Feb', revenue: 5500, expenses: 2200, profit: 3300 },
+  { month: 'Mar', revenue: 6000, expenses: 2300, profit: 3700 },
+  { month: 'Apr', revenue: 6200, expenses: 2400, profit: 3800 },
+  { month: 'May', revenue: 6800, expenses: 2500, profit: 4300 },
+  { month: 'Jun', revenue: 7500, expenses: 2600, profit: 4900 },
+];
+
+const clientAcquisitionData = [
+  { month: 'Jan', newClients: 8, returningClients: 12 },
+  { month: 'Feb', newClients: 10, returningClients: 15 },
+  { month: 'Mar', newClients: 12, returningClients: 18 },
+  { month: 'Apr', newClients: 15, returningClients: 22 },
+  { month: 'May', newClients: 18, returningClients: 25 },
+  { month: 'Jun', newClients: 22, returningClients: 28 },
 ];
 
 export function UnifiedInsightsPage() {
@@ -132,59 +166,301 @@ export function UnifiedInsightsPage() {
             
             {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <MonthlyEarningsChart data={monthlyEarningsData} projectionMonths={3} />
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium">Monthly Earnings</CardTitle>
+                  <CardTitle>Completed Jobs by Type</CardTitle>
+                  <p className="text-sm text-muted-foreground">Distribution of jobs you've completed throughout your JobMate journey</p>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-80 flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">Bar Chart Placeholder</p>
-                  </div>
+                  <JobTypeChart data={jobTypeData} />
                 </CardContent>
               </Card>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <WeeklyJobsChart data={weekdayData} showProjection={true} />
+              <PerformanceMetricsChart data={performanceMetricsData} title="Performance Trends" />
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="earnings" className="space-y-4">
+            <div className="grid grid-cols-1 gap-4">
+              <RevenueForecastChart data={revenueForecastData} forecastPeriods={3} />
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <MonthlyEarningsChart 
+                data={monthlyEarningsData} 
+                projectionMonths={6} 
+                title="Extended Earnings Forecast" 
+              />
               
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg font-medium">Job Types</CardTitle>
+                  <CardTitle className="text-lg font-medium">Earnings Breakdown</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="h-80 flex items-center justify-center">
-                    <p className="text-gray-500 dark:text-gray-400">Pie Chart Placeholder</p>
+                <CardContent className="space-y-4">
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Direct Jobs</span>
+                      <span className="text-sm font-bold">$4,250</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '72%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Marketplace Fees</span>
+                      <span className="text-sm font-bold">$850</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div className="bg-green-500 h-2.5 rounded-full" style={{ width: '14%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Referral Bonuses</span>
+                      <span className="text-sm font-bold">$520</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div className="bg-purple-500 h-2.5 rounded-full" style={{ width: '9%' }}></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium">Tips</span>
+                      <span className="text-sm font-bold">$300</span>
+                    </div>
+                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                      <div className="bg-amber-500 h-2.5 rounded-full" style={{ width: '5%' }}></div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
           
-          <TabsContent value="earnings" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Earnings Details</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Detailed earnings content will go here</p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
           <TabsContent value="jobs" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <WeeklyJobsChart 
+                data={weekdayData} 
+                showProjection={true} 
+                title="Weekly Job Distribution with Projections" 
+              />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Completed Jobs by Type</CardTitle>
+                  <p className="text-sm text-muted-foreground">Distribution of jobs you've completed throughout your JobMate journey</p>
+                </CardHeader>
+                <CardContent>
+                  <JobTypeChart data={jobTypeData} />
+                </CardContent>
+              </Card>
+            </div>
+            
             <Card>
               <CardHeader>
-                <CardTitle>Jobs Analysis</CardTitle>
+                <CardTitle className="text-lg font-medium">Job Completion Timeline</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Detailed jobs analysis content will go here</p>
+                <div className="space-y-4">
+                  {/* Job timeline visualization */}
+                  <div className="relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-gray-200 dark:bg-gray-700"></div>
+                    
+                    <div className="relative pl-6 pb-6">
+                      <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-gray-800"></div>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Plumbing Repair</span>
+                          <span className="text-xs text-gray-500">Today</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Completed in 2.5 hours</p>
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 px-2 py-0.5 rounded-full">Completed</span>
+                          <span className="text-xs ml-2">$120</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="relative pl-6 pb-6">
+                      <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white dark:border-gray-800"></div>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Electrical Installation</span>
+                          <span className="text-xs text-gray-500">Tomorrow</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Scheduled for 3 hours</p>
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300 px-2 py-0.5 rounded-full">Scheduled</span>
+                          <span className="text-xs ml-2">$180</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="relative pl-6">
+                      <div className="absolute left-0 top-1 w-4 h-4 rounded-full bg-purple-500 border-2 border-white dark:border-gray-800"></div>
+                      <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">Furniture Assembly</span>
+                          <span className="text-xs text-gray-500">Jun 30, 2025</span>
+                        </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Estimated 4 hours</p>
+                        <div className="flex items-center mt-2">
+                          <span className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300 px-2 py-0.5 rounded-full">Pending</span>
+                          <span className="text-xs ml-2">$200</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
           
           <TabsContent value="clients" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <PerformanceMetricsChart 
+                data={performanceMetricsData} 
+                title="Client Satisfaction Metrics" 
+                projectionMonths={3} 
+              />
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium">Client Acquisition</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-80">
+                    <ReactECharts
+                      option={{
+                        tooltip: {
+                          trigger: 'axis',
+                          axisPointer: {
+                            type: 'shadow'
+                          }
+                        },
+                        legend: {
+                          data: ['New Clients', 'Returning Clients'],
+                          bottom: 0
+                        },
+                        grid: {
+                          left: '3%',
+                          right: '4%',
+                          bottom: '15%',
+                          top: '3%',
+                          containLabel: true
+                        },
+                        xAxis: {
+                          type: 'category',
+                          data: clientAcquisitionData.map(item => item.month)
+                        },
+                        yAxis: {
+                          type: 'value'
+                        },
+                        series: [
+                          {
+                            name: 'New Clients',
+                            type: 'bar',
+                            stack: 'total',
+                            emphasis: {
+                              focus: 'series'
+                            },
+                            data: clientAcquisitionData.map(item => item.newClients),
+                            itemStyle: {
+                              color: '#8b5cf6'
+                            }
+                          },
+                          {
+                            name: 'Returning Clients',
+                            type: 'bar',
+                            stack: 'total',
+                            emphasis: {
+                              focus: 'series'
+                            },
+                            data: clientAcquisitionData.map(item => item.returningClients),
+                            itemStyle: {
+                              color: '#3b82f6'
+                            }
+                          }
+                        ]
+                      }}
+                      style={{ height: '100%', width: '100%' }}
+                      opts={{ renderer: 'canvas' }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            
             <Card>
               <CardHeader>
-                <CardTitle>Client Insights</CardTitle>
+                <CardTitle className="text-lg font-medium">Client Retention Analysis</CardTitle>
               </CardHeader>
               <CardContent>
-                <p>Detailed client insights content will go here</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-medium mb-2">Retention Rate</h3>
+                    <div className="flex items-center">
+                      <div className="relative w-24 h-24">
+                        <svg className="w-24 h-24" viewBox="0 0 36 36">
+                          <path
+                            d="M18 2.0845
+                              a 15.9155 15.9155 0 0 1 0 31.831
+                              a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#e5e7eb"
+                            strokeWidth="3"
+                            strokeDasharray="100, 100"
+                          />
+                          <path
+                            d="M18 2.0845
+                              a 15.9155 15.9155 0 0 1 0 31.831
+                              a 15.9155 15.9155 0 0 1 0 -31.831"
+                            fill="none"
+                            stroke="#3b82f6"
+                            strokeWidth="3"
+                            strokeDasharray="85, 100"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-xl font-bold">85%</span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Monthly retention</p>
+                        <p className="text-xs text-green-500">+5% from last quarter</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-medium mb-2">Avg. Jobs per Client</h3>
+                    <div className="flex items-center">
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white">3.7</div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Jobs per client</p>
+                        <p className="text-xs text-green-500">+0.5 from last quarter</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                    <h3 className="text-lg font-medium mb-2">Client Lifetime Value</h3>
+                    <div className="flex items-center">
+                      <div className="text-3xl font-bold text-gray-900 dark:text-white">$850</div>
+                      <div className="ml-4">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Average CLV</p>
+                        <p className="text-xs text-green-500">+$120 from last quarter</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
