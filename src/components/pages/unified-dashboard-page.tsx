@@ -14,6 +14,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { JobMateCreationWizard } from '@/components/jobmates/jobmate-creation-wizard';
+import { JobMateDashboardSummary } from '@/components/jobmates/jobmate-dashboard-summary';
 import { 
   Calendar, 
   BarChart, 
@@ -31,13 +34,15 @@ import {
   Users,
   TrendingUp,
   Award,
-  Sparkles
+  Sparkles,
+  Bot,
+  Plus
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { InteractiveMapWithFilters } from '@/components/map/interactive-map-with-filters';
 import { Job } from '@/types/job';
-import { CompatibilityRecommendations } from '@/components/dashboard/compatibility-recommendations';
+// Compatibility Recommendations removed as requested
 
 // Memoized components for better performance
 const MemoizedJobsList = memo(({ jobs }: { jobs: any[] }) => {
@@ -98,6 +103,7 @@ const MemoizedServicesList = memo(() => {
 
 export function UnifiedDashboardPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [showJobMateWizard, setShowJobMateWizard] = useState(false);
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('jobs');
   const [showVerificationBanner, setShowVerificationBanner] = useState(true);
@@ -282,21 +288,31 @@ export function UnifiedDashboardPage() {
             </GlassCardContent>
           </GlassCard>
 
-          {/* Compatibility Recommendations */}
+          {/* JobMates Dashboard */}
           <GlassCard className="col-span-full">
             <GlassCardHeader className="flex flex-row items-center justify-between">
               <div>
                 <GlassCardTitle className="flex items-center">
-                  <Sparkles className="h-5 w-5 mr-2 text-blue-500" />
-                  Compatibility Recommendations
+                  <Bot className="h-5 w-5 mr-2 text-blue-500" />
+                  Your JobMates
                 </GlassCardTitle>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs">
-                View All <ChevronRight className="ml-1 h-4 w-4" />
+              <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowJobMateWizard(true)}>
+                Create JobMate <Plus className="ml-1 h-4 w-4" />
               </Button>
             </GlassCardHeader>
-            <GlassCardContent>
-              {user && <CompatibilityRecommendations userId={user.id} />}
+            <GlassCardContent className="p-0">
+              {/* JobMates Dashboard Integration */}
+              {user ? (
+                user.id ? <JobMateDashboardSummary userId={user.id} /> : 
+                <div className="flex justify-center items-center p-6">
+                  <p className="text-muted-foreground">User ID is missing</p>
+                </div>
+              ) : (
+                <div className="flex justify-center items-center p-6">
+                  <p className="text-muted-foreground">Loading JobMates...</p>
+                </div>
+              )}
             </GlassCardContent>
           </GlassCard>
 
@@ -485,6 +501,31 @@ export function UnifiedDashboardPage() {
           </GlassCard>
         </div>
       </div>
+      {/* Floating Action Button for JobMate Creation */}
+      <div className="fixed bottom-24 right-6 z-50">
+        <Button 
+          onClick={() => setShowJobMateWizard(true)}
+          size="lg"
+          className="rounded-full w-12 h-12 shadow-lg bg-gradient-to-r from-primary/80 to-primary backdrop-blur-sm hover:shadow-xl transition-all duration-300 flex items-center justify-center p-0"
+          aria-label="Create JobMate"
+        >
+          <span className="text-xl">🤖</span>
+        </Button>
+      </div>
+      
+      {/* JobMate Creation Wizard Dialog */}
+      <Dialog open={showJobMateWizard} onOpenChange={setShowJobMateWizard}>
+        <DialogContent className="max-w-3xl p-0 max-h-[90vh] overflow-y-auto">
+          <JobMateCreationWizard 
+            userId={user?.id || ''}
+            onClose={() => setShowJobMateWizard(false)}
+            onSuccess={() => {
+              setShowJobMateWizard(false);
+              // Could add a toast notification here
+            }}
+          />
+        </DialogContent>
+      </Dialog>
     </UnifiedDashboardLayout>
   );
 }

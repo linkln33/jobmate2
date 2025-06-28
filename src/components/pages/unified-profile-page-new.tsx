@@ -20,7 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ListingCreationWizard } from '@/components/marketplace/create-listing/listing-creation-wizard';
 import { SectionHeader } from '@/components/ui/section-header';
-import { CompatibilityPreferencesForm } from '@/components/compatibility/compatibility-preferences-form';
+import { JobMateDashboard } from '@/components/jobmates/jobmate-dashboard';
 // Calendar component import removed
 // Define interfaces for component props to help TypeScript
 // These interfaces define the expected props for components without proper type declarations
@@ -1223,21 +1223,24 @@ export default function UnifiedProfilePageNew() {
                   </CardContent>
                 </Card>
                 
-                {/* Compatibility Preferences Card */}
-                <CompatibilityPreferencesForm
-                  userPreferences={profileData?.userPreferences}
-                  onSave={(preferences) => {
-                    // Save the preferences to the profile
-                    saveProfile({
-                      ...profileData,
-                      userPreferences: preferences
-                    });
-                    toast({
-                      title: "Preferences Updated",
-                      description: "Your compatibility preferences have been saved."
-                    });
-                  }}
-                />
+                {/* JobMates Dashboard Integration */}
+                <Card className="w-full mt-6">
+                  <CardHeader>
+                    <SectionHeader
+                      title="JobMates"
+                      description="AI agents that find matches for you"
+                    />
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    {profile ? (
+                      <JobMateDashboard userId={profile.id} />
+                    ) : (
+                      <div className="flex justify-center items-center p-6">
+                        <p className="text-muted-foreground">Loading JobMates...</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
                 
                 <Card>
                   <CardHeader>

@@ -156,13 +156,17 @@ export interface CompatibilityResult {
 
 // User preferences interface
 export interface UserPreferences {
-  userId: string;
-  generalPreferences: {
+  userId?: string;
+  
+  // General preference settings
+  generalPreferences?: {
     priceImportance: number;
     locationImportance: number;
     qualityImportance: number;
     [key: string]: any;
   };
+  
+  // Category-specific preferences
   categoryPreferences?: {
     jobs?: JobPreferences;
     services?: ServicePreferences;
@@ -175,6 +179,8 @@ export interface UserPreferences {
     learning?: LearningPreferences;
     community?: CommunityPreferences;
   };
+  
+  // Daily intent-based preferences
   dailyPreferences?: {
     intent: string;
     budget?: number;
@@ -182,7 +188,11 @@ export interface UserPreferences {
     urgency?: number;
     [key: string]: any;
   };
-  weightPreferences?: WeightPreferences;
+  
+  // Weight preferences for compatibility factors
+  weights?: {
+    [key: string]: number;
+  };
 }
 
 // Category-specific preference interfaces
@@ -190,81 +200,103 @@ export interface JobPreferences {
   desiredSkills: string[];
   minSalary: number;
   maxSalary: number;
-  workArrangement: JobSubcategory[];
+  workArrangement: JobSubcategory[] | string;
   experienceLevel: string;
+  companySize?: string;
+  industries?: string[];
+  benefits?: string[];
+  workSchedule?: string;
+  remotePreference?: boolean;
   [key: string]: any;
 }
 
 export interface ServicePreferences {
-  serviceTypes: ServiceSubcategory[];
+  serviceTypes: ServiceSubcategory[] | string[];
+  minPrice?: number;
   maxPrice: number;
-  preferredDistance: number;
+  preferredDistance?: number;
   minProviderRating: number;
+  responseTime?: string;
+  availability?: string[];
+  experienceLevel?: string;
+  location?: string;
+  paymentMethods?: string[];
+  specialRequirements?: string;
   [key: string]: any;
 }
 
 export interface RentalPreferences {
-  rentalTypes: RentalSubcategory[];
+  rentalTypes: RentalSubcategory[] | string[];
+  minPrice?: number;
   maxPrice: number;
-  location: string;
-  minDuration: number;
-  maxDuration: number;
-  requiredAmenities: string[];
+  location?: string;
+  minDuration?: number;
+  maxDuration?: number;
+  requiredAmenities?: string[];
+  bedrooms?: number;
+  bathrooms?: number;
+  squareFeet?: number;
+  petFriendly?: boolean;
+  furnished?: boolean;
+  parking?: boolean;
+  utilities?: string[];
+  leaseLength?: string;
+  moveInDate?: string;
   [key: string]: any;
 }
 
 export interface MarketplacePreferences {
   itemTypes: MarketplaceSubcategory[];
   maxPrice: number;
-  minCondition: string;
-  maxDistance: number;
-  preferredBrands: string[];
+  minCondition?: string;
+  maxDistance?: number;
+  preferredBrands?: string[];
   [key: string]: any;
 }
 
 export interface FavorPreferences {
   favorTypes: FavorSubcategory[];
-  maxTimeCommitment: number;
-  maxDistance: number;
-  reciprocityImportance: number;
+  maxTimeCommitment?: number;
+  maxDistance?: number;
+  reciprocityImportance?: number;
   [key: string]: any;
 }
 
 export interface HolidayPreferences {
   holidayTypes: HolidaySubcategory[];
-  budget: number;
-  preferredDestinations: string[];
-  duration: number;
+  budget?: number;
+  preferredDestinations?: string[];
+  duration?: number;
   [key: string]: any;
 }
 
 export interface ArtPreferences {
   artTypes: ArtSubcategory[];
-  budget: number;
-  preferredStyles: string[];
+  budget?: number;
+  preferredStyles?: string[];
   [key: string]: any;
 }
 
 export interface GiveawayPreferences {
   giveawayTypes: GiveawaySubcategory[];
-  maxDistance: number;
-  interests: string[];
+  maxDistance?: number;
+  interests?: string[];
   [key: string]: any;
 }
 
 export interface LearningPreferences {
   learningTypes: LearningSubcategory[];
-  maxPrice: number;
-  skillLevel: string;
-  format: string[];
+  maxPrice?: number;
+  skillLevel?: string;
+  format?: string[];
   [key: string]: any;
 }
 
 export interface CommunityPreferences {
   communityTypes: CommunitySubcategory[];
-  interests: string[];
-  maxDistance: number;
-  frequency: string;
+  interests?: string[];
+  maxDistance?: number;
+  frequency?: string;
   [key: string]: any;
 }
 
@@ -282,12 +314,38 @@ export interface ContextualFactors {
 
 // User-adjustable weights for different compatibility factors
 export interface WeightPreferences {
-  skills: number;       // Weight for skills/tags match
-  location: number;     // Weight for location proximity
-  availability: number; // Weight for availability match
-  price: number;        // Weight for price expectation match
-  userPreferences: number; // Weight for user preferences match
-  previousInteractions: number; // Weight for previous interactions
-  reputation: number;   // Weight for reputation/affinity score
-  aiTrend: number;      // Weight for AI trend boost
+  // Job weights
+  salary?: number;
+  skills?: number;
+  location?: number;
+  benefits?: number;
+  companySize?: number;
+  industry?: number;
+  workSchedule?: number;
+  remoteWork?: number;
+  
+  // Rental weights
+  price?: number;
+  propertyType?: number;
+  amenities?: number;
+  bedrooms?: number;
+  bathrooms?: number;
+  petFriendly?: number;
+  furnished?: number;
+  parking?: number;
+  leaseLength?: number;
+  
+  // Service weights
+  serviceType?: number;
+  providerRating?: number;
+  responseTime?: number;
+  availability?: number;
+  experience?: number;
+  paymentMethods?: number;
+  
+  // General weights
+  userPreferences?: number;
+  previousInteractions?: number;
+  reputation?: number;
+  aiTrend?: number;
 }
