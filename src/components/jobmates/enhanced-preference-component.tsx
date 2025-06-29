@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import { preferenceService } from '@/services/preference-service';
 import {
   Box,
   Typography,
   Paper,
-  Grid,
   Divider,
   Button,
   Slider,
@@ -30,15 +30,17 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 // Import shared components
 import AvailabilityCalendar, { AvailabilitySettings } from '../shared/availability-calendar';
+import GoogleCalendarIntegration from '@/components/shared/google-calendar-integration';
 import SkillSelector from '../shared/skill-selector';
 import ServiceTypeSelector, { ServiceType } from '../shared/service-type-selector';
 
 // Import data
-import { getFeaturesForCategory } from '../../data/category-features';
+import { getFeaturesForCategory, CategoryFeatures } from '../../data/category-features';
 import { getSkillsForCategory, getIndustriesForCategory, SkillSuggestion, IndustrySuggestion } from '../../data/suggested-skills';
 import { getServiceTypesForCategory } from '../../data/service-types';
 
-// Types
+// Types are imported from category-features.ts
+
 interface EnhancedPreferenceComponentProps {
   intentId: string;
   categoryId: string;
@@ -73,13 +75,16 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
   const [availability, setAvailability] = useState<AvailabilitySettings>(preferences.availability || {});
   const [urgency, setUrgency] = useState<string>(preferences.urgency || 'normal');
   
+  // Mock user ID for development - in production this would come from auth context
+  const MOCK_USER_ID = 'user-123';
+  
   // Get suggested data
   const suggestedSkills = getSkillsForCategory(intentId, categoryId);
   const suggestedIndustries = getIndustriesForCategory(intentId, categoryId);
   const suggestedServiceTypes = getServiceTypesForCategory(intentId, categoryId);
   
   // Handle form submission
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     
     // Collect all preferences
@@ -98,8 +103,23 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
       urgency
     };
     
-    // Call the onComplete callback with the preferences
-    onComplete(updatedPreferences);
+    // Save preferences using the preference service
+    try {
+      const response = await preferenceService.savePreferences(
+        MOCK_USER_ID,
+        intentId,
+        categoryId,
+        updatedPreferences
+      );
+      
+      if (response.success) {
+        onComplete(updatedPreferences);
+      } else {
+        console.error('Failed to save preferences:', response.error);
+      }
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+    }
   };
   
   // Handle rating change
@@ -129,7 +149,11 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
       setPaymentMethods([...paymentMethods, method]);
     }
   };
-  
+
+  const handleAvailabilityChange = (availability: AvailabilitySettings) => {
+    setAvailability(availability);
+  };
+
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" align="center" gutterBottom>
@@ -139,9 +163,9 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
         Tailor your experience to find the perfect match
       </Typography>
       
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {/* Left Column */}
-        <Grid item xs={12} md={7}>
+        <Box sx={{ flex: '1 1 100%', maxWidth: { xs: '100%', md: '48%' } }}>
           <Paper sx={{ p: 3, mb: 3 }}>
             {/* Skills Section */}
             {features.showSkillSelector && (
@@ -213,8 +237,8 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                   <LocationOnIcon color="primary" sx={{ mr: 1 }} />
                   <Typography variant="h6">Location</Typography>
                 </Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} sm={8}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                  <Box sx={{ flex: '1 1 100%', maxWidth: { xs: '100%', sm: '48%' } }}>
                     <TextField
                       fullWidth
                       label="Location"
@@ -224,8 +248,8 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                       variant="outlined"
                       size="small"
                     />
-                  </Grid>
-                  <Grid item xs={12} sm={4}>
+                  </Box>
+                  <Box sx={{ flex: '1 1 100%', maxWidth: { xs: '100%', sm: '48%' } }}>
                     <TextField
                       fullWidth
                       label="Radius (miles)"
@@ -238,8 +262,8 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                       variant="outlined"
                       size="small"
                     />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
                 <Divider sx={{ my: 3 }} />
               </Box>
             )}
@@ -254,7 +278,7 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                 <Box sx={{ px: 2 }}>
                   <Slider
                     value={priceRange}
-                    onChange={handlePriceRangeChange}
+                    onChange={(event, newValue) => setPriceRange(newValue as [number, number])}
                     valueLabelDisplay="on"
                     min={0}
                     max={200}
@@ -266,7 +290,7 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                       { value: 150, label: '$150' },
                       { value: 200, label: '$200+' }
                     ]}
-                    valueLabelFormat={(value) => `$${value}`}
+                    valueLabelFormat={(value: number) => `$${value}`}
                   />
                 </Box>
                 <Divider sx={{ my: 3 }} />
@@ -280,7 +304,7 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                 <FormControl fullWidth size="small">
                   <Select
                     value={experienceLevel}
-                    onChange={(e: React.ChangeEvent<{ value: unknown }>) => setExperienceLevel(e.target.value as string)}
+                    onChange={(e) => setExperienceLevel(e.target.value as string)}
                   >
                     <MenuItem value="beginner">Beginner</MenuItem>
                     <MenuItem value="intermediate">Intermediate</MenuItem>
@@ -299,7 +323,7 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Rating
                     value={minRating}
-                    onChange={(event: React.ChangeEvent<{}>, newValue: number | null) => {
+                    onChange={(event, newValue) => {
                       setMinRating(newValue);
                     }}
                     precision={0.5}
@@ -374,42 +398,66 @@ const EnhancedPreferenceComponent: React.FC<EnhancedPreferenceComponentProps> = 
               </Box>
             )}
           </Paper>
-        </Grid>
+        </Box>
         
         {/* Right Column */}
-        <Grid item xs={12} md={5}>
+        <Box sx={{ flex: '1 1 100%', maxWidth: { xs: '100%', md: '48%' } }}>
           {/* Availability Calendar Section */}
           {features.showAvailabilityCalendar && (
-            <Paper sx={{ p: 3, mb: 3 }}>
-              <Typography variant="h6" gutterBottom>Availability</Typography>
-              <AvailabilityCalendar
-                value={availability}
-                onChange={setAvailability}
+            <Box mb={3}>
+              <Typography variant="h6" gutterBottom>
+                Availability
+              </Typography>
+              <GoogleCalendarIntegration
+                availability={availability}
+                onAvailabilityChange={handleAvailabilityChange}
+                eventTitle={`JobMate Availability for ${categoryId}`}
+                eventDescription={`Availability settings for JobMate in category: ${categoryId}`}
+                showExportButton={true}
+                showImportButton={true}
               />
+            </Box>
+          )}
+          
+          {/* Urgency Section */}
+          {features.showUrgencySelector && (
+            <Paper sx={{ p: 3, mb: 3 }}>
+              <Typography variant="h6" gutterBottom>Urgency</Typography>
+              <FormControl fullWidth size="small">
+                <Select
+                  value={urgency}
+                  onChange={(e) => setUrgency(e.target.value as string)}
+                >
+                  <MenuItem value="low">Not Urgent</MenuItem>
+                  <MenuItem value="normal">Normal</MenuItem>
+                  <MenuItem value="high">Urgent</MenuItem>
+                  <MenuItem value="immediate">Immediate</MenuItem>
+                </Select>
+              </FormControl>
             </Paper>
           )}
-        </Grid>
-      </Grid>
-      
-      {/* Action Buttons */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-        <Button
-          variant="outlined"
-          onClick={onBack}
-          startIcon={<ArrowBackIcon />}
-          disabled={isLoading}
-        >
-          Back
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          type="submit"
-          endIcon={<ArrowForwardIcon />}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Saving...' : 'Save Preferences'}
-        </Button>
+          
+          {/* Action Buttons */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={onBack}
+              startIcon={<ArrowBackIcon />}
+            >
+              Back
+            </Button>
+            <Button
+              variant="contained"
+              color="primary"
+              type="submit"
+              endIcon={<ArrowForwardIcon />}
+              disabled={isLoading}
+            >
+              Save & Continue
+            </Button>
+          </Box>
+        </Box>
       </Box>
     </Box>
   );

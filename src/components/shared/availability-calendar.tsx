@@ -318,9 +318,9 @@ const AvailabilityCalendar: React.FC<AvailabilityCalendarProps> = ({ value, onCh
                   </Button>
                 </Box>
                 
-                {value.exceptions.length > 0 ? (
+                {value.exceptions && value.exceptions.length > 0 ? (
                   <Box sx={{ maxHeight: '200px', overflowY: 'auto' }}>
-                    {value.exceptions.map((date, index) => (
+                    {value.exceptions && value.exceptions.map((date, index) => (
                       <Box 
                         key={index} 
                         sx={{ 

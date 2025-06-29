@@ -17,6 +17,7 @@ export interface CategoryFeatures {
   showWorkArrangement: boolean;
   showCompanySize: boolean;
   showVerificationFilter: boolean;
+  showUrgencySelector: boolean;
 }
 
 // Default features (all disabled)
@@ -36,6 +37,7 @@ export const DEFAULT_FEATURES: CategoryFeatures = {
   showWorkArrangement: false,
   showCompanySize: false,
   showVerificationFilter: false,
+  showUrgencySelector: false,
 };
 
 // Interface for intent+category features mapping
