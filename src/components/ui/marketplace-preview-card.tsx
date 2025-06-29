@@ -151,7 +151,7 @@ export function MarketplacePreviewCard({
             {rating > 0 && (
               <div className="flex items-center">
                 <span className="text-xs text-amber-500 mr-1">★</span>
-                <span className="text-xs text-gray-600 dark:text-gray-300">{rating.toFixed(1)}</span>
+                <span className="text-xs text-gray-600 dark:text-gray-300">{typeof rating === 'number' ? rating.toFixed(1) : rating}</span>
               </div>
             )}
           </div>
