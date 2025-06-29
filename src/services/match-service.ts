@@ -1,7 +1,7 @@
-import { Job as JobType, Specialist as SpecialistType, MatchResult as SharedMatchResult } from '@/types/job-match-types';
+import { Job } from '@/types/job';
+import { Specialist as SpecialistType, MatchResult as SharedMatchResult } from '@/types/job-match-types';
 
 // Re-export types for use in other services
-export type Job = JobType;
 export type Specialist = SpecialistType;
 
 // Local match result interface for backward compatibility
@@ -25,23 +25,36 @@ export class MatchService {
 
   /**
    * Calculate match score between a job and specialist
+   * @param job Job object with potentially optional fields from our unified Job type
+   * @param specialist Specialist profile
+   * @returns Match result with score and factors
    */
   calculateMatchScore(job: Job, specialist: Specialist): MatchResult {
+    // Ensure job has required properties or provide defaults
+    const jobWithDefaults = {
+      ...job,
+      description: job.description || '',
+      city: job.city || '',
+      zipCode: job.zipCode || '',
+      createdAt: job.createdAt || new Date().toISOString()
+    };
+    
     // Calculate individual factor scores
     const skillMatch = this.calculateSkillMatch(
-      job.serviceCategory ? [job.serviceCategory.name] : [], 
+      jobWithDefaults.serviceCategory ? [jobWithDefaults.serviceCategory.name] : 
+      jobWithDefaults.category ? [jobWithDefaults.category] : [], 
       specialist.skills || []
     );
     
     const locationProximity = specialist.location ? this.calculateLocationProximity(
-      { lat: job.lat, lng: job.lng }, 
+      { lat: jobWithDefaults.lat, lng: jobWithDefaults.lng }, 
       specialist.location
     ) : 0.5; // Default score if no location data
     
-    const reputationScore = this.calculateReputationCompatibility(job, specialist);
-    const priceMatch = this.calculatePriceMatch(job, specialist);
-    const availabilityMatch = this.calculateAvailabilityMatch(job, specialist);
-    const urgencyCompatibility = this.calculateUrgencyCompatibility(job, specialist);
+    const reputationScore = this.calculateReputationCompatibility(jobWithDefaults, specialist);
+    const priceMatch = this.calculatePriceMatch(jobWithDefaults, specialist);
+    const availabilityMatch = this.calculateAvailabilityMatch(jobWithDefaults, specialist);
+    const urgencyCompatibility = this.calculateUrgencyCompatibility(jobWithDefaults, specialist);
     
     // Apply the match formula
     const score = Math.min(100, Math.max(0, Math.round(

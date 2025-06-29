@@ -21,6 +21,7 @@ import PreferenceComponentFactory from './preference-component-factory';
 import { getIntentById } from '../../types/intent';
 import { getCategoryById } from '../../data/category-mapping';
 import { matchingService } from '../../services/server/matching-service';
+import { preferenceService } from '@/services/preference-service';
 
 enum StepState {
   INTENT_SELECTION = 0,
@@ -35,6 +36,9 @@ interface StepControllerProps {
   initialCategoryId?: string;
   initialPreferences?: any;
 }
+
+// Mock user ID for development - in production this would come from auth context
+const MOCK_USER_ID = 'user-123';
 
 const StepController: React.FC<StepControllerProps> = ({ 
   onComplete, 
@@ -52,7 +56,39 @@ const StepController: React.FC<StepControllerProps> = ({
   const [matchResults, setMatchResults] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [preferencesId, setPreferencesId] = useState<string | null>(null);
+  
+  // Determine if we can skip to step 3 if intent and category are provided
+  useEffect(() => {
+    if (initialIntentId && initialCategoryId && currentStep === StepState.INTENT_SELECTION) {
+      setSelectedIntentId(initialIntentId);
+      setSelectedCategoryId(initialCategoryId);
+      loadExistingPreferences(initialIntentId, initialCategoryId);
+    }
+  }, [initialIntentId, initialCategoryId, currentStep]);
+  
+  // Load existing preferences if available
+  const loadExistingPreferences = async (intentId: string, categoryId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const response = await preferenceService.getPreferences(MOCK_USER_ID, intentId, categoryId);
+      
+      if (response.success && response.preferences) {
+        setPreferences(response.preferences);
+      }
+      
+      setCurrentStep(StepState.PREFERENCE_CUSTOMIZATION); // Move to preference step after loading
+    } catch (err) {
+      console.error('Error loading preferences:', err);
+      // Still move to step 3, but with empty preferences
+      setCurrentStep(StepState.PREFERENCE_CUSTOMIZATION);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   // Handle intent selection
   const handleSelectIntent = (intentId: string) => {
     setSelectedIntentId(intentId);
@@ -62,6 +98,7 @@ const StepController: React.FC<StepControllerProps> = ({
   // Handle category selection
   const handleSelectCategory = (categoryId: string) => {
     setSelectedCategoryId(categoryId);
+    loadExistingPreferences(selectedIntentId!, categoryId);
   };
 
   // Handle moving to preferences step

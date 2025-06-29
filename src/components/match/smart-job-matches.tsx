@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+// Import the unified Job type
 import { Job } from '@/types/job';
+// Import other types from match service
 import { Specialist, matchService, MatchResult } from '@/services/match-service';
 import { JobMatchCard } from './job-match-card';
 import { Button } from '@/components/ui/button';
@@ -26,10 +28,21 @@ export function SmartJobMatches({ jobs, specialist, onSelectJob }: SmartJobMatch
     
     // Simulate API delay
     setTimeout(() => {
-      const matches = jobs.map(job => ({
-        job,
-        matchResult: matchService.calculateMatchScore(job, specialist)
-      }));
+      const matches = jobs.map(job => {
+        // Ensure job has all required properties for matchService
+        const enhancedJob = {
+          ...job,
+          description: job.description || '',
+          city: job.city || '',
+          zipCode: job.zipCode || '',
+          createdAt: job.createdAt || new Date().toISOString()
+        };
+        
+        return {
+          job,
+          matchResult: matchService.calculateMatchScore(enhancedJob, specialist)
+        };
+      });
       
       setJobMatches(matches);
       setIsLoading(false);
@@ -54,14 +67,17 @@ export function SmartJobMatches({ jobs, specialist, onSelectJob }: SmartJobMatch
       case 'urgent':
         // Filter for urgent jobs and sort by match score
         return filtered
-          .filter(match => match.job.urgencyLevel === 'high')
+          .filter(match => (match.job.urgencyLevel === 'high' || match.job.urgency === 'high'))
           .sort((a, b) => b.matchResult.score - a.matchResult.score);
       case 'new':
-        // Sort by newest (using createdAt)
+        // Sort by newest (using createdAt if available, otherwise fallback to current time)
         return filtered
-          .sort((a, b) => 
-            new Date(b.job.createdAt).getTime() - new Date(a.job.createdAt).getTime()
-          )
+          .sort((a, b) => {
+            // Handle cases where createdAt might be undefined
+            const dateA = a.job.createdAt ? new Date(a.job.createdAt) : new Date();
+            const dateB = b.job.createdAt ? new Date(b.job.createdAt) : new Date();
+            return dateB.getTime() - dateA.getTime();
+          })
           .slice(0, 10);
       default:
         return filtered.slice(0, 10);
@@ -126,9 +142,16 @@ export function SmartJobMatches({ jobs, specialist, onSelectJob }: SmartJobMatch
               {filteredMatches.map(({ job, matchResult }) => (
                 <JobMatchCard 
                   key={job.id} 
-                  job={job} 
+                  job={{
+                    ...job,
+                    // Ensure required properties have values
+                    description: job.description || '',
+                    city: job.city || '',
+                    zipCode: job.zipCode || '',
+                    createdAt: job.createdAt || new Date().toISOString()
+                  }}
                   matchResult={matchResult}
-                  onViewDetails={() => onSelectJob && onSelectJob(job.id)}
+                  onViewDetails={() => onSelectJob && onSelectJob(String(job.id))}
                 />
               ))}
             </div>

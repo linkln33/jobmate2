@@ -3,6 +3,9 @@ import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
 import { matchingService } from '@/services/server/matching-service';
 
+// Mock database for preferences (in production this would use Prisma)
+const preferenceDb = new Map<string, any>();
+
 const prisma = new PrismaClient();
 
 // POST /api/matches - Get job matches for a specialist with scoring

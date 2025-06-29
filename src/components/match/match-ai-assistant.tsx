@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+// Import the unified Job type
 import { Job } from '@/types/job';
+// Import other types from match service
 import { Specialist, MatchResult } from '@/services/match-service';
 import { aiMatchService, MatchAssistanceContext } from '@/services/ai-match-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
