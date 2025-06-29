@@ -9,6 +9,7 @@ import { JobMateFormData } from "@/types/jobmate";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { MainCategory } from "@/types/compatibility";
 import { 
   Smile,
   Clock,
@@ -28,14 +29,20 @@ interface JobMatePersonalizeStepProps {
 const categoryEmojis: Record<string, string[]> = {
   jobs: ["💼", "🚀", "💻", "📊", "👔", "🔍", "💰", "📈", "🏢", "🌟"],
   rentals: ["🏠", "🔑", "🏙️", "🏘️", "🌆", "🛋️", "🏡", "🌇", "🏢", "🏕️"],
-  services: ["🛠️", "🧰", "🔧", "💪", "🧹", "👨‍🔧", "👩‍🔧", "🚚", "📦", "🧾"]
+  services: ["🛠️", "🧰", "🔧", "💪", "🧹", "👨‍🔧", "👩‍🔧", "🚚", "📦", "🧾"],
+  marketplace: ["🛒", "🏪", "💲", "🛍️", "📦", "🔖", "💰", "📱", "🏷️", "🧸"],
+  learning: ["📚", "🎓", "✏️", "🧠", "💡", "🔬", "🧪", "📝", "📊", "🎯"],
+  travel: ["✈️", "🏝️", "🗺️", "🧳", "🏨", "🚆", "🚗", "🌍", "🏔️", "⛱️"]
 };
 
 // Name suggestions based on category
 const categoryNameSuggestions: Record<string, string[]> = {
   jobs: ["Career Scout", "Job Hunter", "Opportunity Finder", "Resume Matcher", "Career Compass"],
   rentals: ["Home Finder", "Rental Scout", "Property Matcher", "Space Hunter", "Nest Seeker"],
-  services: ["Service Pro", "Expert Finder", "Task Matcher", "Service Scout", "Pro Connector"]
+  services: ["Service Pro", "Expert Finder", "Task Matcher", "Service Scout", "Pro Connector"],
+  marketplace: ["Deal Finder", "Market Scout", "Item Matcher", "Bargain Hunter", "Shop Assistant"],
+  learning: ["Knowledge Guide", "Skill Finder", "Learning Companion", "Study Buddy", "Course Matcher"],
+  travel: ["Travel Planner", "Adventure Scout", "Trip Finder", "Destination Matcher", "Journey Guide"]
 };
 
 export function JobMatePersonalizeStep({ 
@@ -293,14 +300,7 @@ export function JobMatePersonalizeStep({
         </div>
       </div>
       
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={handleSubmit} disabled={!!nameError}>
-          Continue
-        </Button>
-      </div>
+      {/* Navigation handled by main wizard container */}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 // Compatibility Score System Types
 
 export type MainCategory = 
+  // Original categories
   | 'jobs'
   | 'services'
   | 'rentals'
@@ -10,7 +11,116 @@ export type MainCategory =
   | 'art'
   | 'giveaways'
   | 'learning'
-  | 'community';
+  | 'community'
+  | 'events'
+  
+  // Earn money categories
+  | 'business'
+  | 'digital'
+  | 'skilled-trades'
+  | 'home-services'
+  | 'care-assistance'
+  | 'transport'
+  | 'education'
+  | 'personal'
+  | 'outdoor-garden'
+  | 'errands'
+  | 'niche'
+  
+  // Hire someone categories
+  | 'professional'
+  | 'tech-talent'
+  | 'creative'
+  | 'trade-workers'
+  | 'home-help'
+  | 'caregivers'
+  | 'education-staff'
+  | 'hospitality'
+  | 'retail-staff'
+  | 'drivers'
+  | 'admin-support'
+  | 'seasonal'
+  
+  // Sell something categories
+  | 'electronics'
+  | 'home-goods'
+  | 'clothing'
+  | 'collectibles'
+  | 'sports-equipment'
+  | 'toys-games'
+  | 'vehicles'
+  | 'books-media'
+  | 'handmade'
+  | 'business-equipment'
+  | 'services-offered'
+  | 'other-items'
+  
+  // Rent something categories
+  | 'apartments'
+  | 'houses'
+  | 'rooms'
+  | 'vacation-rentals'
+  | 'commercial-space'
+  | 'event-venues'
+  | 'parking-storage'
+  | 'equipment-rental'
+  | 'vehicle-rental'
+  | 'electronics-rental'
+  | 'furniture-rental'
+  | 'specialty-items'
+  
+  // Find help/favor categories
+  | 'household'
+  | 'tech-help'
+  | 'pet-care'
+  | 'plant-care'
+  | 'transportation'
+  | 'childcare'
+  | 'elder-care'
+  | 'tutoring'
+  | 'event-help'
+  | 'creative-help'
+  | 'community-service'
+  
+  // Explore or learn categories
+  | 'academic'
+  | 'tech-skills'
+  | 'creative-arts'
+  | 'business-skills'
+  | 'trades-crafts'
+  | 'cooking-food'
+  | 'fitness-health'
+  | 'languages'
+  | 'personal-dev'
+  | 'hobbies'
+  | 'parenting-family'
+  | 'specialized-topics'
+  
+  // Holiday & Travel categories
+  | 'beach-resorts'
+  | 'city-breaks'
+  | 'adventure-travel'
+  | 'cultural-tours'
+  | 'luxury-travel'
+  | 'budget-travel'
+  | 'family-trips'
+  | 'road-trips'
+  | 'cruises'
+  | 'wellness-retreats'
+  | 'food-wine'
+  | 'special-events'
+  
+  // Just browsing categories
+  | 'trending'
+  | 'local-events'
+  | 'job-market'
+  | 'housing'
+  | 'learning-resources'
+  | 'community-groups'
+  | 'creative-showcase'
+  | 'travel-destinations'
+  | 'deals-discounts'
+  | 'new-listings';
 
 // Job subcategories
 export type JobSubcategory = 

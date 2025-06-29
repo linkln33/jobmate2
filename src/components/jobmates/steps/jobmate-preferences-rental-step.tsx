@@ -6,107 +6,131 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPreferences } from "@/types/compatibility";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { MainCategory, RentalPreferences, RentalSubcategory, UserPreferences } from "@/types/compatibility";
 
 interface JobMatePreferencesRentalStepProps {
   preferences: Partial<UserPreferences>;
   onUpdate: (preferences: Partial<UserPreferences>) => void;
   onBack?: () => void;
+  category?: MainCategory; // Added category prop to customize rental suggestions
 }
 
 export function JobMatePreferencesRentalStep({ 
   preferences, 
   onUpdate,
-  onBack 
+  onBack,
+  category
 }: JobMatePreferencesRentalStepProps) {
-  const [rentalPrefs, setRentalPrefs] = useState(preferences.categoryPreferences?.rentals || {
-    minPrice: 0,
+  // Initialize rental preferences with proper typing
+  const initialRentalPrefs: RentalPreferences = {
+    rentalTypes: [],
     maxPrice: 5000,
-    minBedrooms: 0,
-    maxBedrooms: 5,
-    minBathrooms: 1,
-    maxBathrooms: 3,
-    propertyTypes: [],
-    amenities: [],
+    minPrice: 0,
+    location: "",
+    minDuration: 1,
+    maxDuration: 12,
+    requiredAmenities: [],
+    bedrooms: 1,
+    bathrooms: 1,
+    squareFeet: 1000,
     petFriendly: true,
     furnished: false,
-    parkingIncluded: false,
-    utilitiesIncluded: false,
-    minSquareFeet: 0,
-    maxSquareFeet: 3000,
+    parking: false,
+    utilities: [],
     leaseLength: "any",
     moveInDate: new Date().toISOString().split('T')[0]
-  });
+  };
+  
+  const [rentalPrefs, setRentalPrefs] = useState<RentalPreferences>(
+    preferences.categoryPreferences?.rentals || initialRentalPrefs
+  );
   
   const [amenityInput, setAmenityInput] = useState("");
   
-  // Common property types
-  const propertyTypes = [
-    "Apartment", "House", "Condo", "Townhouse", 
-    "Studio", "Loft", "Room", "Duplex"
+  // Common property types - must match RentalSubcategory type
+  const propertyTypes: RentalSubcategory[] = [
+    "apartments", "houses", "rooms", "offices", 
+    "event-spaces", "equipment", "vehicles", "party"
   ];
   
   // Common amenities
-  const commonAmenities = [
-    "Air Conditioning", "Washer/Dryer", "Dishwasher", 
-    "Balcony", "Pool", "Gym", "Elevator", "Security System"
+  const commonAmenities: string[] = [
+    "Parking", "Laundry", "Dishwasher", "Air Conditioning", 
+    "Gym", "Pool", "Balcony", "Pets Allowed", "Furnished"
   ];
   
   // Lease length options
-  const leaseLengths = [
-    "month-to-month", "3-month", "6-month", "1-year", "2-year", "any"
+  const leaseLengthOptions: string[] = [
+    "Month-to-Month", "3 Months", "6 Months", "1 Year", "2+ Years"
   ];
   
   // Toggle property type
-  const togglePropertyType = (type: string) => {
-    if (rentalPrefs.propertyTypes?.includes(type)) {
-      setRentalPrefs(prev => ({
-        ...prev,
-        propertyTypes: prev.propertyTypes?.filter(t => t !== type) || []
-      }));
-    } else {
-      setRentalPrefs(prev => ({
-        ...prev,
-        propertyTypes: [...(prev.propertyTypes || []), type]
-      }));
-    }
+  const togglePropertyType = (t: string): void => {
+    setRentalPrefs(prev => {
+      // Get current rental types or initialize empty array
+      const currentTypes = [...(prev.rentalTypes || [])];
+      
+      if (currentTypes.includes(t)) {
+        return {
+          ...prev,
+          rentalTypes: currentTypes.filter(type => type !== t)
+        };
+      } else {
+        return {
+          ...prev,
+          rentalTypes: [...currentTypes, t]
+        };
+      }
+    });
   };
   
   // Add an amenity
-  const addAmenity = () => {
-    if (amenityInput.trim() && !rentalPrefs.amenities?.includes(amenityInput.trim())) {
-      setRentalPrefs(prev => ({
-        ...prev,
-        amenities: [...(prev.amenities || []), amenityInput.trim()]
-      }));
-      setAmenityInput("");
-    }
+  const addAmenity = (): void => {
+    if (amenityInput.trim() === "") return;
+    
+    setRentalPrefs(prev => {
+      // Get current required amenities or initialize empty array
+      const currentAmenities = [...(prev.requiredAmenities || [])];
+      
+      if (!currentAmenities.includes(amenityInput.trim())) {
+        return {
+          ...prev,
+          requiredAmenities: [...currentAmenities, amenityInput.trim()]
+        };
+      }
+      return prev;
+    });
+    
+    setAmenityInput("");
   };
   
   // Remove an amenity
-  const removeAmenity = (amenity: string) => {
-    setRentalPrefs(prev => ({
-      ...prev,
-      amenities: prev.amenities?.filter(a => a !== amenity) || []
-    }));
+  const removeAmenity = (a: string): void => {
+    setRentalPrefs(prev => {
+      const currentAmenities = [...(prev.requiredAmenities || [])];
+      return {
+        ...prev,
+        requiredAmenities: currentAmenities.filter(amenity => amenity !== a)
+      };
+    });
   };
   
   // Toggle common amenity
-  const toggleCommonAmenity = (amenity: string) => {
-    if (rentalPrefs.amenities?.includes(amenity)) {
+  const toggleCommonAmenity = (amenity: string): void => {
+    if (rentalPrefs.requiredAmenities?.includes(amenity)) {
       removeAmenity(amenity);
     } else {
       setRentalPrefs(prev => ({
         ...prev,
-        amenities: [...(prev.amenities || []), amenity]
+        requiredAmenities: [...(prev.requiredAmenities || []), amenity]
       }));
     }
   };
   
   // Handle form submission
-  const handleSubmit = () => {
+  const handleSavePreferences = (): void => {
     const updatedPreferences = {
       ...preferences,
       categoryPreferences: {
@@ -114,7 +138,16 @@ export function JobMatePreferencesRentalStep({
         rentals: rentalPrefs
       }
     };
+    
     onUpdate(updatedPreferences);
+  };
+  
+  const handleSubmit = (): void => {
+    handleSavePreferences();
+    
+    if (onBack) {
+      onBack();
+    }
   };
   
   return (
@@ -267,11 +300,10 @@ export function JobMatePreferencesRentalStep({
         <div className="space-y-4">
           <h3 className="font-medium">Property Types</h3>
           <div className="flex flex-wrap gap-2">
-            {propertyTypes.map((type) => (
+            {propertyTypes.map((type: string) => (
               <Badge 
                 key={type} 
-                variant={rentalPrefs.propertyTypes?.includes(type) ? "default" : "outline"}
-                className="cursor-pointer"
+                className={`mr-1 mb-1 cursor-pointer ${rentalPrefs.rentalTypes?.includes(type) ? 'bg-primary' : 'bg-secondary'}`}
                 onClick={() => togglePropertyType(type)}
               >
                 {type}
@@ -284,10 +316,10 @@ export function JobMatePreferencesRentalStep({
         <div className="space-y-4">
           <h3 className="font-medium">Desired Amenities</h3>
           <div className="flex flex-wrap gap-2">
-            {commonAmenities.map((amenity) => (
+            {commonAmenities.map((amenity: string) => (
               <Badge 
                 key={amenity} 
-                variant={rentalPrefs.amenities?.includes(amenity) ? "default" : "outline"}
+                variant={rentalPrefs.requiredAmenities?.includes(amenity) ? "default" : "outline"}
                 className="cursor-pointer"
                 onClick={() => toggleCommonAmenity(amenity)}
               >
@@ -305,13 +337,15 @@ export function JobMatePreferencesRentalStep({
             <Button onClick={addAmenity}>Add</Button>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {rentalPrefs.amenities?.filter(a => !commonAmenities.includes(a)).map((amenity) => (
-              <Badge key={amenity} variant="secondary" className="flex items-center gap-1">
+            {rentalPrefs.requiredAmenities?.filter((a: string) => !commonAmenities.includes(a)).map((amenity: string) => (
+              <Badge key={amenity} className="mr-1 mb-1">
                 {amenity}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
+                <button
+                  className="ml-1 hover:text-red-500"
                   onClick={() => removeAmenity(amenity)}
-                />
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))}
           </div>
@@ -372,7 +406,7 @@ export function JobMatePreferencesRentalStep({
         <div className="space-y-4">
           <h3 className="font-medium">Lease Length</h3>
           <div className="grid grid-cols-3 gap-2">
-            {leaseLengths.map((length) => (
+            {leaseLengthOptions.map((length) => (
               <Button
                 key={length}
                 variant={rentalPrefs.leaseLength === length ? "default" : "outline"}
@@ -399,10 +433,9 @@ export function JobMatePreferencesRentalStep({
         </div>
       </div>
       
-      <div className="flex justify-end pt-6">
-        <Button onClick={handleSubmit}>
-          Continue
-        </Button>
+      {/* Navigation buttons moved to main wizard footer */}
+      <div className="hidden">
+        <Button onClick={handleSubmit}>Continue</Button>
       </div>
     </div>
   );

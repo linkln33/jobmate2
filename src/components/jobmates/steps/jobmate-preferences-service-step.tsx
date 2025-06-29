@@ -6,42 +6,58 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPreferences } from "@/types/compatibility";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { MainCategory, ServicePreferences, ServiceSubcategory, UserPreferences } from "@/types/compatibility";
 
 interface JobMatePreferencesServiceStepProps {
   preferences: Partial<UserPreferences>;
   onUpdate: (preferences: Partial<UserPreferences>) => void;
   onBack?: () => void;
+  category?: MainCategory;
+  isRental?: boolean;
+  isMarketplace?: boolean;
+  isLearning?: boolean;
+  isTravel?: boolean;
+  isHiring?: boolean;
 }
 
 export function JobMatePreferencesServiceStep({ 
   preferences, 
   onUpdate,
-  onBack 
+  onBack,
+  category,
+  isRental,
+  isMarketplace,
+  isLearning,
+  isTravel,
+  isHiring
 }: JobMatePreferencesServiceStepProps) {
-  const [servicePrefs, setServicePrefs] = useState(preferences.categoryPreferences?.services || {
-    minPrice: 0,
+  // Initialize service preferences with proper typing
+  const initialServicePrefs: ServicePreferences = {
+    serviceTypes: [] as ServiceSubcategory[],
     maxPrice: 1000,
-    serviceTypes: [],
-    providerRating: 4,
+    minProviderRating: 4,
     responseTime: "any",
     availability: [],
     experienceLevel: "any",
     location: "any",
     paymentMethods: [],
-    specialRequirements: []
-  });
+    specialRequirements: ""
+  };
+
+  const [servicePrefs, setServicePrefs] = useState<ServicePreferences>(
+    preferences.categoryPreferences?.services || initialServicePrefs
+  );
   
   const [serviceTypeInput, setServiceTypeInput] = useState("");
   const [requirementInput, setRequirementInput] = useState("");
   
-  // Common service types
-  const commonServiceTypes = [
-    "Cleaning", "Plumbing", "Electrical", "Tutoring", 
-    "Web Design", "Photography", "Landscaping", "Home Repair",
-    "Personal Training", "Accounting", "Legal", "Marketing"
+  // Common service types - must match ServiceSubcategory type
+  const serviceTypes: ServiceSubcategory[] = [
+    "handyman", "development", "design", "writing", 
+    "marketing", "legal", "tutoring", "health", "events",
+    "cleaning", "gardening", "pet-care", "moving"
   ];
   
   // Payment methods
@@ -57,7 +73,7 @@ export function JobMatePreferencesServiceStep({
   ];
   
   // Toggle service type
-  const toggleServiceType = (type: string) => {
+  const toggleServiceType = (type: ServiceSubcategory): void => {
     if (servicePrefs.serviceTypes?.includes(type)) {
       setServicePrefs(prev => ({
         ...prev,
@@ -72,83 +88,114 @@ export function JobMatePreferencesServiceStep({
   };
   
   // Add a service type
-  const addServiceType = () => {
-    if (serviceTypeInput.trim() && !servicePrefs.serviceTypes?.includes(serviceTypeInput.trim())) {
-      setServicePrefs(prev => ({
-        ...prev,
-        serviceTypes: [...(prev.serviceTypes || []), serviceTypeInput.trim()]
-      }));
-      setServiceTypeInput("");
-    }
+  const addServiceType = (): void => {
+    if (!serviceTypeInput.trim()) return;
+    
+    // Check if already exists
+    if (servicePrefs.serviceTypes?.includes(serviceTypeInput as any)) return;
+    
+    setServicePrefs(prev => ({
+      ...prev,
+      serviceTypes: [...(prev.serviceTypes || []), serviceTypeInput as any]
+    }));
+    
+    setServiceTypeInput("");
   };
   
   // Remove a service type
   const removeServiceType = (type: string) => {
+    const currentTypes = Array.isArray(servicePrefs.serviceTypes) 
+      ? servicePrefs.serviceTypes as string[]
+      : [];
+      
     setServicePrefs(prev => ({
       ...prev,
-      serviceTypes: prev.serviceTypes?.filter(t => t !== type) || []
+      serviceTypes: currentTypes.filter(t => t !== type)
     }));
   };
   
   // Toggle payment method
   const togglePaymentMethod = (method: string) => {
-    if (servicePrefs.paymentMethods?.includes(method)) {
+    const currentMethods = Array.isArray(servicePrefs.paymentMethods) 
+      ? servicePrefs.paymentMethods
+      : [];
+      
+    if (currentMethods.includes(method)) {
       setServicePrefs(prev => ({
         ...prev,
-        paymentMethods: prev.paymentMethods?.filter(m => m !== method) || []
+        paymentMethods: currentMethods.filter(m => m !== method)
       }));
     } else {
       setServicePrefs(prev => ({
         ...prev,
-        paymentMethods: [...(prev.paymentMethods || []), method]
+        paymentMethods: [...currentMethods, method]
       }));
     }
   };
   
   // Toggle availability
   const toggleAvailability = (availability: string) => {
-    if (servicePrefs.availability?.includes(availability)) {
+    const currentAvailability = Array.isArray(servicePrefs.availability) 
+      ? servicePrefs.availability
+      : [];
+      
+    if (currentAvailability.includes(availability)) {
       setServicePrefs(prev => ({
         ...prev,
-        availability: prev.availability?.filter(a => a !== availability) || []
+        availability: currentAvailability.filter(a => a !== availability)
       }));
     } else {
       setServicePrefs(prev => ({
         ...prev,
-        availability: [...(prev.availability || []), availability]
+        availability: [...currentAvailability, availability]
       }));
     }
   };
   
-  // Add a special requirement
-  const addRequirement = () => {
-    if (requirementInput.trim() && !servicePrefs.specialRequirements?.includes(requirementInput.trim())) {
-      setServicePrefs(prev => ({
-        ...prev,
-        specialRequirements: [...(prev.specialRequirements || []), requirementInput.trim()]
-      }));
-      setRequirementInput("");
+  // Get current special requirements as array
+  const getSpecialRequirementsArray = (): string[] => {
+    if (!servicePrefs.specialRequirements) return [];
+    if (Array.isArray(servicePrefs.specialRequirements)) {
+      return servicePrefs.specialRequirements as unknown as string[];
     }
+    return servicePrefs.specialRequirements.split(',').filter(r => r.trim() !== '');
+  };
+  
+  // Add a special requirement
+  const handleAddRequirement = () => {
+    if (!requirementInput.trim()) return;
+    
+    const requirements = getSpecialRequirementsArray();
+    const newRequirements = [...requirements, requirementInput.trim()];
+    
+    setServicePrefs(prev => ({
+      ...prev,
+      specialRequirements: newRequirements.join(', ')
+    }));
+    
+    setRequirementInput("");
   };
   
   // Remove a special requirement
   const removeRequirement = (requirement: string) => {
+    const requirements = getSpecialRequirementsArray();
+    const newRequirements = requirements.filter(r => r !== requirement);
+    
     setServicePrefs(prev => ({
       ...prev,
-      specialRequirements: prev.specialRequirements?.filter(r => r !== requirement) || []
+      specialRequirements: newRequirements.join(', ')
     }));
   };
   
   // Handle form submission
   const handleSubmit = () => {
-    const updatedPreferences = {
+    onUpdate({
       ...preferences,
       categoryPreferences: {
         ...preferences.categoryPreferences,
         services: servicePrefs
       }
-    };
-    onUpdate(updatedPreferences);
+    });
   };
   
   return (
@@ -196,36 +243,45 @@ export function JobMatePreferencesServiceStep({
         <div className="space-y-4">
           <h3 className="font-medium">Service Types</h3>
           <div className="flex flex-wrap gap-2">
-            {commonServiceTypes.map((type) => (
-              <Badge 
-                key={type} 
-                variant={servicePrefs.serviceTypes?.includes(type) ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => toggleServiceType(type)}
-              >
-                {type}
-              </Badge>
-            ))}
+            {serviceTypes.map((type: ServiceSubcategory) => {
+              const currentTypes = Array.isArray(servicePrefs.serviceTypes) 
+                ? servicePrefs.serviceTypes as ServiceSubcategory[]
+                : [];
+              return (
+                <Badge 
+                  key={type} 
+                  variant={currentTypes.includes(type) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleServiceType(type)}
+                >
+                  {type}
+                </Badge>
+              );
+            })}
           </div>
           <div className="flex gap-2">
             <Input
               placeholder="Add another service type"
               value={serviceTypeInput}
               onChange={(e) => setServiceTypeInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addServiceType()}
+              onKeyDown={(e) => e.key === 'Enter' && addServiceType()}
+              className="flex-1"
             />
-            <Button onClick={addServiceType}>Add</Button>
+            <Button type="button" onClick={addServiceType}>Add</Button>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {servicePrefs.serviceTypes?.filter(t => !commonServiceTypes.includes(t)).map((type) => (
-              <Badge key={type} variant="secondary" className="flex items-center gap-1">
-                {type}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => removeServiceType(type)}
-                />
-              </Badge>
-            ))}
+            {Array.isArray(servicePrefs.serviceTypes) && 
+              (servicePrefs.serviceTypes as ServiceSubcategory[])
+                .filter(t => !serviceTypes.includes(t))
+                .map((type) => (
+                  <Badge key={type} variant="secondary" className="flex items-center gap-1">
+                    {type}
+                    <button onClick={() => removeServiceType(type)} className="ml-1">
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))
+            }
           </div>
         </div>
         
@@ -233,16 +289,16 @@ export function JobMatePreferencesServiceStep({
         <div className="space-y-4">
           <div className="flex justify-between">
             <h3 className="font-medium">Minimum Provider Rating</h3>
-            <span className="font-medium">{servicePrefs.providerRating} / 5</span>
+            <span className="font-medium">{servicePrefs.minProviderRating || 4} / 5</span>
           </div>
           <Slider
-            defaultValue={[servicePrefs.providerRating || 4]}
+            defaultValue={[servicePrefs.minProviderRating || 4]}
             min={1}
             max={5}
             step={0.5}
             onValueChange={(value) => setServicePrefs(prev => ({
               ...prev,
-              providerRating: value[0]
+              minProviderRating: value[0]
             }))}
           />
           <div className="flex justify-between text-xs text-muted-foreground">
@@ -276,16 +332,21 @@ export function JobMatePreferencesServiceStep({
         <div className="space-y-4">
           <h3 className="font-medium">Availability</h3>
           <div className="flex flex-wrap gap-2">
-            {availabilityOptions.map((option) => (
-              <Badge 
-                key={option} 
-                variant={servicePrefs.availability?.includes(option) ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => toggleAvailability(option)}
-              >
-                {option}
-              </Badge>
-            ))}
+            {availabilityOptions.map((option) => {
+              const currentAvailability = Array.isArray(servicePrefs.availability) 
+                ? servicePrefs.availability
+                : [];
+              return (
+                <Badge 
+                  key={option} 
+                  variant={currentAvailability.includes(option) ? "default" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => toggleAvailability(option)}
+                >
+                  {option}
+                </Badge>
+              );
+            })}
           </div>
         </div>
         
@@ -327,16 +388,21 @@ export function JobMatePreferencesServiceStep({
         <div className="space-y-4">
           <h3 className="font-medium">Accepted Payment Methods</h3>
           <div className="grid grid-cols-2 gap-2">
-            {paymentMethods.map((method) => (
-              <div key={method} className="flex items-center space-x-2">
-                <Checkbox 
-                  id={`payment-${method}`} 
-                  checked={servicePrefs.paymentMethods?.includes(method)}
-                  onCheckedChange={() => togglePaymentMethod(method)}
-                />
-                <Label htmlFor={`payment-${method}`}>{method}</Label>
-              </div>
-            ))}
+            {paymentMethods.map((method) => {
+              const currentMethods = Array.isArray(servicePrefs.paymentMethods) 
+                ? servicePrefs.paymentMethods
+                : [];
+              return (
+                <div key={method} className="flex items-center space-x-2">
+                  <Checkbox 
+                    id={`payment-${method}`} 
+                    checked={currentMethods.includes(method)}
+                    onCheckedChange={() => togglePaymentMethod(method)}
+                  />
+                  <Label htmlFor={`payment-${method}`}>{method}</Label>
+                </div>
+              );
+            })}
           </div>
         </div>
         
@@ -345,35 +411,33 @@ export function JobMatePreferencesServiceStep({
           <h3 className="font-medium">Special Requirements</h3>
           <div className="flex gap-2">
             <Input
-              placeholder="Add a special requirement"
+              placeholder="Add special requirements"
               value={requirementInput}
               onChange={(e) => setRequirementInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && addRequirement()}
+              onKeyDown={(e) => e.key === "Enter" && handleAddRequirement()}
+              className="flex-1"
             />
-            <Button onClick={addRequirement}>Add</Button>
+            <Button type="button" onClick={handleAddRequirement} size="sm">Add</Button>
           </div>
           <div className="flex flex-wrap gap-2 mt-2">
-            {servicePrefs.specialRequirements?.map((requirement) => (
+            {getSpecialRequirementsArray().map((requirement) => (
               <Badge key={requirement} variant="secondary" className="flex items-center gap-1">
                 {requirement}
-                <X 
-                  className="h-3 w-3 cursor-pointer" 
-                  onClick={() => removeRequirement(requirement)}
-                />
+                <button onClick={() => removeRequirement(requirement)} className="ml-1">
+                  <X className="h-3 w-3" />
+                </button>
               </Badge>
             ))}
-            {!servicePrefs.specialRequirements?.length && (
+            {getSpecialRequirementsArray().length === 0 && (
               <p className="text-sm text-muted-foreground">No special requirements added</p>
             )}
           </div>
         </div>
       </div>
       
-      <div className="flex justify-end pt-6">
-        <Button onClick={handleSubmit}>
-          Continue
-        </Button>
-      </div>
+      <Button onClick={handleSubmit} className="w-full">
+        Save Preferences
+      </Button>
     </div>
   );
 }

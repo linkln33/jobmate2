@@ -7,35 +7,99 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Checkbox } from "@/components/ui/checkbox";
-import { UserPreferences } from "@/types/compatibility";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { JobPreferences, MainCategory, UserPreferences } from "@/types/compatibility";
 
 interface JobMatePreferencesJobStepProps {
   preferences: Partial<UserPreferences>;
   onUpdate: (preferences: Partial<UserPreferences>) => void;
   onBack?: () => void;
+  category?: MainCategory; // Added category prop to customize skill suggestions
+  isHiring?: boolean; // Added isHiring prop for hiring-specific UI
 }
 
 export function JobMatePreferencesJobStep({ 
   preferences, 
   onUpdate,
-  onBack 
+  onBack,
+  category = 'jobs' // Default to 'jobs' if no category is provided
 }: JobMatePreferencesJobStepProps) {
-  const [jobPrefs, setJobPrefs] = useState(preferences.categoryPreferences?.jobs || {
+  const [jobPrefs, setJobPrefs] = useState<JobPreferences>(preferences.categoryPreferences?.jobs || {
     minSalary: 0,
     maxSalary: 150000,
-    desiredSkills: [],
-    remotePreference: "hybrid",
+    desiredSkills: [] as string[],
+    workArrangement: "hybrid",
     experienceLevel: "mid",
     companySize: "any",
-    industryPreference: [],
-    benefitsPreference: [],
+    industryPreference: [] as string[],
+    benefitsPreference: [] as string[],
     workSchedulePreference: "full-time"
   });
   
   const [skillInput, setSkillInput] = useState("");
   const [industryInput, setIndustryInput] = useState("");
+  
+  // Category-specific skill suggestions
+  const categorySkills: Record<string, string[]> = {
+    // Original category
+    'jobs': [
+      "Project Management", "Microsoft Office", "Communication", "Leadership", 
+      "Problem Solving", "Customer Service", "Time Management", "Teamwork"
+    ],
+    // New categories for earning money
+    'business': [
+      "Data Entry", "Bookkeeping", "Administrative Support", "Customer Service", 
+      "Microsoft Office", "CRM Software", "Scheduling", "Email Management"
+    ],
+    'digital': [
+      "JavaScript", "React", "UI/UX Design", "Graphic Design", "Content Writing", 
+      "SEO", "Social Media Marketing", "Video Editing", "WordPress", "Photoshop"
+    ],
+    'skilled-trades': [
+      "Carpentry", "Electrical", "Plumbing", "Welding", "Masonry", 
+      "Roofing", "HVAC", "Blueprint Reading", "Power Tools", "Safety Protocols"
+    ],
+    'home-services': [
+      "Cleaning", "Home Repairs", "Furniture Assembly", "Painting", 
+      "Appliance Repair", "Window Cleaning", "Carpet Cleaning", "Pest Control"
+    ],
+    'care-assistance': [
+      "Childcare", "Elder Care", "CPR Certified", "First Aid", "Meal Preparation", 
+      "Medication Management", "Pet Care", "Special Needs Experience"
+    ],
+    'transport': [
+      "Driver's License", "Clean Driving Record", "Forklift Operation", "Delivery Experience", 
+      "Navigation Skills", "Vehicle Maintenance", "Food Delivery", "Bike Messenger"
+    ],
+    'education': [
+      "Subject Expertise", "Curriculum Development", "Tutoring", "Test Prep", 
+      "Language Teaching", "Coaching", "Mentoring", "Lesson Planning"
+    ],
+    'personal': [
+      "Photography", "Event Planning", "Styling", "Makeup Application", 
+      "Hair Styling", "Personal Shopping", "Massage Therapy", "Fashion Knowledge"
+    ],
+    'outdoor-garden': [
+      "Landscaping", "Lawn Care", "Gardening", "Tree Trimming", 
+      "Irrigation Systems", "Plant Knowledge", "Equipment Operation", "Pest Management"
+    ],
+    'errands': [
+      "Shopping", "Time Management", "Organization", "Attention to Detail", 
+      "Reliability", "Meal Preparation", "Package Handling", "Inventory Management"
+    ],
+    'niche': [
+      "Specialized Skills", "Technical Knowledge", "Equipment Operation", "Certifications", 
+      "Artistic Ability", "Attention to Detail", "Problem Solving", "Customer Service"
+    ],
+    'community': [
+      "Volunteer Experience", "Fundraising", "Community Outreach", "Event Coordination", 
+      "Public Speaking", "Grant Writing", "Nonprofit Management", "Social Services"
+    ]
+  };
+  
+  // Get relevant skills based on the selected category
+  const suggestedSkills = categorySkills[category] || categorySkills['jobs'];
   
   // Common industries for suggestions
   const commonIndustries = [
@@ -169,6 +233,8 @@ export function JobMatePreferencesJobStep({
             />
             <Button onClick={addSkill}>Add</Button>
           </div>
+          
+          {/* Display selected skills */}
           <div className="flex flex-wrap gap-2 mt-2">
             {jobPrefs.desiredSkills?.map((skill) => (
               <Badge key={skill} variant="secondary" className="flex items-center gap-1">
@@ -182,6 +248,30 @@ export function JobMatePreferencesJobStep({
             {!jobPrefs.desiredSkills?.length && (
               <p className="text-sm text-muted-foreground">No skills added yet</p>
             )}
+          </div>
+          
+          {/* Suggested skills based on category */}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium mb-2">Suggested skills for {category}:</h4>
+            <div className="flex flex-wrap gap-2">
+              {suggestedSkills.map((skill: string) => (
+                <Badge 
+                  key={skill} 
+                  variant="outline" 
+                  className="cursor-pointer hover:bg-secondary"
+                  onClick={() => {
+                    if (!jobPrefs.desiredSkills?.includes(skill)) {
+                      setJobPrefs((prev: JobPreferences) => ({
+                        ...prev,
+                        desiredSkills: [...(prev.desiredSkills || []), skill]
+                      }));
+                    }
+                  }}
+                >
+                  + {skill}
+                </Badge>
+              ))}
+            </div>
           </div>
         </div>
         
@@ -300,10 +390,9 @@ export function JobMatePreferencesJobStep({
         </div>
       </div>
       
-      <div className="flex justify-end pt-6">
-        <Button onClick={handleSubmit}>
-          Continue
-        </Button>
+      {/* Navigation buttons moved to main wizard footer */}
+      <div className="hidden">
+        <Button onClick={handleSubmit}>Continue</Button>
       </div>
     </div>
   );

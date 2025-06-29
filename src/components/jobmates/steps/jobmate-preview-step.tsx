@@ -414,14 +414,7 @@ export function JobMatePreviewStep({
         </Card>
       </div>
       
-      <div className="flex justify-between pt-6">
-        <Button variant="outline" onClick={onBack}>
-          Back
-        </Button>
-        <Button onClick={onSubmit} disabled={isSubmitting}>
-          {isSubmitting ? "Creating..." : "Create JobMate"}
-        </Button>
-      </div>
+      {/* Navigation handled by main wizard container */}
     </div>
   );
 }
