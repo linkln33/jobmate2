@@ -583,6 +583,8 @@ export function JobMateCreationWizard({
               <JobMatePreferencesJobStep
                 preferences={formData.preferences || {}}
                 onUpdate={updatePreferences}
+                isHiring={formData.intent === "hire"}
+                category={formData.categoryFocus}
                 // Don't pass onBack here as we handle it in the footer
               />
             );
@@ -775,7 +777,6 @@ export function JobMateCreationWizard({
           case "creative-showcase":
           case "deals-discounts":
           case "new-listings":
-          case "browse":
           case "events":
           case "favors":
           case "transportation":

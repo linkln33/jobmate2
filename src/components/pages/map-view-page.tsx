@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { getCategoryNameById, getSubcategoryNameById } from '@/utils/category-icons';
-import { EnhancedJobMap } from '@/components/map/enhanced-job-map';
+import { InteractiveJobMap } from '@/components/map/interactive-job-map';
 import { MapFilters } from '@/components/map/map-filters';
 import { MapFilterOverlay } from '@/components/map/map-filter-overlay';
 import { MobileMapView } from '@/components/map/mobile-map-view';
@@ -813,44 +813,14 @@ export function MapViewPage() {
                   </div>
                 ) : (
                   <div className="h-full w-full">
-                    <EnhancedJobMap
-                      initialJobs={filteredJobs.map(job => ({
-                        id: job.id.toString(),
-                        title: job.title,
-                        description: job.title, // Use title as description since description doesn't exist
-                        status: job.status,
-                        lat: job.lat,
-                        lng: job.lng,
-                        city: job.address.split(',')[0] || '',
-                        state: job.address.split(',')[1] || '',
-                        zipCode: job.address.split(',')[2] || '',
-                        budgetMin: parseInt(job.price.replace(/[^0-9]/g, '') || '0'),
-                        createdAt: new Date().toISOString(),
-                        urgencyLevel: job.urgency === 'urgent' ? 'high' : job.urgency,
-                        isVerifiedPayment: job.status === 'accepted',
-                        isNeighborPosted: Math.random() > 0.5, // Mock data for now
-                        serviceCategory: {
-                          id: job.category || '',
-                          name: getCategoryNameById(job.category || '')
-                        },
-                        customer: {
-                          id: typeof job.customer === 'string' ? job.customer : '',
-                          firstName: 'Customer',
-                          lastName: 'Name'
-                        }
-                      }))}
-                      initialCenter={{ lat: 37.7749, lng: -122.4194 }} // San Francisco
-                      initialZoom={12}
-                      height="100%"
-                      onJobSelected={(jobId) => {
-                        setSelectedJobId(jobId);
-                        const job = jobs.find(j => j.id === jobId);
-                        if (job) {
-                          setSelectedJob(job);
-                        }
+                    <InteractiveJobMap
+                      jobs={filteredJobs}
+                      defaultCenter={{ lat: 37.7749, lng: -122.4194 }} // Default to San Francisco
+                      defaultZoom={12}
+                      onJobSelect={(job) => {
+                        setSelectedJobId(job.id.toString());
+                        setSelectedJob(job);
                       }}
-                      categories={[]} // We'll implement this later
-                      selectedJobId={selectedJobId}
                     />
                   </div>
                 )}

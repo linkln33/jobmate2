@@ -1232,8 +1232,8 @@ export default function UnifiedProfilePageNew() {
                     />
                   </CardHeader>
                   <CardContent className="p-0">
-                    {profile ? (
-                      <JobMateDashboard userId={profile.id} />
+                    {profileData ? (
+                      <JobMateDashboard userId={profileData.id} />
                     ) : (
                       <div className="flex justify-center items-center p-6">
                         <p className="text-muted-foreground">Loading JobMates...</p>

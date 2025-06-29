@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Job } from '@/components/map/enhanced-job-map';
+import { Job } from '@/types/job';
 import { Specialist, matchService, MatchResult } from '@/services/match-service';
 import { JobMatchCard } from './job-match-card';
 import { Button } from '@/components/ui/button';

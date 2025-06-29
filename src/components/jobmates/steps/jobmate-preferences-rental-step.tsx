@@ -49,17 +49,119 @@ export function JobMatePreferencesRentalStep({
   
   const [amenityInput, setAmenityInput] = useState("");
   
-  // Common property types - must match RentalSubcategory type
-  const propertyTypes: RentalSubcategory[] = [
-    "apartments", "houses", "rooms", "offices", 
-    "event-spaces", "equipment", "vehicles", "party"
-  ];
+  // Category-specific property types - must match RentalSubcategory type
+  const categoryPropertyTypes: Record<string, RentalSubcategory[]> = {
+    // Default rental types
+    'rentals': [
+      "apartments", "houses", "rooms", "offices", 
+      "event-spaces", "equipment", "vehicles", "party"
+    ],
+    
+    // Apartment specific
+    'apartments': [
+      "apartments", "studio", "loft", "penthouse", 
+      "duplex", "high-rise", "garden-apartment", "condo"
+    ],
+    
+    // House specific
+    'houses': [
+      "houses", "single-family", "townhouse", "cottage", 
+      "cabin", "villa", "bungalow", "mansion"
+    ],
+    
+    // Room specific
+    'rooms': [
+      "rooms", "shared-room", "private-room", "master-bedroom", 
+      "guest-room", "student-housing", "co-living", "dormitory"
+    ],
+    
+    // Vacation rentals
+    'vacation-rentals': [
+      "beach-house", "cabin", "villa", "resort", 
+      "cottage", "chalet", "houseboat", "island-rental"
+    ],
+    
+    // Commercial space
+    'commercial-space': [
+      "offices", "retail", "warehouse", "industrial", 
+      "restaurant-space", "medical-office", "coworking", "studio-space"
+    ],
+    
+    // Event venues
+    'event-venues': [
+      "event-spaces", "party", "wedding-venue", "conference-center", 
+      "banquet-hall", "outdoor-venue", "studio-space", "theater"
+    ],
+    
+    // Parking & storage
+    'parking-storage': [
+      "parking", "storage-unit", "garage", "warehouse", 
+      "self-storage", "boat-storage", "rv-parking", "vehicle-storage"
+    ]
+  };
   
-  // Common amenities
-  const commonAmenities: string[] = [
-    "Parking", "Laundry", "Dishwasher", "Air Conditioning", 
-    "Gym", "Pool", "Balcony", "Pets Allowed", "Furnished"
-  ];
+  // Determine which property types to show based on category
+  const propertyTypes: RentalSubcategory[] = 
+    (category && categoryPropertyTypes[category]) ? 
+    categoryPropertyTypes[category] : 
+    categoryPropertyTypes['rentals'];
+  
+  // Category-specific amenities
+  const categoryAmenities: Record<string, string[]> = {
+    // Default rental amenities
+    'rentals': [
+      "Parking", "Laundry", "Dishwasher", "Air Conditioning", 
+      "Gym", "Pool", "Balcony", "Pets Allowed", "Furnished"
+    ],
+    
+    // Apartment specific amenities
+    'apartments': [
+      "In-unit Laundry", "Dishwasher", "Central AC", "Balcony", 
+      "Elevator", "Doorman", "Gym", "Pool", "Rooftop", "Package Service"
+    ],
+    
+    // House specific amenities
+    'houses': [
+      "Yard", "Garage", "Basement", "Porch", "Deck", 
+      "Fireplace", "Washer/Dryer", "Smart Home", "Garden", "Driveway"
+    ],
+    
+    // Room specific amenities
+    'rooms': [
+      "Private Bathroom", "Furnished", "Utilities Included", "Closet", 
+      "Kitchen Access", "Private Entrance", "WiFi", "Cable TV"
+    ],
+    
+    // Vacation rental amenities
+    'vacation-rentals': [
+      "Ocean View", "Hot Tub", "WiFi", "Kitchen", "BBQ", 
+      "Waterfront", "Private Pool", "Outdoor Space", "Entertainment System"
+    ],
+    
+    // Commercial space amenities
+    'commercial-space': [
+      "High-speed Internet", "Conference Room", "Reception Area", "Kitchen", 
+      "Security System", "24/7 Access", "Utilities Included", "Parking"
+    ],
+    
+    // Event venue amenities
+    'event-venues': [
+      "Sound System", "Lighting", "Catering Kitchen", "Tables/Chairs", 
+      "Restrooms", "Parking", "Outdoor Space", "AV Equipment", "Stage"
+    ],
+    
+    // Parking & storage amenities
+    'parking-storage': [
+      "24/7 Access", "Climate Control", "Security Camera", "Gated Entry", 
+      "Drive-up Access", "Indoor", "Covered", "Electricity"
+    ]
+  };
+  
+  // Determine which amenities to show based on category
+  const commonAmenities: string[] = 
+    (category && categoryAmenities[category]) ? 
+    categoryAmenities[category] : 
+    categoryAmenities['rentals'];
   
   // Lease length options
   const leaseLengthOptions: string[] = [

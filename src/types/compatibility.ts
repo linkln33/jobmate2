@@ -316,7 +316,17 @@ export interface JobPreferences {
   industries?: string[];
   benefits?: string[];
   workSchedule?: string;
-  remotePreference?: boolean;
+  remotePreference?: string; // Changed from boolean to string for 'remote', 'hybrid', 'onsite'
+  
+  // Hiring-specific fields
+  isHiring?: boolean;
+  hiringCategory?: string;
+  paymentType?: string; // 'hourly', 'fixed-price', 'negotiable'
+  providerType?: string; // 'individual', 'small-business', 'professional'
+  workDuration?: string; // 'one-time', 'short-term', 'long-term'
+  availabilityRequirements?: string[];
+  certificationRequirements?: string[];
+  benefitsOffered?: string[];
   [key: string]: any;
 }
 

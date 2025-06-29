@@ -53,12 +53,128 @@ export function JobMatePreferencesServiceStep({
   const [serviceTypeInput, setServiceTypeInput] = useState("");
   const [requirementInput, setRequirementInput] = useState("");
   
-  // Common service types - must match ServiceSubcategory type
-  const serviceTypes: ServiceSubcategory[] = [
-    "handyman", "development", "design", "writing", 
-    "marketing", "legal", "tutoring", "health", "events",
-    "cleaning", "gardening", "pet-care", "moving"
-  ];
+  // Category-specific service types - must match ServiceSubcategory type
+  const categoryServiceTypes: Record<string, ServiceSubcategory[]> = {
+    // Default services
+    'services': [
+      "handyman", "development", "design", "writing", 
+      "marketing", "legal", "tutoring", "health", "events",
+      "cleaning", "gardening", "pet-care", "moving"
+    ],
+    
+    // Home services
+    'home-services': [
+      "cleaning", "handyman", "plumbing", "electrical", 
+      "painting", "moving", "gardening", "furniture-assembly"
+    ],
+    
+    // Tech help
+    'tech-help': [
+      "development", "it-support", "computer-repair", "network-setup", 
+      "smart-home", "data-recovery", "software-training", "cybersecurity"
+    ],
+    
+    // Creative help
+    'creative-help': [
+      "design", "writing", "photography", "video-production", 
+      "music-production", "illustration", "animation", "branding"
+    ],
+    
+    // Event help
+    'event-help': [
+      "events", "catering", "photography", "entertainment", 
+      "decoration", "coordination", "audio-visual", "venue-setup"
+    ],
+    
+    // Household
+    'household': [
+      "cleaning", "cooking", "laundry", "organization", 
+      "shopping", "errands", "home-management", "meal-prep"
+    ],
+    
+    // Pet care
+    'pet-care': [
+      "pet-care", "dog-walking", "pet-sitting", "grooming", 
+      "training", "pet-transportation", "pet-health", "specialty-care"
+    ],
+    
+    // Plant care
+    'plant-care': [
+      "gardening", "plant-sitting", "landscaping", "indoor-plants", 
+      "garden-design", "maintenance", "seasonal-care", "specialty-plants"
+    ],
+    
+    // Childcare
+    'childcare': [
+      "babysitting", "nanny", "tutoring", "activities", 
+      "transportation", "special-needs", "overnight-care", "homework-help"
+    ],
+    
+    // Elder care
+    'elder-care': [
+      "companionship", "health", "meal-prep", "transportation", 
+      "medication-management", "mobility-assistance", "personal-care", "respite-care"
+    ],
+    
+    // Tutoring
+    'tutoring': [
+      "tutoring", "academic", "test-prep", "language", 
+      "music-lessons", "art-lessons", "computer-skills", "professional-skills"
+    ],
+    
+    // Equipment rental
+    'equipment-rental': [
+      "tools", "construction", "event-equipment", "outdoor", 
+      "photography", "audio-visual", "sports", "specialty-equipment"
+    ],
+    
+    // Vehicle rental
+    'vehicle-rental': [
+      "cars", "trucks", "vans", "motorcycles", 
+      "bicycles", "boats", "recreational", "specialty-vehicles"
+    ],
+    
+    // Electronics rental
+    'electronics-rental': [
+      "computers", "cameras", "audio", "displays", 
+      "gaming", "drones", "phones", "specialty-electronics"
+    ],
+    
+    // Marketplace categories
+    'marketplace': [
+      "electronics", "home-goods", "clothing", "collectibles", 
+      "sports-equipment", "toys-games", "vehicles", "books-media"
+    ],
+    
+    // Learning categories
+    'learning': [
+      "tutoring", "courses", "workshops", "mentoring", 
+      "language", "professional", "creative", "technical"
+    ],
+    
+    // Travel categories
+    'travel': [
+      "accommodations", "transportation", "tours", "experiences", 
+      "planning", "local-guides", "specialty-travel", "group-travel"
+    ]
+  };
+  
+  // Determine which service types to show based on category and props
+  let serviceTypes: ServiceSubcategory[] = [];
+  
+  if (isRental) {
+    serviceTypes = categoryServiceTypes['equipment-rental'];
+  } else if (isMarketplace) {
+    serviceTypes = categoryServiceTypes['marketplace'];
+  } else if (isLearning) {
+    serviceTypes = categoryServiceTypes['learning'];
+  } else if (isTravel) {
+    serviceTypes = categoryServiceTypes['travel'];
+  } else if (category && categoryServiceTypes[category]) {
+    serviceTypes = categoryServiceTypes[category];
+  } else {
+    serviceTypes = categoryServiceTypes['services'];
+  }
   
   // Payment methods
   const paymentMethods = [
