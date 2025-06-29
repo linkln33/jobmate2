@@ -88,6 +88,8 @@ export function JobMatePreviewStep({
         return "Find Help";
       case "learn":
         return "Learn Skills";
+      case "holiday":
+        return "Holiday & Travel";
       default:
         return formData.intent;
     }

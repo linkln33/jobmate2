@@ -1,7 +1,7 @@
 import { MainCategory, UserPreferences, Subcategory } from './compatibility';
 
 export type JobMateStatus = 'active' | 'paused' | 'archived';
-export type JobMateIntent = 'earn' | 'hire' | 'sell' | 'rent' | 'list' | 'buy' | 'help' | 'learn' | 'browse';
+export type JobMateIntent = 'earn' | 'hire' | 'sell' | 'rent' | 'list' | 'buy' | 'help' | 'learn' | 'browse' | 'holiday';
 
 export interface JobMateSettings {
   autoRun: boolean;

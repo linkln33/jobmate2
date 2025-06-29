@@ -216,6 +216,7 @@ export function JobMateCreationWizard({
                 { value: "rent", label: "Rent something", icon: "🏠" },
                 { value: "help", label: "Find help / favor", icon: "🙋" },
                 { value: "learn", label: "Explore or learn", icon: "🔍" },
+                { value: "holiday", label: "Holiday & Travel", icon: "🌴" },
                 { value: "browse", label: "Just browsing", icon: "👀" },
               ].map((option) => (
                 <Button
