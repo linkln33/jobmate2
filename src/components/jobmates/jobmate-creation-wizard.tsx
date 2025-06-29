@@ -159,12 +159,13 @@ export function JobMateCreationWizard({
     nextStep();
   };
   
-  const updateNameAndDetails = (name: string, emoji: string, description: string) => {
+  const updateNameAndDetails = (name: string, emoji: string, description: string, settings?: JobMateFormData['settings']) => {
     setFormData(prev => ({
       ...prev,
       name,
       emoji,
-      description
+      description,
+      settings: settings || prev.settings
     }));
     nextStep();
   };
@@ -318,7 +319,12 @@ export function JobMateCreationWizard({
         return (
           <JobMatePersonalizeStep
             formData={formData}
-            onUpdate={setFormData}
+            onUpdate={(updatedFormData) => {
+              // Extract the name, emoji, description, and settings from the updated form data
+              const { name, emoji, description, settings } = updatedFormData;
+              // Use updateNameAndDetails which will also call nextStep()
+              updateNameAndDetails(name, emoji, description, settings);
+            }}
             onBack={prevStep}
           />
         );
