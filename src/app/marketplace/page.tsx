@@ -47,7 +47,7 @@ function convertToCardProps(
       isVerified: true,
       isVip: false,
       user: {
-        name: listing.contactInfo?.email || 'Listing Owner',
+        name: listing.contactInfo?.name || listing.userId?.split('@')[0] || 'Listing Owner',
         avatar: '/images/avatars/avatar-1.png'
       },
       compatibilityScore: listing.compatibilityScore,

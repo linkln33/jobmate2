@@ -55,12 +55,22 @@ export function MarketplaceListingCard({
   className,
   onClick
 }: MarketplaceListingCardProps) {
+  // Enhanced glassmorphism effect with subtler colors
+  const glassmorphismStyle = {
+    background: 'linear-gradient(135deg, rgba(173, 216, 230, 0.65) 0%, rgba(173, 216, 230, 0.45) 100%)',
+    backdropFilter: 'blur(18px)',
+    border: '1px solid rgba(173, 216, 230, 0.4)',
+    boxShadow: '0 10px 25px 0 rgba(31, 38, 135, 0.2), 0 5px 10px rgba(0, 0, 0, 0.08)',
+    transition: 'all 0.3s ease-in-out'
+  };
+
   return (
     <div 
       className={cn(
-        "bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer",
+        "relative rounded-xl overflow-hidden glassmorphism-container h-[470px] flex flex-col hover:translate-y-[-10px] hover:shadow-xl transition-all duration-300",
         className
       )}
+      style={glassmorphismStyle}
       onClick={onClick}
     >
       {/* Image with badges */}
@@ -129,14 +139,17 @@ export function MarketplaceListingCard({
         <h3 className="font-bold text-lg mb-1">{title}</h3>
         <p className="text-gray-600 dark:text-gray-300 text-sm mb-3 line-clamp-2">{description}</p>
         
-        {/* Tags */}
+        {/* Tags - limited to 5 with consistent sizing */}
         {tags && tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-3">
-            {tags.map((tag, index) => (
-              <Badge key={index} variant="outline" className="text-xs">
+          <div className="flex flex-wrap gap-1 mb-3 h-[60px] overflow-hidden">
+            {tags.slice(0, 5).map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-xs px-3 py-1 min-w-[80px] max-w-[120px] h-[28px] flex items-center justify-center border border-gray-300 dark:border-gray-600 mb-1 truncate">
                 {tag}
               </Badge>
             ))}
+            {tags.length > 5 && (
+              <Badge variant="outline" className="text-xs px-3 py-1 min-w-[80px] max-w-[120px] h-[28px] flex items-center justify-center border border-gray-300 dark:border-gray-600">+{tags.length - 5} more</Badge>
+            )}
           </div>
         )}
         
@@ -170,28 +183,32 @@ export function MarketplaceListingCard({
           </div>
         )}
         
-        {/* User info */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <Avatar className="h-6 w-6 mr-2">
-              {user.avatar && <AvatarImage src={user.avatar} alt={user.name} />}
-              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-            </Avatar>
-            <span className="text-sm text-gray-600 dark:text-gray-400">{user.name}</span>
+        {/* Share button replacing user info */}
+        <div className="flex items-center justify-center">
+          {/* Share button */}
+          <div className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1.5 rounded-full shadow-sm text-xs cursor-pointer hover:from-blue-600 hover:to-purple-600 transition-all share-button-container mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+              <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+            </svg>
+            <span>Share & get 5-15%</span>
           </div>
-          
-          {/* Stats */}
-          {stats && (
-            <div className="flex items-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
-              {stats.views !== undefined && (
-                <span>{stats.views} views</span>
-              )}
-              {stats.likes !== undefined && (
-                <span>{stats.likes} likes</span>
-              )}
-            </div>
-          )}
         </div>
+        
+        {/* Stats - moved to separate div */}
+        {stats && (
+          <div className="flex items-center justify-center mt-2 text-xs text-gray-500 dark:text-gray-400">
+            {stats.views !== undefined && (
+              <span className="mr-2">{stats.views} views</span>
+            )}
+            {stats.likes !== undefined && (
+              <span>{stats.likes} likes</span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
