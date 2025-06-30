@@ -11,6 +11,16 @@ import {
 } from '@/components/ui/popover';
 import { MARKETPLACE_CATEGORIES } from '@/data/marketplace-categories';
 
+/**
+ * Props for the MarketplaceSearch component.
+ * 
+ * @interface MarketplaceSearchProps
+ * @property {(query: string) => void} onSearch - Callback function triggered when search is performed
+ * @property {(filters: any) => void} [onFilter] - Optional callback function for when filters are applied
+ * @property {string} [className] - Optional additional CSS classes for styling
+ * @property {string[]} [selectedCategories] - Optional array of currently selected category IDs
+ * @property {(categoryId: string) => void} [onCategorySelect] - Optional callback function when a category is selected
+ */
 interface MarketplaceSearchProps {
   onSearch: (query: string) => void;
   onFilter?: (filters: any) => void;
@@ -19,6 +29,40 @@ interface MarketplaceSearchProps {
   onCategorySelect?: (categoryId: string) => void;
 }
 
+/**
+ * MarketplaceSearch Component
+ * 
+ * A comprehensive search component for the JobMate marketplace that includes
+ * text search functionality with category filtering via dropdown. This component
+ * enhances the user experience by providing quick access to marketplace categories
+ * directly from the search bar.
+ * 
+ * Features:
+ * - Text search with instant feedback
+ * - Category dropdown with emoji icons for visual identification
+ * - Clear button to reset search input
+ * - Optional filter popover integration
+ * - Responsive design that works across device sizes
+ * - Keyboard navigation support
+ * - Outside click detection to close dropdown
+ * 
+ * The component uses the MARKETPLACE_CATEGORIES data to populate the category
+ * dropdown, allowing users to quickly filter listings by category.
+ * 
+ * @param {MarketplaceSearchProps} props - Component props
+ * @returns {JSX.Element} A search component with category dropdown
+ * 
+ * @example
+ * ```tsx
+ * <MarketplaceSearch
+ *   onSearch={(query) => fetchSearchResults(query)}
+ *   onFilter={(filters) => applyFilters(filters)}
+ *   selectedCategories={['tech', 'design']}
+ *   onCategorySelect={(categoryId) => toggleCategory(categoryId)}
+ *   className="my-4"
+ * />
+ * ```
+ */
 export function MarketplaceSearch({
   onSearch,
   onFilter,
@@ -26,12 +70,30 @@ export function MarketplaceSearch({
   selectedCategories = [],
   onCategorySelect = () => {}
 }: MarketplaceSearchProps) {
+  /**
+   * State for the current search query text
+   */
   const [searchQuery, setSearchQuery] = useState('');
+  
+  /**
+   * State to control the visibility of the category dropdown
+   */
   const [showDropdown, setShowDropdown] = useState(false);
+  
+  /**
+   * Reference to the dropdown container for outside click detection
+   */
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  /**
+   * Reference to the search input for focus management
+   */
   const inputRef = useRef<HTMLInputElement>(null);
   
-  // Close dropdown when clicking outside
+  /**
+   * Effect to handle closing the dropdown when clicking outside
+   * Adds and removes event listeners for mousedown events
+   */
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -45,10 +107,19 @@ export function MarketplaceSearch({
     };
   }, []);
   
+  /**
+   * Shows the category dropdown when the input is focused
+   */
   const handleFocus = () => {
     setShowDropdown(true);
   };
   
+  /**
+   * Handles category selection from the dropdown
+   * Calls the onCategorySelect callback and refocuses the input
+   * 
+   * @param {string} categoryId - ID of the selected category
+   */
   const handleCategorySelect = (categoryId: string) => {
     onCategorySelect(categoryId);
     // Focus back on input after selection
@@ -57,11 +128,20 @@ export function MarketplaceSearch({
     }
   };
   
+  /**
+   * Handles form submission for search
+   * Prevents default form behavior and triggers the onSearch callback
+   * 
+   * @param {React.FormEvent} e - Form submit event
+   */
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     onSearch(searchQuery);
   };
   
+  /**
+   * Clears the search input and triggers search with empty query
+   */
   const handleClear = () => {
     setSearchQuery('');
     onSearch('');

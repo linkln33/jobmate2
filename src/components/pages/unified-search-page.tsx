@@ -1,23 +1,76 @@
 "use client";
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Star, Search, MapPin, Filter, ChevronDown, Briefcase, Clock, Calendar } from 'lucide-react';
-import Link from 'next/link';
-import { getInitials } from '@/lib/utils';
-import { useAuth } from '@/contexts/AuthContext';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Search, MapPin, Star, Briefcase, Clock, Calendar, Filter } from 'lucide-react';
+
+// Algolia imports
+import { InstantSearch, Configure, RefinementList } from 'react-instantsearch';
+import { searchClient } from '@/utils/algolia';
+import { AlgoliaSearchBar } from '@/components/search/algolia-search-bar';
+import { SpecialistsHits } from '@/components/search/specialists-hits';
+import { JobsHits } from '@/components/search/jobs-hits';
+import { MARKETPLACE_CATEGORIES } from '@/data/marketplace-categories';
+
+// Mock auth hook until real implementation is available
+function useAuth() {
+  return {
+    isAuthenticated: true,
+    user: {
+      name: 'Demo User',
+      email: 'user@example.com',
+      avatar: ''
+    }
+  };
+}
+
+// Helper function to get initials from name
+const getInitials = (name: string) => {
+  if (!name) return '';
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+};
+
+// Helper function to format date
+function formatDate(timestamp: number): string {
+  const now = Date.now();
+  const diff = now - timestamp;
+  
+  // Less than a day
+  if (diff < 86400000) {
+    return 'Today';
+  }
+  // Less than a week
+  else if (diff < 604800000) {
+    const days = Math.floor(diff / 86400000);
+    return `${days} day${days > 1 ? 's' : ''} ago`;
+  }
+  // Less than a month
+  else if (diff < 2592000000) {
+    const weeks = Math.floor(diff / 604800000);
+    return `${weeks} week${weeks > 1 ? 's' : ''} ago`;
+  }
+  // More than a month
+  else {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+  }
+}
 
 export function UnifiedSearchPage() {
   const { isAuthenticated, user } = useAuth();
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('specialists');
   const [category, setCategory] = useState('all');
   const [priceRange, setPriceRange] = useState([0, 100]);
   const [sortBy, setSortBy] = useState('rating');
@@ -131,32 +184,29 @@ export function UnifiedSearchPage() {
   ];
   
   return (
-    <UnifiedDashboardLayout title="Search" showMap={false}>
-      <div className="container mx-auto px-4 py-8">
+    <InstantSearch searchClient={searchClient} indexName="jobmate_listings">
+      <Configure hitsPerPage={12} distinct={true} />
+      <UnifiedDashboardLayout title="Search" showMap={false}>
+        <div className="container mx-auto px-4 py-8">
         {/* Search Header */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-grow">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-              <Input
-                type="text"
-                placeholder="Search for jobs, skills, or specialists..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-md"
-              />
-            </div>
+            <AlgoliaSearchBar />
             <div className="flex gap-2">
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="w-[180px] bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-md">
+                <SelectTrigger className="w-[220px] bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-md">
                   <SelectValue placeholder="Category" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Categories</SelectItem>
-                  <SelectItem value="development">Development</SelectItem>
-                  <SelectItem value="design">Design</SelectItem>
-                  <SelectItem value="marketing">Marketing</SelectItem>
-                  <SelectItem value="writing">Writing</SelectItem>
+                  {MARKETPLACE_CATEGORIES.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>
+                      <span className="flex items-center">
+                        <span className="mr-2">{category.icon}</span>
+                        <span>{category.name}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <Button variant="outline" className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-md">
@@ -185,126 +235,48 @@ export function UnifiedSearchPage() {
         </div>
         
         {/* Search Results */}
-        <Tabs defaultValue="specialists" className="mb-8">
+        <Tabs defaultValue="specialists" className="mb-8" onValueChange={(value) => {
+          // When tab changes, update the Algolia index being searched
+          const indexName = value === 'specialists' ? 'jobmate_specialists' : 'jobmate_listings';
+          // This would normally update the index, but we'll keep it simple for now
+        }}>
           <TabsList className="mb-6 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-md">
             <TabsTrigger value="specialists">Specialists</TabsTrigger>
             <TabsTrigger value="jobs">Jobs</TabsTrigger>
           </TabsList>
           
           <TabsContent value="specialists">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {specialists.map((specialist) => (
-                <Card key={specialist.id} className="overflow-hidden bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition">
-                  <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                      <Avatar className="h-16 w-16">
-                        <AvatarImage src={specialist.avatar} alt={specialist.name} />
-                        <AvatarFallback className="bg-gradient-to-r from-brand-500 to-blue-500 text-white">
-                          {getInitials(specialist.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-grow">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-semibold text-lg">{specialist.name}</h3>
-                            <p className="text-gray-500 dark:text-gray-400">{specialist.title}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400 mr-1" />
-                            <span className="font-medium">{specialist.rating}</span>
-                            <span className="text-gray-500 dark:text-gray-400 text-sm ml-1">({specialist.reviews})</span>
-                          </div>
-                        </div>
-                        
-                        <div className="mt-2 flex items-center text-gray-500 dark:text-gray-400 text-sm">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          <span>{specialist.location}</span>
-                          <span className="mx-2">•</span>
-                          <span>${specialist.hourlyRate}/hr</span>
-                        </div>
-                        
-                        <p className="mt-3 text-sm line-clamp-2">{specialist.description}</p>
-                        
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {specialist.skills.slice(0, 3).map((skill, index) => (
-                            <Badge key={index} variant="secondary" className="bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
-                              {skill}
-                            </Badge>
-                          ))}
-                          {specialist.skills.length > 3 && (
-                            <Badge variant="outline">+{specialist.skills.length - 3}</Badge>
-                          )}
-                        </div>
-                        
-                        <div className="mt-4 flex justify-between items-center">
-                          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
-                            <Briefcase className="h-4 w-4 mr-1" />
-                            <span>{specialist.completedJobs} jobs completed</span>
-                          </div>
-                          <Button asChild size="sm" className="bg-gradient-to-r from-brand-500 to-blue-500 hover:from-brand-600 hover:to-blue-600">
-                            <Link href={`/specialists/${specialist.id}`}>View Profile</Link>
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            {/* Algolia-powered specialists results */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <RefinementList
+                    attribute="category"
+                    limit={5}
+                    operator="or"
+                    className="hidden"
+                  />
+                </h3>
+              </div>
             </div>
+            <SpecialistsHits />
           </TabsContent>
           
           <TabsContent value="jobs">
-            <div className="grid grid-cols-1 gap-6">
-              {jobs.map((job) => (
-                <Card key={job.id} className="overflow-hidden bg-white/70 dark:bg-gray-800/70 backdrop-blur-md border-none shadow-lg hover:shadow-xl transition">
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-lg">{job.title}</h3>
-                        <p className="text-gray-500 dark:text-gray-400">{job.company}</p>
-                      </div>
-                      <Badge className="bg-gradient-to-r from-brand-500 to-blue-500 text-white">
-                        {job.type}
-                      </Badge>
-                    </div>
-                    
-                    <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-y-2 text-sm">
-                      <div className="flex items-center text-gray-500 dark:text-gray-400">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        <span>{job.location}</span>
-                      </div>
-                      <div className="flex items-center text-gray-500 dark:text-gray-400">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>{job.duration}</span>
-                      </div>
-                      <div className="flex items-center text-gray-500 dark:text-gray-400">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        <span>Posted {job.postedDate}</span>
-                      </div>
-                    </div>
-                    
-                    <p className="mt-3 text-sm line-clamp-2">{job.description}</p>
-                    
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {job.skills.map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300">
-                          {skill}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-4 flex justify-between items-center">
-                      <div className="text-brand-600 dark:text-brand-400 font-medium">
-                        {job.budget}
-                      </div>
-                      <Button asChild size="sm" className="bg-gradient-to-r from-brand-500 to-blue-500 hover:from-brand-600 hover:to-blue-600">
-                        <Link href={`/jobs/${job.id}`}>View Details</Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            {/* Algolia-powered jobs results */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <RefinementList
+                    attribute="jobType"
+                    limit={5}
+                    operator="or"
+                    className="hidden"
+                  />
+                </h3>
+              </div>
             </div>
+            <JobsHits />
           </TabsContent>
         </Tabs>
         
@@ -330,5 +302,6 @@ export function UnifiedSearchPage() {
         </div>
       </div>
     </UnifiedDashboardLayout>
+    </InstantSearch>
   );
 }

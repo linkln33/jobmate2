@@ -6,6 +6,24 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
+/**
+ * Props interface for the MarketplacePreviewCard component.
+ * 
+ * @interface MarketplacePreviewCardProps
+ * @property {string} [id] - Optional unique identifier for the marketplace listing
+ * @property {string} title - Title of the marketplace listing
+ * @property {string} description - Description of the marketplace listing
+ * @property {string} category - Category the listing belongs to
+ * @property {string} price - Price of the item/service/rental/job
+ * @property {string} [location] - Optional location information
+ * @property {string} imageUrl - URL to the image representing the listing
+ * @property {string} [userName] - Optional name of the user who posted the listing
+ * @property {string} [avatarUrl] - Optional URL to the avatar of the user
+ * @property {number} [rating] - Optional rating score (0-5)
+ * @property {'job' | 'service' | 'item' | 'rental'} [type] - Type of listing
+ * @property {string} [className] - Optional additional CSS classes
+ * @property {() => void} [onClick] - Optional click handler for the card
+ */
 export interface MarketplacePreviewCardProps {
   id?: string;
   title: string;
@@ -22,6 +40,45 @@ export interface MarketplacePreviewCardProps {
   onClick?: () => void;
 }
 
+/**
+ * MarketplacePreviewCard Component
+ * 
+ * A visually appealing card component that displays marketplace listings with a
+ * glassmorphism design. This component is used throughout the JobMate platform
+ * to present jobs, services, items, and rentals in a consistent, attractive format.
+ * 
+ * Features:
+ * - Glassmorphism styling with subtle gradients and blur effects
+ * - Animated hover and tap interactions using Framer Motion
+ * - Type-specific styling with appropriate icons and colors
+ * - Responsive image display with fallback
+ * - User information display with avatar
+ * - Rating display with star visualization
+ * - Price and location information
+ * 
+ * The card is designed to be used in grid layouts and marketplace search results,
+ * providing users with an at-a-glance view of important listing information.
+ * 
+ * @param {MarketplacePreviewCardProps} props - Component props
+ * @returns {JSX.Element} A marketplace preview card component
+ * 
+ * @example
+ * ```tsx
+ * <MarketplacePreviewCard
+ *   title="Professional Web Development"
+ *   description="Full-stack web development services for your business needs"
+ *   category="Development"
+ *   price="$75/hr"
+ *   location="Remote"
+ *   imageUrl="/images/web-dev.jpg"
+ *   userName="Jane Smith"
+ *   avatarUrl="/avatars/jane.jpg"
+ *   rating={4.8}
+ *   type="service"
+ *   onClick={() => router.push('/listing/123')}
+ * />
+ * ```
+ */
 export function MarketplacePreviewCard({
   id,
   title,
@@ -38,7 +95,10 @@ export function MarketplacePreviewCard({
   onClick,
   ...props
 }: MarketplacePreviewCardProps) {
-  // Enhanced glassmorphism effect with subtler colors
+  /**
+   * Custom glassmorphism style for the card
+   * Creates a translucent, blurred effect with subtle gradients and shadows
+   */
   const glassmorphismStyle = {
     background: 'linear-gradient(135deg, rgba(173, 216, 230, 0.65) 0%, rgba(173, 216, 230, 0.45) 100%)',
     backdropFilter: 'blur(18px)',
@@ -47,7 +107,11 @@ export function MarketplacePreviewCard({
     transition: 'all 0.3s ease-in-out'
   };
 
-  // Type styling and icons
+  /**
+   * Configuration for different listing types
+   * Each type has a specific color, label, and emoji icon
+   * Used to visually differentiate between jobs, services, items, and rentals
+   */
   const typeConfig: Record<string, { color: string, label: string, icon: string }> = {
     job: {
       color: 'bg-indigo-500',

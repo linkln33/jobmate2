@@ -1,3 +1,15 @@
+/**
+ * Represents a subcategory within a marketplace category.
+ * 
+ * Subcategories provide more specific classification of listings within a parent category,
+ * allowing for more precise filtering and organization of marketplace content.
+ * 
+ * @interface MarketplaceSubcategory
+ * @property {string} id - Unique identifier for the subcategory
+ * @property {string} name - Display name of the subcategory
+ * @property {string} [description] - Optional description of the subcategory
+ * @property {string} [icon] - Optional emoji or icon identifier for the subcategory
+ */
 export interface MarketplaceSubcategory {
   id: string;
   name: string;
@@ -5,6 +17,20 @@ export interface MarketplaceSubcategory {
   icon?: string;
 }
 
+/**
+ * Represents a top-level category in the marketplace.
+ * 
+ * Categories are used to organize listings into logical groups, each with its own
+ * set of subcategories. Categories are displayed with emoji icons in the UI for
+ * better visual identification.
+ * 
+ * @interface MarketplaceCategory
+ * @property {string} id - Unique identifier for the category
+ * @property {string} name - Display name of the category
+ * @property {string} icon - Emoji or icon identifier for visual representation
+ * @property {string} [description] - Optional description of the category
+ * @property {MarketplaceSubcategory[]} subcategories - Array of subcategories within this category
+ */
 export interface MarketplaceCategory {
   id: string;
   name: string;
@@ -13,6 +39,33 @@ export interface MarketplaceCategory {
   subcategories: MarketplaceSubcategory[];
 }
 
+/**
+ * Comprehensive list of marketplace categories and their subcategories.
+ * 
+ * This constant defines the complete category structure used throughout the JobMate
+ * marketplace. Each category includes an emoji icon for visual identification and
+ * a set of related subcategories.
+ * 
+ * Categories cover various service domains including:
+ * - Home Services
+ * - Skilled Trades
+ * - Outdoor & Garden
+ * - Transport & Driving
+ * - Digital & Creative
+ * - Personal & Lifestyle
+ * - Care & Assistance
+ * - Education & Learning
+ * - Events & Entertainment
+ * - Business Services
+ * 
+ * This data structure is used for:
+ * - Populating category dropdowns in search components
+ * - Filtering marketplace listings
+ * - Organizing the marketplace browsing experience
+ * - Tagging and categorizing user listings
+ * 
+ * @type {MarketplaceCategory[]}
+ */
 export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
   {
     id: 'home-services',
@@ -162,7 +215,25 @@ export const MARKETPLACE_CATEGORIES: MarketplaceCategory[] = [
   }
 ];
 
-// Helper function to get all subcategories flattened
+/**
+ * Helper function to get all subcategories flattened into a single array.
+ * 
+ * This utility function extracts all subcategories from all parent categories
+ * and returns them as a single flat array, which is useful for search functionality,
+ * dropdown population, and other UI components that need access to all subcategories.
+ * 
+ * @returns {MarketplaceSubcategory[]} A flattened array of all subcategories across all categories
+ * 
+ * @example
+ * ```typescript
+ * const allSubcategories = getAllSubcategories();
+ * // Use for populating a complete subcategory dropdown
+ * const subcategoryOptions = allSubcategories.map(sub => ({
+ *   value: sub.id,
+ *   label: sub.name
+ * }));
+ * ```
+ */
 export function getAllSubcategories(): MarketplaceSubcategory[] {
   return MARKETPLACE_CATEGORIES.flatMap(category => 
     category.subcategories.map(subcategory => ({
@@ -172,14 +243,49 @@ export function getAllSubcategories(): MarketplaceSubcategory[] {
   );
 }
 
-// Helper function to find a category by subcategory id
+/**
+ * Helper function to find a parent category by a subcategory ID.
+ * 
+ * This function searches through all categories to find the one containing
+ * the specified subcategory ID. Useful for determining the parent category
+ * when only the subcategory ID is known.
+ * 
+ * @param {string} subcategoryId - The ID of the subcategory to search for
+ * @returns {MarketplaceCategory | undefined} The parent category if found, undefined otherwise
+ * 
+ * @example
+ * ```typescript
+ * // Find which category contains the 'web-development' subcategory
+ * const parentCategory = findCategoryBySubcategory('web-development');
+ * if (parentCategory) {
+ *   console.log(`Web Development belongs to ${parentCategory.name}`);
+ * }
+ * ```
+ */
 export function findCategoryBySubcategory(subcategoryId: string): MarketplaceCategory | undefined {
   return MARKETPLACE_CATEGORIES.find(category => 
     category.subcategories.some(sub => sub.id === subcategoryId)
   );
 }
 
-// Helper function to get a subcategory by id
+/**
+ * Helper function to get a subcategory by its ID.
+ * 
+ * This function searches through all categories and their subcategories
+ * to find and return the subcategory with the matching ID.
+ * 
+ * @param {string} id - The ID of the subcategory to retrieve
+ * @returns {MarketplaceSubcategory | undefined} The subcategory if found, undefined otherwise
+ * 
+ * @example
+ * ```typescript
+ * // Get details about the 'graphic-design' subcategory
+ * const graphicDesign = getSubcategoryById('graphic-design');
+ * if (graphicDesign) {
+ *   console.log(`Found: ${graphicDesign.name}`);
+ * }
+ * ```
+ */
 export function getSubcategoryById(id: string): MarketplaceSubcategory | undefined {
   for (const category of MARKETPLACE_CATEGORIES) {
     const subcategory = category.subcategories.find(sub => sub.id === id);

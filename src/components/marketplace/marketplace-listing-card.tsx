@@ -9,6 +9,33 @@ import { CompatibilityBadge } from '@/components/ui/compatibility-badge';
 import { EnhancedCompatibilityBadge } from '@/components/ui/enhanced-compatibility-badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
+/**
+ * Props for the MarketplaceListingCard component.
+ * 
+ * @interface MarketplaceListingCardProps
+ * @property {string} id - Unique identifier for the listing
+ * @property {string} title - Title of the marketplace listing
+ * @property {string} description - Description of the listing
+ * @property {string} price - Price value as a string (e.g., "25", "100-200")
+ * @property {string} [priceUnit="hr"] - Unit for the price (e.g., "hr" for hourly, "day", "fixed")
+ * @property {string} imageUrl - URL to the listing's main image
+ * @property {string[]} tags - Array of tags/categories associated with the listing
+ * @property {'job' | 'service' | 'item' | 'rental'} [type] - Type of listing which determines styling and badges
+ * @property {boolean} [isFeatured=false] - Whether the listing is featured/promoted
+ * @property {boolean} [isVerified=false] - Whether the listing is from a verified provider
+ * @property {boolean} [isVip=false] - Whether the listing has VIP status
+ * @property {Object} user - Information about the listing creator
+ * @property {string} user.name - Name of the listing creator
+ * @property {string} [user.avatar] - Avatar URL of the listing creator
+ * @property {Object} [stats] - Engagement statistics for the listing
+ * @property {number} [stats.views] - Number of views
+ * @property {number} [stats.likes] - Number of likes/favorites
+ * @property {number} [stats.comments] - Number of comments/inquiries
+ * @property {number} [compatibilityScore] - Match compatibility score (0-100)
+ * @property {string} [compatibilityReason] - Explanation for the compatibility score
+ * @property {string} [className] - Additional CSS classes for styling
+ * @property {() => void} [onClick] - Click handler for the card
+ */
 export interface MarketplaceListingCardProps {
   id: string;
   title: string;
@@ -36,6 +63,39 @@ export interface MarketplaceListingCardProps {
   onClick?: () => void;
 }
 
+/**
+ * A card component for displaying marketplace listings with a modern glassmorphism design.
+ * 
+ * This component displays listing details including image, title, description, price,
+ * user information, and various badges (featured, verified, VIP). It also supports
+ * displaying compatibility scores when used in matching contexts.
+ * 
+ * The card features a hover effect that slightly elevates it and adds a shadow for
+ * enhanced user interaction feedback.
+ * 
+ * @param {MarketplaceListingCardProps} props - Component props
+ * @returns {JSX.Element} A marketplace listing card component
+ * 
+ * @example
+ * ```tsx
+ * <MarketplaceListingCard
+ *   id="listing-123"
+ *   title="Professional House Cleaning"
+ *   description="Thorough cleaning service for homes of all sizes"
+ *   price="35"
+ *   priceUnit="hr"
+ *   imageUrl="/images/house-cleaning.jpg"
+ *   tags={["Cleaning", "Home Services"]}
+ *   type="service"
+ *   isVerified={true}
+ *   user={{
+ *     name: "Jane Smith",
+ *     avatar: "/avatars/jane-smith.jpg"
+ *   }}
+ *   onClick={() => router.push('/marketplace/listing-123')}
+ * />
+ * ```
+ */
 export function MarketplaceListingCard({
   id,
   title,
@@ -55,7 +115,10 @@ export function MarketplaceListingCard({
   className,
   onClick
 }: MarketplaceListingCardProps) {
-  // Enhanced glassmorphism effect with subtler colors
+  /**
+   * Custom style for the glassmorphism effect.
+   * Creates a frosted glass appearance with subtle gradient, blur, and shadow effects.
+   */
   const glassmorphismStyle = {
     background: 'linear-gradient(135deg, rgba(173, 216, 230, 0.65) 0%, rgba(173, 216, 230, 0.45) 100%)',
     backdropFilter: 'blur(18px)',
