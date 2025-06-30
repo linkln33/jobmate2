@@ -95,6 +95,9 @@ export function StickyNavbar({ className = '', hideDashboardButton = false }: St
             <Link href="#how-it-works" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               How It Works
             </Link>
+            <Link href="#pricing" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium">
+              Pricing
+            </Link>
             <Link href="#marketplace" className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Marketplace
             </Link>
@@ -190,6 +193,13 @@ export function StickyNavbar({ className = '', hideDashboardButton = false }: St
                 onClick={() => setMobileMenuOpen(false)}
               >
                 How It Works
+              </Link>
+              <Link 
+                href="#pricing" 
+                className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-2 font-medium"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                Pricing
               </Link>
               <Link 
                 href="#marketplace" 

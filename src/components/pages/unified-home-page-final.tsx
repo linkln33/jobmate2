@@ -17,6 +17,7 @@ import { Job } from '@/types/job';
 import { FeatureHighlightsSection } from '@/components/sections/feature-highlights-section';
 import { HowItWorksSection } from '@/components/sections/how-it-works-section';
 import { ComparisonSection } from '@/components/sections/comparison-section';
+import { SubscriptionTiersSection } from '@/components/sections/subscription-tiers-section';
 import { TestimonialsSection } from '@/components/sections/testimonials-section';
 import { MarketplaceSection } from '@/components/sections/marketplace-section';
 import { AIAssistantSection } from '@/components/sections/ai-assistant-section';
@@ -161,6 +162,9 @@ export function UnifiedHomePageFinal() {
       
       {/* Comparison Section */}
       <ComparisonSection />
+      
+      {/* Subscription Tiers Section */}
+      <SubscriptionTiersSection />
       
       {/* Marketplace Preview */}
       <MarketplaceSection />

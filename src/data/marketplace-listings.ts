@@ -6,6 +6,1173 @@ export type MarketplaceListingType = 'item' | 'service' | 'rental' | 'job';
 
 // Mock data for marketplace listings
 export const marketplaceListings: MarketplaceListing[] = [
+  // =====================================================
+  // ITEM LISTINGS
+  // =====================================================
+  {
+    id: 'item-1',
+    title: 'Mountain Bike - Premium Quality',
+    description: 'High-quality mountain bike for sale. Perfect for trails and off-road adventures. Barely used and in excellent condition.',
+    price: 450.00,
+    priceUnit: '',
+    imageUrl: '/images/marketplace/bike.jpg',
+    tags: ['sports', 'outdoor', 'bike', 'mountain bike'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'item',
+    category: 'Sports & Outdoors',
+    pricingType: 'fixed',
+    address: '123 Main St, Boston, MA 02108',
+    lat: 42.3601,
+    lng: -71.0589,
+    sellerName: 'John Smith',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'John Smith',
+      avatar: ''
+    },
+    viewCount: 187,
+    favoriteCount: 42,
+    createdAt: '2025-06-20T10:30:00Z'
+  },
+  {
+    id: 'item-2',
+    title: 'Professional Chainsaw - Like New',
+    description: 'Professional-grade chainsaw for sale. Used only a few times and maintained perfectly. Comes with carrying case and safety equipment.',
+    price: 299.99,
+    priceUnit: '',
+    imageUrl: '/images/marketplace/chainsaw.jpg',
+    tags: ['tools', 'outdoor', 'chainsaw', 'professional'],
+    isFeatured: false,
+    isVerified: true,
+    type: 'item',
+    category: 'Tools & Equipment',
+    pricingType: 'fixed',
+    address: '456 Oak St, Cambridge, MA 02138',
+    lat: 42.3736,
+    lng: -71.1097,
+    sellerName: 'Mike Johnson',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Mike Johnson',
+      avatar: ''
+    },
+    viewCount: 134,
+    favoriteCount: 28,
+    createdAt: '2025-06-18T14:45:00Z'
+  },
+  {
+    id: 'item-3',
+    title: 'Gaming Laptop - High Performance',
+    description: 'Powerful gaming laptop with latest graphics card, 32GB RAM, and 1TB SSD. Perfect for gaming and professional work. Includes original packaging.',
+    price: 1299.00,
+    priceUnit: '',
+    imageUrl: '/images/marketplace/laptop1.jpg',
+    tags: ['electronics', 'computer', 'gaming', 'laptop'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: '789 Tech Blvd, Boston, MA 02116',
+    lat: 42.3505,
+    lng: -71.0809,
+    sellerName: 'Tech Enthusiast',
+    sellerRating: 5.0,
+    sellerResponseTime: 'Usually responds within 15 minutes',
+    status: 'active',
+    user: {
+      name: 'Tech Enthusiast',
+      avatar: ''
+    },
+    viewCount: 312,
+    favoriteCount: 87,
+    createdAt: '2025-06-22T09:15:00Z'
+  },
+  
+  // =====================================================
+  // RENTAL LISTINGS
+  // =====================================================
+  {
+    id: 'rental-1',
+    title: 'Ice Cream Machine Rental',
+    description: 'Professional ice cream machine available for rent. Perfect for parties, events, and special occasions. Makes delicious soft-serve ice cream.',
+    price: 75.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/icecream-machine.jpg',
+    tags: ['party', 'events', 'ice cream', 'rental'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'rental',
+    category: 'Party Equipment',
+    pricingType: 'daily',
+    address: '123 Party Ave, Boston, MA 02118',
+    lat: 42.3467,
+    lng: -71.0972,
+    sellerName: 'Party Supplies Inc',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Party Supplies Inc',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 34,
+    createdAt: '2025-06-19T11:30:00Z'
+  },
+  {
+    id: 'rental-2',
+    title: 'Power Tools Set for Rent',
+    description: 'Complete set of professional power tools available for rent. Includes drill, saw, sander, and more. Perfect for home improvement projects.',
+    price: 45.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent.jpg',
+    tags: ['tools', 'power tools', 'DIY', 'home improvement'],
+    isFeatured: false,
+    isVerified: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    pricingType: 'daily',
+    address: '456 Workshop St, Cambridge, MA 02139',
+    lat: 42.3736,
+    lng: -71.1097,
+    sellerName: 'Tool Time Rentals',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 45 minutes',
+    status: 'active',
+    user: {
+      name: 'Tool Time Rentals',
+      avatar: ''
+    },
+    viewCount: 189,
+    favoriteCount: 41,
+    createdAt: '2025-06-17T13:45:00Z'
+  },
+  {
+    id: 'rental-3',
+    title: 'Party Tent Rental - Large',
+    description: 'Large party tent available for rent. Perfect for outdoor events, weddings, and gatherings. Easy setup and includes side walls.',
+    price: 120.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/wedding-tent.jpg',
+    tags: ['party', 'events', 'tent', 'outdoor', 'wedding'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'rental',
+    category: 'Event Equipment',
+    pricingType: 'daily',
+    address: '789 Event Lane, Boston, MA 02116',
+    lat: 42.3505,
+    lng: -71.0809,
+    sellerName: 'Event Solutions',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Event Solutions',
+      avatar: ''
+    },
+    viewCount: 234,
+    favoriteCount: 56,
+    createdAt: '2025-06-21T10:15:00Z'
+  },
+  
+  // =====================================================
+  // JOB LISTINGS
+  // =====================================================
+  {
+    id: 'job-1',
+    title: 'Experienced Carpenter Needed',
+    description: 'Looking for an experienced carpenter for home renovation project. Must have at least 3 years of experience and own tools. Project duration: 2 weeks.',
+    price: 35.00,
+    priceUnit: 'hour',
+    imageUrl: '/images/marketplace/carpenter.jpg',
+    tags: ['carpenter', 'construction', 'renovation', 'skilled labor'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'job',
+    category: 'Construction & Trades',
+    pricingType: 'hourly',
+    address: '123 Renovation Rd, Boston, MA 02108',
+    lat: 42.3601,
+    lng: -71.0589,
+    sellerName: 'Home Improvement LLC',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 2 hours',
+    status: 'active',
+    user: {
+      name: 'Home Improvement LLC',
+      avatar: ''
+    },
+    viewCount: 145,
+    favoriteCount: 32,
+    createdAt: '2025-06-18T09:30:00Z'
+  },
+  {
+    id: 'job-2',
+    title: 'Babysitter Needed - Weekends',
+    description: 'Looking for a reliable babysitter for two children (ages 4 and 6) on weekends. CPR certification and references required.',
+    price: 25.00,
+    priceUnit: 'hour',
+    imageUrl: '/images/marketplace/babysitter.jpg',
+    tags: ['babysitter', 'childcare', 'weekend', 'part-time'],
+    isFeatured: false,
+    isVerified: true,
+    type: 'job',
+    category: 'Childcare',
+    pricingType: 'hourly',
+    address: '456 Family St, Cambridge, MA 02138',
+    lat: 42.3736,
+    lng: -71.1097,
+    sellerName: 'Sarah Johnson',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Sarah Johnson',
+      avatar: ''
+    },
+    viewCount: 178,
+    favoriteCount: 45,
+    createdAt: '2025-06-20T14:45:00Z'
+  },
+  {
+    id: 'job-3',
+    title: 'Food Delivery Driver - Flexible Hours',
+    description: 'Looking for food delivery drivers with own vehicle. Flexible hours and competitive pay. Must have valid driver\'s license and clean driving record.',
+    price: 20.00,
+    priceUnit: 'hour',
+    imageUrl: '/images/marketplace/food-delivery.jpg',
+    tags: ['delivery', 'driver', 'food', 'flexible', 'part-time'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'job',
+    category: 'Delivery & Transportation',
+    pricingType: 'hourly',
+    address: '789 Restaurant Row, Boston, MA 02116',
+    lat: 42.3505,
+    lng: -71.0809,
+    sellerName: 'Quick Eats Delivery',
+    sellerRating: 4.6,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Quick Eats Delivery',
+      avatar: ''
+    },
+    viewCount: 267,
+    favoriteCount: 58,
+    createdAt: '2025-06-22T11:15:00Z'
+  },
+  // =====================================================
+  // PET SERVICES CATEGORY
+  // =====================================================
+  {
+    id: 'pet-1',
+    title: 'Mobile Pet Grooming',
+    description: 'Professional mobile pet grooming service that comes to your home. Stress-free grooming for cats and dogs of all breeds and sizes.',
+    price: 75.00,
+    priceUnit: 'service',
+    imageUrl: '/images/marketplace/Dog-Grooming.jpg',
+    tags: ['pets', 'grooming', 'mobile', 'cats', 'dogs'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Pet Services',
+    pricingType: 'fixed',
+    address: '123 Pet Lane, Boston, MA 02108',
+    lat: 42.3601,
+    lng: -71.0589,
+    sellerName: 'Pampered Paws Mobile',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Pampered Paws Mobile',
+      avatar: ''
+    },
+    viewCount: 243,
+    favoriteCount: 56,
+    createdAt: '2025-06-15T14:30:00Z'
+  },
+  {
+    id: 'pet-2',
+    title: 'Veterinary House Calls',
+    description: 'Licensed veterinarian providing in-home medical care for pets. Routine checkups, vaccinations, and minor treatments in the comfort of your home.',
+    price: 120.00,
+    priceUnit: 'visit',
+    imageUrl: '/images/marketplace/veterinary.jpg',
+    tags: ['veterinary', 'pets', 'healthcare', 'house calls'],
+    isVerified: true,
+    type: 'service',
+    category: 'Pet Services',
+    pricingType: 'fixed',
+    address: 'Boston, MA 02110',
+    lat: 42.3601,
+    lng: -71.0589,
+    sellerName: 'Dr. Sarah Johnson',
+    sellerRating: 5.0,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Dr. Sarah Johnson',
+      avatar: ''
+    },
+    viewCount: 189,
+    favoriteCount: 47,
+    createdAt: '2025-06-18T09:15:00Z'
+  },
+  {
+    id: 'pet-3',
+    title: 'Professional Dog Walking',
+    description: 'Reliable daily dog walking service. GPS tracked walks, photos sent after each walk, and flexible scheduling options available.',
+    price: 25.00,
+    priceUnit: 'walk',
+    imageUrl: '/images/marketplace/dog-walker.jpg',
+    tags: ['dog walking', 'pets', 'exercise', 'daily service'],
+    isFeatured: false,
+    isVerified: true,
+    type: 'service',
+    category: 'Pet Services',
+    pricingType: 'fixed',
+    address: 'Cambridge, MA 02139',
+    lat: 42.3736,
+    lng: -71.1097,
+    sellerName: 'Happy Tails Walking Co.',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Happy Tails Walking Co.',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 38,
+    createdAt: '2025-06-20T10:30:00Z'
+  },
+  // SERVICE LISTINGS
+  {
+    id: 'service-1',
+    title: 'Dog Grooming Services',
+    description: 'Professional dog grooming with gentle handling and premium products. Includes bath, haircut, nail trimming, and ear cleaning.',
+    price: 55.00,
+    priceUnit: 'service',
+    imageUrl: '/images/marketplace/Dog-Grooming.jpg',
+    tags: ['pets', 'grooming', 'dogs', 'care'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Pet Services',
+    pricingType: 'fixed',
+    address: '123 Pet Lane, Boston, MA 02108',
+    lat: 42.3601,
+    lng: -71.0589,
+    sellerName: 'Paws & Relax',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Paws & Relax',
+      avatar: ''
+    },
+    viewCount: 243,
+    favoriteCount: 56,
+    createdAt: '2025-06-15T14:30:00Z'
+  },
+  {
+    id: 'service-2',
+    title: 'Wedding DJ & Entertainment',
+    description: 'Professional DJ services for weddings and special events. Includes sound equipment, lighting, and personalized playlists.',
+    price: 850.00,
+    priceUnit: 'event',
+    imageUrl: '/images/marketplace/Wedding-DJ-Michigan.jpg',
+    tags: ['wedding', 'dj', 'entertainment', 'events'],
+    isVerified: true,
+    isVip: true,
+    type: 'service',
+    category: 'Event Services',
+    pricingType: 'fixed',
+    address: 'Detroit, MI 48226',
+    lat: 42.3314,
+    lng: -83.0458,
+    sellerName: 'Elite Entertainment',
+    sellerRating: 5.0,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Elite Entertainment',
+      avatar: ''
+    },
+    viewCount: 189,
+    favoriteCount: 47,
+    createdAt: '2025-06-18T09:15:00Z'
+  },
+  {
+    id: 'service-3',
+    title: 'Professional Plumbing Services',
+    description: 'Expert plumbing services for residential and commercial properties. Available for emergency repairs and installations.',
+    price: 75.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/plumbing.jpg',
+    tags: ['plumbing', 'repairs', 'installation'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Home Services',
+    pricingType: 'hourly',
+    address: '123 Main St, San Francisco, CA 94105',
+    lat: 37.7897,
+    lng: -122.3972,
+    sellerName: 'Mike Johnson',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Mike Johnson',
+      avatar: ''
+    },
+    viewCount: 125,
+    favoriteCount: 18,
+    createdAt: '2025-06-20T10:30:00Z'
+  },
+  
+  // =====================================================
+  // HOME SERVICES CATEGORY
+  // =====================================================
+  {
+    id: 'home-1',
+    title: 'Professional Handyman Services',
+    description: 'Experienced handyman for all your home repair needs. Furniture assembly, fixture installation, drywall repair, and more.',
+    price: 55.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/handyman.jpg',
+    tags: ['handyman', 'repairs', 'installation', 'home maintenance'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Home Services',
+    pricingType: 'hourly',
+    address: 'Denver, CO 80202',
+    lat: 39.7392,
+    lng: -104.9903,
+    sellerName: 'Denver Handyman Pro',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 2 hours',
+    status: 'active',
+    user: {
+      name: 'Denver Handyman Pro',
+      avatar: ''
+    },
+    viewCount: 187,
+    favoriteCount: 43,
+    createdAt: '2025-06-17T09:30:00Z'
+  },
+  {
+    id: 'home-2',
+    title: 'Custom Carpentry & Woodworking',
+    description: 'Master carpenter specializing in custom furniture, built-ins, and fine woodworking. Quality craftsmanship with sustainable materials.',
+    price: 85.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/carpenter.jpg',
+    tags: ['carpentry', 'woodworking', 'custom furniture', 'cabinetry'],
+    isVerified: true,
+    type: 'service',
+    category: 'Home Services',
+    pricingType: 'hourly',
+    address: 'Portland, OR 97205',
+    lat: 45.5231,
+    lng: -122.6765,
+    sellerName: 'Portland Fine Woodworking',
+    sellerRating: 5.0,
+    sellerResponseTime: 'Usually responds within 1 day',
+    status: 'active',
+    user: {
+      name: 'Portland Fine Woodworking',
+      avatar: ''
+    },
+    viewCount: 142,
+    favoriteCount: 39,
+    createdAt: '2025-06-12T14:15:00Z'
+  },
+  {
+    id: 'home-3',
+    title: 'Emergency Car Repair Service',
+    description: 'Mobile mechanic service for emergency car repairs. Available 24/7 for breakdowns, jump starts, tire changes, and basic repairs.',
+    price: 90.00,
+    priceUnit: 'service',
+    imageUrl: '/images/marketplace/car-repair.jpg',
+    tags: ['car repair', 'automotive', 'emergency', 'mobile mechanic'],
+    isFeatured: true,
+    type: 'service',
+    category: 'Home Services',
+    pricingType: 'fixed',
+    address: 'Austin, TX 78701',
+    lat: 30.2672,
+    lng: -97.7431,
+    sellerName: 'Roadside Rescue Mechanics',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 15 minutes',
+    status: 'active',
+    user: {
+      name: 'Roadside Rescue Mechanics',
+      avatar: ''
+    },
+    viewCount: 213,
+    favoriteCount: 57,
+    createdAt: '2025-06-19T16:45:00Z'
+  },
+  
+  // =====================================================
+  // EVENT SERVICES CATEGORY
+  // =====================================================
+  {
+    id: 'event-1',
+    title: 'Professional Wedding Photography',
+    description: 'Experienced wedding photographer capturing your special moments with artistic style. Includes engagement session, full day coverage, and digital gallery.',
+    price: 2500.00,
+    priceUnit: 'event',
+    imageUrl: '/images/marketplace/wedding-planner.jpg',
+    tags: ['wedding', 'photography', 'events', 'professional'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Event Services',
+    pricingType: 'fixed',
+    address: 'Chicago, IL 60605',
+    lat: 41.8781,
+    lng: -87.6298,
+    sellerName: 'Elegant Imagery',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 1 day',
+    status: 'active',
+    user: {
+      name: 'Elegant Imagery',
+      avatar: ''
+    },
+    viewCount: 234,
+    favoriteCount: 67,
+    createdAt: '2025-06-10T11:30:00Z'
+  },
+  {
+    id: 'event-2',
+    title: 'Wedding DJ & Entertainment',
+    description: 'Professional DJ services for weddings and special events. Includes sound equipment, lighting, and personalized playlists.',
+    price: 850.00,
+    priceUnit: 'event',
+    imageUrl: '/images/marketplace/Wedding-DJ-Michigan.jpg',
+    tags: ['wedding', 'dj', 'entertainment', 'events'],
+    isVerified: true,
+    isVip: true,
+    type: 'service',
+    category: 'Event Services',
+    pricingType: 'fixed',
+    address: 'Detroit, MI 48226',
+    lat: 42.3314,
+    lng: -83.0458,
+    sellerName: 'Elite Entertainment',
+    sellerRating: 5.0,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Elite Entertainment',
+      avatar: ''
+    },
+    viewCount: 189,
+    favoriteCount: 47,
+    createdAt: '2025-06-18T09:15:00Z'
+  },
+  {
+    id: 'event-3',
+    title: 'Full-Service Event Planning',
+    description: 'Comprehensive event planning services for corporate events, weddings, and special occasions. Vendor management, logistics, and day-of coordination.',
+    price: 3500.00,
+    priceUnit: 'event',
+    imageUrl: '/images/marketplace/wedding-planner.jpg',
+    tags: ['event planning', 'corporate', 'coordination', 'professional'],
+    isVerified: true,
+    isVip: true,
+    type: 'service',
+    category: 'Event Services',
+    pricingType: 'fixed',
+    address: 'New York, NY 10001',
+    lat: 40.7128,
+    lng: -74.0060,
+    sellerName: 'Manhattan Events Co.',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 3 hours',
+    status: 'active',
+    user: {
+      name: 'Manhattan Events Co.',
+      avatar: ''
+    },
+    viewCount: 267,
+    favoriteCount: 82,
+    createdAt: '2025-06-05T14:00:00Z'
+  },
+  
+  // =====================================================
+  // ITEMS FOR SALE CATEGORY
+  // =====================================================
+  {
+    id: 'item-1',
+    title: 'Mountain Bike - Trek Marlin 7',
+    description: 'Trek Marlin 7 mountain bike, size large. 1 year old, excellent condition. Hydraulic disc brakes, front suspension, tubeless ready wheels.',
+    price: 750.00,
+    imageUrl: '/images/marketplace/bike.jpg',
+    tags: ['bike', 'mountain bike', 'trek', 'outdoor', 'sports'],
+    isFeatured: true,
+    type: 'item',
+    category: 'Sports & Recreation',
+    pricingType: 'fixed',
+    address: 'Boulder, CO 80302',
+    lat: 40.0150,
+    lng: -105.2705,
+    sellerName: 'Mountain Enthusiast',
+    sellerRating: 4.9,
+    status: 'active',
+    user: {
+      name: 'Mountain Enthusiast',
+      avatar: ''
+    },
+    viewCount: 167,
+    favoriteCount: 42,
+    createdAt: '2025-06-18T15:30:00Z'
+  },
+  {
+    id: 'item-2',
+    title: 'Vintage Leather Sofa',
+    description: 'Beautiful vintage leather sofa in cognac color. Genuine leather, solid wood frame. Minor wear consistent with age. Dimensions: 84" x 36" x 32".',
+    price: 1200.00,
+    imageUrl: '/images/marketplace/wedding-tent.jpg',
+    tags: ['furniture', 'sofa', 'leather', 'vintage', 'home'],
+    isVerified: true,
+    type: 'item',
+    category: 'Home & Garden',
+    pricingType: 'fixed',
+    address: 'Portland, OR 97205',
+    lat: 45.5231,
+    lng: -122.6765,
+    sellerName: 'Vintage Home Goods',
+    sellerRating: 4.8,
+    status: 'active',
+    user: {
+      name: 'Vintage Home Goods',
+      avatar: ''
+    },
+    viewCount: 143,
+    favoriteCount: 36,
+    createdAt: '2025-06-22T11:45:00Z'
+  },
+  {
+    id: 'item-3',
+    title: 'Professional DSLR Camera Kit',
+    description: 'Canon EOS 5D Mark IV with 24-70mm f/2.8 lens, extra battery, memory cards, and camera bag. Excellent condition, low shutter count.',
+    price: 2800.00,
+    imageUrl: '/images/marketplace/laptop2.jpg',
+    tags: ['camera', 'photography', 'canon', 'dslr', 'professional'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: 'Los Angeles, CA 90001',
+    lat: 34.0522,
+    lng: -118.2437,
+    sellerName: 'Pro Photographer',
+    sellerRating: 5.0,
+    status: 'active',
+    user: {
+      name: 'Pro Photographer',
+      avatar: ''
+    },
+    viewCount: 198,
+    favoriteCount: 57,
+    createdAt: '2025-06-15T09:30:00Z'
+  },
+  
+  // =====================================================
+  // ELECTRONICS CATEGORY
+  // =====================================================
+  {
+    id: 'electronics-1',
+    title: 'MacBook Pro 16" - Like New',
+    description: 'M2 Pro chip, 32GB RAM, 1TB SSD. Only 3 months old, perfect condition with original box and accessories. AppleCare+ until 2027.',
+    price: 2499.00,
+    imageUrl: '/images/marketplace/laptop1.jpg',
+    tags: ['macbook', 'apple', 'laptop', 'computer'],
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: 'New York, NY 10001',
+    lat: 40.7128,
+    lng: -74.0060,
+    sellerName: 'Tech Enthusiast',
+    sellerRating: 4.8,
+    status: 'active',
+    user: {
+      name: 'Tech Enthusiast',
+      avatar: ''
+    },
+    viewCount: 198,
+    favoriteCount: 45,
+    createdAt: '2025-06-24T09:30:00Z'
+  },
+  {
+    id: 'electronics-2',
+    title: 'Dell XPS 15 - Developer Edition',
+    description: 'Intel Core i9, 64GB RAM, 2TB SSD, RTX 4070. Perfect for software development and content creation. Ubuntu pre-installed.',
+    price: 1899.00,
+    imageUrl: '/images/marketplace/laptop2.jpg',
+    tags: ['dell', 'xps', 'laptop', 'developer', 'ubuntu'],
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: 'San Francisco, CA 94105',
+    lat: 37.7749,
+    lng: -122.4194,
+    sellerName: 'DevTools Inc',
+    sellerRating: 4.9,
+    status: 'active',
+    user: {
+      name: 'DevTools Inc',
+      avatar: ''
+    },
+    viewCount: 176,
+    favoriteCount: 38,
+    createdAt: '2025-06-22T15:45:00Z'
+  },
+  {
+    id: 'electronics-3',
+    title: 'Professional Camera Setup - Sony A7IV',
+    description: 'Complete Sony A7IV kit with 24-70mm f/2.8 GM lens, extra batteries, SD cards, and camera bag. Perfect condition, only used for 5 shoots.',
+    price: 3200.00,
+    imageUrl: '/images/marketplace/laptop1.jpg', // Using laptop image as placeholder
+    tags: ['camera', 'sony', 'photography', 'professional'],
+    isFeatured: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: 'Los Angeles, CA 90001',
+    lat: 34.0522,
+    lng: -118.2437,
+    sellerName: 'LA Photographer',
+    sellerRating: 5.0,
+    status: 'active',
+    user: {
+      name: 'LA Photographer',
+      avatar: ''
+    },
+    viewCount: 215,
+    favoriteCount: 53,
+    createdAt: '2025-06-18T12:30:00Z'
+  },
+  
+  // =====================================================
+  // JOBS & TASKS CATEGORY
+  // =====================================================
+  {
+    id: 'job-1',
+    title: 'Website Developer Needed',
+    description: 'Looking for an experienced web developer to create a responsive e-commerce website. Must be proficient in React, Node.js, and MongoDB.',
+    price: 2500.00,
+    priceUnit: 'project',
+    imageUrl: '/images/marketplace/writer.jpg',
+    tags: ['web development', 'programming', 'e-commerce', 'freelance'],
+    isFeatured: true,
+    type: 'job',
+    category: 'Programming & Tech',
+    pricingType: 'fixed',
+    address: 'Remote',
+    lat: 37.7749,
+    lng: -122.4194,
+    sellerName: 'TechStart Inc.',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 1 day',
+    status: 'active',
+    user: {
+      name: 'TechStart Inc.',
+      avatar: ''
+    },
+    viewCount: 187,
+    favoriteCount: 45,
+    createdAt: '2025-06-25T09:30:00Z'
+  },
+  {
+    id: 'job-2',
+    title: 'Social Media Manager',
+    description: 'Seeking a part-time social media manager to handle our Instagram and TikTok accounts. Content creation and community management experience required.',
+    price: 25.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/laptop1.jpg',
+    tags: ['social media', 'marketing', 'content creation', 'part-time'],
+    isVerified: true,
+    type: 'job',
+    category: 'Marketing & Social Media',
+    pricingType: 'hourly',
+    address: 'Chicago, IL 60605',
+    lat: 41.8781,
+    lng: -87.6298,
+    sellerName: 'Fashion Forward Boutique',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 3 hours',
+    status: 'active',
+    user: {
+      name: 'Fashion Forward Boutique',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 38,
+    createdAt: '2025-06-22T14:15:00Z'
+  },
+  {
+    id: 'job-3',
+    title: 'Personal Trainer Wanted',
+    description: 'Looking for a certified personal trainer for 3 sessions per week. Focus on strength training and nutrition guidance.',
+    price: 60.00,
+    priceUnit: 'session',
+    imageUrl: '/images/marketplace/handyman.jpg',
+    tags: ['fitness', 'personal training', 'health', 'wellness'],
+    type: 'job',
+    category: 'Health & Fitness',
+    pricingType: 'fixed',
+    address: 'Miami, FL 33101',
+    lat: 25.7617,
+    lng: -80.1918,
+    sellerName: 'Alex Rodriguez',
+    sellerRating: 4.9,
+    status: 'active',
+    user: {
+      name: 'Alex Rodriguez',
+      avatar: ''
+    },
+    viewCount: 134,
+    favoriteCount: 29,
+    createdAt: '2025-06-20T10:45:00Z'
+  },
+  
+  // =====================================================
+  // TOOLS & EQUIPMENT CATEGORY
+  // =====================================================
+  {
+    id: 'tools-1',
+    title: 'Professional Power Tools Set',
+    description: 'Complete set of DeWalt power tools available for rent. Includes drill, impact driver, circular saw, and reciprocating saw.',
+    price: 65.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent.jpg',
+    tags: ['tools', 'power tools', 'dewalt', 'diy'],
+    isFeatured: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    pricingType: 'daily',
+    address: 'Austin, TX 78701',
+    lat: 30.2672,
+    lng: -97.7431,
+    sellerName: 'Tool Share',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Tool Share',
+      avatar: ''
+    },
+    viewCount: 142,
+    favoriteCount: 29,
+    createdAt: '2025-06-10T15:20:00Z'
+  },
+  {
+    id: 'tools-2',
+    title: 'Professional Chainsaw - Husqvarna',
+    description: 'Husqvarna 460 Rancher chainsaw. 60cc engine, 20" bar. Used for one season, well maintained. Includes carrying case and extra chain.',
+    price: 425.00,
+    imageUrl: '/images/marketplace/chainsaw.jpg',
+    tags: ['chainsaw', 'tools', 'outdoor', 'equipment'],
+    type: 'item',
+    category: 'Tools & Equipment',
+    pricingType: 'fixed',
+    address: 'Denver, CO 80202',
+    lat: 39.7392,
+    lng: -104.9903,
+    sellerName: 'Mountain Logger',
+    sellerRating: 4.7,
+    status: 'active',
+    user: {
+      name: 'Mountain Logger',
+      avatar: ''
+    },
+    viewCount: 112,
+    favoriteCount: 19,
+    createdAt: '2025-06-17T11:20:00Z'
+  },
+  {
+    id: 'tools-3',
+    title: 'Heavy-Duty Pressure Washer Rental',
+    description: '3000 PSI gas-powered pressure washer available for daily or weekend rental. Perfect for cleaning driveways, decks, and siding.',
+    price: 75.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent3.jpg',
+    tags: ['pressure washer', 'cleaning', 'rental', 'outdoor'],
+    isVerified: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    pricingType: 'daily',
+    address: 'Seattle, WA 98101',
+    lat: 47.6062,
+    lng: -122.3321,
+    sellerName: 'Seattle Equipment Rentals',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 2 hours',
+    status: 'active',
+    user: {
+      name: 'Seattle Equipment Rentals',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 34,
+    createdAt: '2025-06-14T09:15:00Z'
+  },
+  
+  // RENTAL LISTINGS
+  {
+    id: 'rental-1',
+    title: 'Premium Mountain Bike Rental',
+    description: 'Trek Fuel EX 8 mountain bike available for daily or weekly rental. Perfect for trail riding. Helmet included.',
+    price: 45.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/bike.jpg',
+    tags: ['bike', 'mountain bike', 'outdoor', 'recreation'],
+    isVerified: true,
+    type: 'rental',
+    category: 'Sports & Recreation',
+    pricingType: 'daily',
+    address: 'Boulder, CO 80302',
+    lat: 40.0150,
+    lng: -105.2705,
+    sellerName: 'Boulder Bike Rentals',
+    sellerRating: 4.8,
+    sellerResponseTime: 'Usually responds within 2 hours',
+    status: 'active',
+    user: {
+      name: 'Boulder Bike Rentals',
+      avatar: ''
+    },
+    viewCount: 176,
+    favoriteCount: 32,
+    createdAt: '2025-06-12T11:45:00Z'
+  },
+  {
+    id: 'rental-2',
+    title: 'Professional Power Tools Set',
+    description: 'Complete set of DeWalt power tools available for rent. Includes drill, impact driver, circular saw, and reciprocating saw.',
+    price: 65.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent.jpg',
+    tags: ['tools', 'power tools', 'dewalt', 'diy'],
+    isFeatured: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    pricingType: 'daily',
+    address: 'Austin, TX 78701',
+    lat: 30.2672,
+    lng: -97.7431,
+    sellerName: 'Tool Share',
+    sellerRating: 4.7,
+    sellerResponseTime: 'Usually responds within 1 hour',
+    status: 'active',
+    user: {
+      name: 'Tool Share',
+      avatar: ''
+    },
+    viewCount: 142,
+    favoriteCount: 29,
+    createdAt: '2025-06-10T15:20:00Z'
+  },
+  {
+    id: 'rental-3',
+    title: 'Commercial Ice Cream Machine',
+    description: 'Professional soft-serve ice cream machine available for events. Makes up to 50 cones per hour. Delivery and setup included.',
+    price: 195.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/icecream-machine.jpg',
+    tags: ['ice cream', 'events', 'catering', 'party'],
+    isVip: true,
+    type: 'rental',
+    category: 'Event Equipment',
+    pricingType: 'daily',
+    address: 'Miami, FL 33130',
+    lat: 25.7617,
+    lng: -80.1918,
+    sellerName: 'Party Equipment Rentals',
+    sellerRating: 4.9,
+    sellerResponseTime: 'Usually responds within 30 minutes',
+    status: 'active',
+    user: {
+      name: 'Party Equipment Rentals',
+      avatar: ''
+    },
+    viewCount: 203,
+    favoriteCount: 51,
+    createdAt: '2025-06-05T09:10:00Z'
+  },
+  
+  // TASK/JOB LISTINGS
+  {
+    id: 'task-1',
+    title: 'Need Experienced Dog Walker',
+    description: 'Looking for a reliable dog walker for my energetic Labrador. 30-minute walks, 3 times per week, flexible schedule.',
+    price: 20.00,
+    priceUnit: 'walk',
+    imageUrl: '/images/marketplace/dog-walker.jpg',
+    tags: ['dog walker', 'pet care', 'part-time'],
+    type: 'job',
+    category: 'Pet Care',
+    pricingType: 'fixed',
+    address: 'Portland, OR 97205',
+    lat: 45.5231,
+    lng: -122.6765,
+    sellerName: 'Emma Thompson',
+    status: 'active',
+    user: {
+      name: 'Emma Thompson',
+      avatar: ''
+    },
+    viewCount: 87,
+    favoriteCount: 12,
+    createdAt: '2025-06-22T16:40:00Z'
+  },
+  {
+    id: 'task-2',
+    title: 'Heavy Lifting & Moving Help',
+    description: 'Need assistance moving furniture from a 2-bedroom apartment to a new location. Must be able to lift heavy items. 3-4 hours of work.',
+    price: 150.00,
+    priceUnit: 'job',
+    imageUrl: '/images/marketplace/heavy-lifting.jpg',
+    tags: ['moving', 'lifting', 'furniture', 'labor'],
+    type: 'job',
+    category: 'Moving & Labor',
+    pricingType: 'fixed',
+    address: 'Chicago, IL 60605',
+    lat: 41.8781,
+    lng: -87.6298,
+    sellerName: 'David Wilson',
+    status: 'active',
+    user: {
+      name: 'David Wilson',
+      avatar: ''
+    },
+    viewCount: 104,
+    favoriteCount: 15,
+    createdAt: '2025-06-25T10:15:00Z'
+  },
+  {
+    id: 'task-3',
+    title: 'Food Delivery Driver Needed',
+    description: 'Looking for a reliable driver for our restaurant delivery service. Part-time position, flexible hours, good pay + tips.',
+    price: 18.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/food-delivery.jpg',
+    tags: ['delivery', 'driver', 'food', 'part-time'],
+    isFeatured: true,
+    type: 'job',
+    category: 'Delivery & Transportation',
+    pricingType: 'hourly',
+    address: 'Seattle, WA 98101',
+    lat: 47.6062,
+    lng: -122.3321,
+    sellerName: 'Fresh Eats Restaurant',
+    status: 'active',
+    user: {
+      name: 'Fresh Eats Restaurant',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 27,
+    createdAt: '2025-06-19T14:30:00Z'
+  },
+  
+  // ITEM LISTINGS
+  {
+    id: 'item-1',
+    title: 'MacBook Pro 16" - Like New',
+    description: 'M2 Pro chip, 32GB RAM, 1TB SSD. Only 3 months old, perfect condition with original box and accessories. AppleCare+ until 2027.',
+    price: 2499.00,
+    imageUrl: '/images/marketplace/laptop1.jpg',
+    tags: ['macbook', 'apple', 'laptop', 'computer'],
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    pricingType: 'fixed',
+    address: 'New York, NY 10001',
+    lat: 40.7128,
+    lng: -74.0060,
+    sellerName: 'Tech Enthusiast',
+    sellerRating: 4.8,
+    status: 'active',
+    user: {
+      name: 'Tech Enthusiast',
+      avatar: ''
+    },
+    viewCount: 198,
+    favoriteCount: 45,
+    createdAt: '2025-06-24T09:30:00Z'
+  },
+  {
+    id: 'item-2',
+    title: 'Professional Chainsaw - Husqvarna',
+    description: 'Husqvarna 460 Rancher chainsaw. 60cc engine, 20" bar. Used for one season, well maintained. Includes carrying case and extra chain.',
+    price: 425.00,
+    imageUrl: '/images/marketplace/chainsaw.jpg',
+    tags: ['chainsaw', 'tools', 'outdoor', 'equipment'],
+    type: 'item',
+    category: 'Tools & Equipment',
+    pricingType: 'fixed',
+    address: 'Denver, CO 80202',
+    lat: 39.7392,
+    lng: -104.9903,
+    sellerName: 'Mountain Logger',
+    sellerRating: 4.7,
+    status: 'active',
+    user: {
+      name: 'Mountain Logger',
+      avatar: ''
+    },
+    viewCount: 112,
+    favoriteCount: 19,
+    createdAt: '2025-06-17T11:20:00Z'
+  },
+  {
+    id: 'item-3',
+    title: 'Custom Handcrafted Wooden Furniture',
+    description: 'Beautiful handmade oak dining table with matching chairs. Custom built by professional carpenter. One-of-a-kind piece.',
+    price: 1850.00,
+    imageUrl: '/images/marketplace/carpenter.jpg',
+    tags: ['furniture', 'handmade', 'wood', 'dining'],
+    isFeatured: true,
+    isVip: true,
+    type: 'item',
+    category: 'Home & Garden',
+    pricingType: 'fixed',
+    address: 'Nashville, TN 37203',
+    lat: 36.1627,
+    lng: -86.7816,
+    sellerName: 'Artisan Woodworks',
+    sellerRating: 5.0,
+    status: 'active',
+    user: {
+      name: 'Artisan Woodworks',
+      avatar: ''
+    },
+    viewCount: 175,
+    favoriteCount: 42,
+    createdAt: '2025-06-14T13:45:00Z'
+  },
   {
     id: '1',
     title: 'Professional Plumbing Services',
@@ -33,17 +1200,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Mike Johnson',
       avatar: ''
     },
-    stats: {
-      views: 125,
-      likes: 18
-    },
+    viewCount: 125,
+    favoriteCount: 18,
     createdAt: '2025-06-20T10:30:00Z'
   },
   {
     id: '2',
     title: 'Handyman Services',
     description: 'General handyman services for home repairs, furniture assembly, and minor renovations. No job too small!',
-    price: '45.00',
+    price: 45.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/handyman.jpg',
     tags: ['handyman', 'repairs', 'home improvement'],
@@ -57,17 +1222,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Robert Smith',
       avatar: ''
     },
-    stats: {
-      views: 98,
-      likes: 24
-    },
+    viewCount: 98,
+    favoriteCount: 24,
     createdAt: '2025-06-22T14:15:00Z'
   },
   {
     id: '3',
     title: 'Experienced Babysitter',
     description: 'Certified babysitter with 5+ years of experience. CPR trained and excellent references available.',
-    price: '25.00',
+    price: 25.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/babysitter.jpg',
     tags: ['childcare', 'babysitting', 'kids'],
@@ -81,17 +1244,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Sarah Williams',
       avatar: ''
     },
-    stats: {
-      views: 156,
-      likes: 42
-    },
+    viewCount: 156,
+    favoriteCount: 42,
     createdAt: '2025-06-21T09:45:00Z'
   },
   {
     id: '4',
     title: 'Wedding Tent Rental',
     description: 'Large wedding tent available for rent. Perfect for outdoor ceremonies and receptions. Setup and takedown included.',
-    price: '750.00',
+    price: 30.00,
     priceUnit: 'day',
     imageUrl: '/images/marketplace/wedding-tent.jpg',
     tags: ['wedding', 'rental', 'event'],
@@ -105,17 +1266,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Event Solutions Inc.',
       avatar: ''
     },
-    stats: {
-      views: 87,
-      likes: 15
-    },
+    viewCount: 87,
+    favoriteCount: 15,
     createdAt: '2025-06-23T11:20:00Z'
   },
   {
     id: '5',
     title: 'Professional Carpentry Services',
     description: 'Custom carpentry work including cabinets, furniture, and woodworking. Quality craftsmanship with attention to detail.',
-    price: '60.00',
+    price: 60.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/carpenter.jpg',
     tags: ['carpentry', 'woodworking', 'custom furniture'],
@@ -130,17 +1289,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'James Carpenter',
       avatar: ''
     },
-    stats: {
-      views: 105,
-      likes: 31
-    },
+    viewCount: 105,
+    favoriteCount: 31,
     createdAt: '2025-06-19T08:45:00Z'
   },
   {
     id: '6',
     title: 'Professional Driver Services',
     description: 'Experienced driver available for airport transfers, events, or personal chauffeur services. Clean driving record and professional demeanor.',
-    price: '35.00',
+    price: 35.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/driver.jpg',
     tags: ['driver', 'transportation', 'chauffeur'],
@@ -154,17 +1311,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Daniel Richards',
       avatar: ''
     },
-    stats: {
-      views: 89,
-      likes: 22
-    },
+    viewCount: 89,
+    favoriteCount: 22,
     createdAt: '2025-06-18T16:30:00Z'
   },
   {
     id: '7',
     title: 'Heavy Lifting & Moving Help',
     description: 'Strong, reliable help for moving furniture, appliances, or other heavy items. Available for residential or commercial moves.',
-    price: '40.00',
+    price: 40.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/heavy-lifting.jpg',
     tags: ['moving', 'heavy lifting', 'furniture'],
@@ -179,17 +1334,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Marcus Strong',
       avatar: ''
     },
-    stats: {
-      views: 76,
-      likes: 18
-    },
+    viewCount: 76,
+    favoriteCount: 18,
     createdAt: '2025-06-17T13:20:00Z'
   },
   {
     id: '8',
     title: 'Wedding DJ Services',
     description: 'Professional DJ with extensive wedding experience. High-quality sound system, lighting options, and a vast music library for your special day.',
-    price: '800.00',
+    price: 100.00,
     priceUnit: 'event',
     imageUrl: '/images/marketplace/Wedding-DJ-Michigan.jpg',
     tags: ['wedding', 'DJ', 'music', 'entertainment'],
@@ -205,17 +1358,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Alex Beats',
       avatar: ''
     },
-    stats: {
-      views: 134,
-      likes: 47
-    },
+    viewCount: 134,
+    favoriteCount: 47,
     createdAt: '2025-06-16T15:10:00Z'
   },
   {
     id: '9',
     title: 'Wedding Planning Services',
     description: 'Full-service wedding planning from engagement to the big day. Vendor coordination, timeline management, and day-of coordination included.',
-    price: '2,500.00',
+    price: 2500.00,
     priceUnit: 'package',
     imageUrl: '/images/marketplace/wedding-planner.jpg',
     tags: ['wedding', 'planning', 'event coordination'],
@@ -231,17 +1382,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Elegant Events by Emma',
       avatar: ''
     },
-    stats: {
-      views: 212,
-      likes: 58
-    },
+    viewCount: 212,
+    favoriteCount: 58,
     createdAt: '2025-06-15T09:30:00Z'
   },
   {
     id: '10',
     title: 'Plumbing Repair Job',
     description: 'Need a professional plumber to fix a leaking shower and replace bathroom sink. Experienced with residential plumbing required.',
-    price: '300.00',
+    price: 300.00,
     imageUrl: '/images/marketplace/plumber.png',
     tags: ['plumbing', 'bathroom', 'repair'],
     isVip: true,
@@ -254,17 +1403,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'David Cooper',
       avatar: ''
     },
-    stats: {
-      views: 65,
-      likes: 12
-    },
+    viewCount: 45,
+    favoriteCount: 8,
     createdAt: '2025-06-24T10:30:00Z'
   },
   {
     id: '11',
     title: 'Home Renovation Specialist',
     description: 'Looking for an experienced contractor for a complete home renovation project. Must have portfolio and references.',
-    price: '10,000.00',
+    price: 10000.00,
     imageUrl: '/images/marketplace/handyman.jpg',
     tags: ['renovation', 'construction', 'contractor'],
     isFeatured: true,
@@ -277,17 +1424,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Jennifer Adams',
       avatar: ''
     },
-    stats: {
-      views: 112,
-      likes: 28
-    },
+    viewCount: 112,
+    favoriteCount: 29,
     createdAt: '2025-06-25T15:45:00Z'
   },
   {
     id: '12',
     title: 'Weekend Childcare Needed',
     description: 'Looking for a reliable babysitter for weekend evenings. Two children ages 5 and 7. References required.',
-    price: '20.00',
+    price: 20.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/babysitter.jpg',
     tags: ['childcare', 'weekend', 'babysitting'],
@@ -300,17 +1445,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Thomas Wilson',
       avatar: ''
     },
-    stats: {
-      views: 78,
-      likes: 19
-    },
+    viewCount: 78,
+    favoriteCount: 19,
     createdAt: '2025-06-26T09:15:00Z'
   },
   {
     id: '13',
     title: 'Event Space for Corporate Retreat',
     description: 'Seeking event space rental for a corporate retreat. Need capacity for 50 people with outdoor area and AV equipment.',
-    price: '1,200.00',
+    price: 1200.00,
     priceUnit: 'day',
     imageUrl: '/images/marketplace/wedding-tent.jpg',
     tags: ['corporate', 'event', 'rental'],
@@ -320,17 +1463,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Tech Innovations LLC',
       avatar: ''
     },
-    stats: {
-      views: 92,
-      likes: 23
-    },
+    viewCount: 112,
+    favoriteCount: 28,
     createdAt: '2025-06-27T11:00:00Z'
   },
   {
     id: '14',
     title: 'Custom Cabinetry Project',
     description: 'Looking for a skilled carpenter to build custom kitchen cabinets and a built-in bookshelf. Must have experience with high-end finishes.',
-    price: '5,000.00',
+    price: 5000.00,
     imageUrl: '/images/marketplace/carpenter.jpg',
     tags: ['carpentry', 'cabinetry', 'custom work'],
     isFeatured: true,
@@ -341,17 +1482,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Michelle Parker',
       avatar: ''
     },
-    stats: {
-      views: 83,
-      likes: 17
-    },
+    viewCount: 65,
+    favoriteCount: 12,
     createdAt: '2025-06-22T08:15:00Z'
   },
   {
     id: '15',
     title: 'Airport Transportation Needed',
     description: 'Need a reliable driver for airport pickup and drop-off. Regular weekly trips, must be punctual and professional.',
-    price: '60.00',
+    price: 60.00,
     priceUnit: 'trip',
     imageUrl: '/images/marketplace/driver.jpg',
     tags: ['transportation', 'airport', 'driver'],
@@ -361,17 +1500,332 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Business Travels Inc.',
       avatar: ''
     },
-    stats: {
-      views: 67,
-      likes: 14
-    },
+    viewCount: 67,
+    favoriteCount: 14,
     createdAt: '2025-06-21T16:45:00Z'
+  },
+  
+  // New Item Listings
+  {
+    id: '20',
+    title: 'Gaming Laptop - Alienware',
+    description: 'High-performance gaming laptop with RTX 3080, 32GB RAM, 1TB SSD. Perfect condition, barely used.',
+    price: 1800.00,
+    imageUrl: '/images/marketplace/laptop1.jpg',
+    tags: ['gaming', 'laptop', 'electronics', 'computer'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'item',
+    category: 'Electronics',
+    address: '123 Tech Blvd, San Francisco, CA 94105',
+    lat: 37.7749,
+    lng: -122.4194,
+    user: {
+      name: 'Tech Enthusiast',
+      avatar: ''
+    },
+    viewCount: 189,
+    favoriteCount: 42,
+    createdAt: '2025-06-18T11:30:00Z'
+  },
+  {
+    id: '21',
+    title: 'Professional Camera Kit',
+    description: 'Complete photography kit including DSLR camera, 3 lenses, tripod, and carrying case. Perfect for professionals.',
+    price: 2200.00,
+    imageUrl: '/images/marketplace/laptop2.jpg',
+    tags: ['photography', 'camera', 'professional', 'equipment'],
+    isVerified: true,
+    type: 'item',
+    category: 'Photography',
+    address: '456 Arts Ave, Los Angeles, CA 90001',
+    lat: 34.0522,
+    lng: -118.2437,
+    user: {
+      name: 'Pro Photographer',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 38,
+    createdAt: '2025-06-19T09:15:00Z'
+  },
+  
+  // New Rental Listings
+  {
+    id: '22',
+    title: 'Premium Party Tent Rental',
+    description: 'Large event tent suitable for weddings, parties, and corporate events. Includes setup and takedown.',
+    price: 350.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/wedding-tent.jpg',
+    tags: ['event', 'tent', 'party', 'wedding'],
+    isFeatured: true,
+    type: 'rental',
+    category: 'Event Equipment',
+    address: '789 Event Plaza, Miami, FL 33101',
+    lat: 25.7617,
+    lng: -80.1918,
+    user: {
+      name: 'Event Solutions',
+      avatar: ''
+    },
+    viewCount: 143,
+    favoriteCount: 36,
+    createdAt: '2025-06-20T14:45:00Z'
+  },
+  {
+    id: '23',
+    title: 'Professional Power Tools Set',
+    description: 'Complete set of professional-grade power tools including drill, saw, sander, and more. Perfect for home renovation projects.',
+    price: 75.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent.jpg',
+    tags: ['tools', 'power tools', 'renovation', 'DIY'],
+    isVerified: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    address: '321 Builder St, Chicago, IL 60605',
+    lat: 41.8781,
+    lng: -87.6298,
+    user: {
+      name: 'Tool Time Rentals',
+      avatar: ''
+    },
+    viewCount: 128,
+    favoriteCount: 31,
+    createdAt: '2025-06-17T10:30:00Z'
+  },
+
+  // Additional Item Listings
+  {
+    id: '24',
+    title: 'Mountain Bike - Trek X-Caliber',
+    description: 'High-performance mountain bike in excellent condition. Hydraulic disc brakes, front suspension, tubeless ready wheels. Perfect for trails.',
+    price: 850.00,
+    imageUrl: '/images/marketplace/bike.jpg',
+    tags: ['bike', 'mountain bike', 'outdoor', 'sports', 'cycling'],
+    isFeatured: true,
+    type: 'item',
+    category: 'Sports & Recreation',
+    address: '567 Mountain View Rd, Boulder, CO 80302',
+    lat: 40.0150,
+    lng: -105.2705,
+    user: {
+      name: 'Trail Rider',
+      avatar: ''
+    },
+    viewCount: 176,
+    favoriteCount: 45,
+    createdAt: '2025-06-22T09:15:00Z'
+  },
+  {
+    id: '25',
+    title: 'Professional Chainsaw - Husqvarna',
+    description: 'Powerful chainsaw for professional tree work or heavy-duty cutting. Well maintained with recent service. Includes carrying case and safety gear.',
+    price: 450.00,
+    imageUrl: '/images/marketplace/chainsaw.jpg',
+    tags: ['tools', 'chainsaw', 'outdoor', 'equipment'],
+    isVerified: true,
+    type: 'item',
+    category: 'Tools & Equipment',
+    address: '789 Timber Lane, Portland, OR 97201',
+    lat: 45.5152,
+    lng: -122.6784,
+    user: {
+      name: 'Timber Pro',
+      avatar: ''
+    },
+    viewCount: 112,
+    favoriteCount: 28,
+    createdAt: '2025-06-18T14:30:00Z'
+  },
+
+  // Additional Service Listings
+  {
+    id: '26',
+    title: 'Professional Car Repair Service',
+    description: 'Certified mechanic offering comprehensive car repair services. Specializing in European and Japanese vehicles. Mobile service available.',
+    price: 85.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/car-repair.jpg',
+    tags: ['automotive', 'repair', 'mechanic', 'car service'],
+    isFeatured: true,
+    isVerified: true,
+    type: 'service',
+    category: 'Automotive',
+    address: '456 Auto Lane, Detroit, MI 48201',
+    lat: 42.3314,
+    lng: -83.0458,
+    user: {
+      name: 'Master Mechanic',
+      avatar: ''
+    },
+    viewCount: 198,
+    favoriteCount: 52,
+    createdAt: '2025-06-19T11:45:00Z'
+  },
+  {
+    id: '27',
+    title: 'Professional Dog Walking Service',
+    description: 'Reliable dog walking service available daily. Individual or group walks, flexible scheduling. Insured and experienced with all breeds and sizes.',
+    price: 25.00,
+    priceUnit: 'walk',
+    imageUrl: '/images/marketplace/dog-walker.jpg',
+    tags: ['pets', 'dog walking', 'pet care', 'animal'],
+    isVerified: true,
+    type: 'service',
+    category: 'Pet Services',
+    address: '123 Bark Street, Seattle, WA 98101',
+    lat: 47.6062,
+    lng: -122.3321,
+    user: {
+      name: 'Happy Tails Walking',
+      avatar: ''
+    },
+    viewCount: 156,
+    favoriteCount: 41,
+    createdAt: '2025-06-21T08:30:00Z'
+  },
+  {
+    id: '28',
+    title: 'Experienced Wedding DJ Services',
+    description: 'Professional DJ with 10+ years experience specializing in weddings and special events. Top-quality sound equipment, extensive music library, and MC services included.',
+    price: 1200.00,
+    priceUnit: 'event',
+    imageUrl: '/images/marketplace/Wedding-DJ-Michigan.jpg',
+    tags: ['wedding', 'DJ', 'music', 'entertainment', 'event'],
+    isFeatured: true,
+    type: 'service',
+    category: 'Event Services',
+    address: '789 Music Avenue, Nashville, TN 37203',
+    lat: 36.1627,
+    lng: -86.7816,
+    user: {
+      name: 'Elite Entertainment',
+      avatar: ''
+    },
+    viewCount: 187,
+    favoriteCount: 49,
+    createdAt: '2025-06-17T15:45:00Z'
+  },
+
+  // Additional Rental Listings
+  {
+    id: '29',
+    title: 'Commercial Ice Cream Machine Rental',
+    description: 'Professional-grade soft serve ice cream machine perfect for events, parties, and corporate functions. Includes setup, supplies, and pickup.',
+    price: 200.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/icecream-machine.jpg',
+    tags: ['ice cream', 'event', 'party', 'catering', 'dessert'],
+    isVerified: true,
+    type: 'rental',
+    category: 'Event Equipment',
+    address: '456 Sweet Street, Austin, TX 78701',
+    lat: 30.2672,
+    lng: -97.7431,
+    user: {
+      name: 'Sweet Treats Rentals',
+      avatar: ''
+    },
+    viewCount: 145,
+    favoriteCount: 38,
+    createdAt: '2025-06-20T13:15:00Z'
+  },
+  {
+    id: '30',
+    title: 'Heavy-Duty Power Tool Package',
+    description: 'Complete set of professional power tools for construction and renovation. Includes drills, saws, sanders, and more. Delivery and pickup available.',
+    price: 120.00,
+    priceUnit: 'day',
+    imageUrl: '/images/marketplace/power-tools-set-rent3.jpg',
+    tags: ['tools', 'construction', 'renovation', 'power tools'],
+    isFeatured: true,
+    type: 'rental',
+    category: 'Tools & Equipment',
+    address: '789 Builder Way, Denver, CO 80202',
+    lat: 39.7392,
+    lng: -104.9903,
+    user: {
+      name: 'Construction Rentals Pro',
+      avatar: ''
+    },
+    viewCount: 168,
+    favoriteCount: 43,
+    createdAt: '2025-06-18T09:30:00Z'
+  },
+
+  // Additional Job Listings
+  {
+    id: '31',
+    title: 'Experienced Carpenter Needed',
+    description: 'Looking for a skilled carpenter for custom cabinetry and built-ins for home renovation. Must have experience with fine woodworking and finishing.',
+    price: 45.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/carpenter.jpg',
+    tags: ['carpentry', 'woodworking', 'construction', 'skilled trade'],
+    isVerified: true,
+    type: 'job',
+    category: 'Construction & Trades',
+    address: '123 Woodwork Lane, Portland, OR 97201',
+    lat: 45.5152,
+    lng: -122.6784,
+    user: {
+      name: 'Custom Home Designs',
+      avatar: ''
+    },
+    viewCount: 134,
+    favoriteCount: 29,
+    createdAt: '2025-06-22T10:45:00Z'
+  },
+  {
+    id: '32',
+    title: 'Babysitter Needed - Weekends',
+    description: 'Seeking a reliable and experienced babysitter for two children (ages 4 and 7) on weekend evenings. CPR certification preferred.',
+    price: 20.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/babysitter.jpg',
+    tags: ['childcare', 'babysitting', 'weekend', 'part-time'],
+    type: 'job',
+    category: 'Childcare',
+    address: '456 Family Street, Boston, MA 02108',
+    lat: 42.3601,
+    lng: -71.0589,
+    user: {
+      name: 'Family First',
+      avatar: ''
+    },
+    viewCount: 98,
+    favoriteCount: 22,
+    createdAt: '2025-06-19T16:30:00Z'
+  },
+  {
+    id: '33',
+    title: 'Food Delivery Driver - Flexible Hours',
+    description: 'Looking for delivery drivers with own vehicle for local restaurant deliveries. Flexible hours, great tips, and competitive pay.',
+    price: 18.00,
+    priceUnit: 'hr',
+    imageUrl: '/images/marketplace/food-delivery.jpg',
+    tags: ['delivery', 'driver', 'food', 'part-time', 'flexible'],
+    isFeatured: true,
+    type: 'job',
+    category: 'Food & Restaurant',
+    address: '789 Delivery Road, Chicago, IL 60605',
+    lat: 41.8781,
+    lng: -87.6298,
+    user: {
+      name: 'Quick Bites Delivery',
+      avatar: ''
+    },
+    viewCount: 176,
+    favoriteCount: 38,
+    createdAt: '2025-06-21T12:15:00Z'
   },
   {
     id: '16',
     title: 'Moving Help This Weekend',
     description: 'Need 2 strong individuals to help with a local apartment move. Must be able to lift heavy furniture and appliances.',
-    price: '25.00',
+    price: 25.00,
     priceUnit: 'hr',
     imageUrl: '/images/marketplace/heavy-lifting.jpg',
     tags: ['moving', 'lifting', 'labor'],
@@ -381,17 +1835,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Alex Thompson',
       avatar: ''
     },
-    stats: {
-      views: 95,
-      likes: 21
-    },
+    viewCount: 95,
+    favoriteCount: 21,
     createdAt: '2025-06-24T14:30:00Z'
   },
   {
     id: '17',
     title: 'DJ Needed for Wedding Reception',
     description: 'Looking for an experienced DJ for our wedding reception on August 15th. Must have own equipment and a diverse music selection.',
-    price: '600.00',
+    price: 750.00,
     imageUrl: '/images/marketplace/Wedding-DJ-Michigan.jpg',
     tags: ['wedding', 'DJ', 'music'],
     isFeatured: true,
@@ -402,17 +1854,15 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Jessica & Mark',
       avatar: ''
     },
-    stats: {
-      views: 108,
-      likes: 32
-    },
+    viewCount: 83,
+    favoriteCount: 17,
     createdAt: '2025-06-23T18:20:00Z'
   },
   {
     id: '18',
     title: 'Wedding Planner for Destination Wedding',
     description: 'Seeking an experienced wedding planner for our destination wedding in Hawaii. Need help with vendor coordination and guest logistics.',
-    price: '3,500.00',
+    price: 3500.00,
     imageUrl: '/images/marketplace/wedding-planner.jpg',
     tags: ['wedding', 'destination', 'planning'],
     isVerified: true,
@@ -423,10 +1873,8 @@ export const marketplaceListings: MarketplaceListing[] = [
       name: 'Sophia Chen',
       avatar: ''
     },
-    stats: {
-      views: 124,
-      likes: 36
-    },
+    viewCount: 92,
+    favoriteCount: 23,
     createdAt: '2025-06-20T11:45:00Z'
   }
 ];

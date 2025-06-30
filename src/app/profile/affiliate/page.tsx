@@ -505,8 +505,72 @@ export default function AffiliateProgram() {
                   </div>
                   
                   <div className="space-y-2">
-                    <label className="text-sm font-medium">Custom Code (Optional)</label>
-                    <Input placeholder="Enter custom code" />
+                    <label className="text-sm font-medium">Campaign Name (Optional)</label>
+                    <Input placeholder="Summer Sale" />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Your Referral Link</label>
+                  <div className="flex items-center space-x-2">
+                    <Input value={referralLink} readOnly />
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(referralLink)}>
+                      <Copy className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* Listing-specific Referral Links */}
+                <div className="pt-4 border-t">
+                  <h3 className="text-lg font-medium mb-2">Listing-specific Referral Links</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Generate referral links for specific listings to earn commissions when users make purchases through your links.
+                  </p>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Listing Type</label>
+                        <select className="w-full p-2 rounded-md border">
+                          <option value="job">Job</option>
+                          <option value="service">Service</option>
+                          <option value="rental">Rental</option>
+                          <option value="item">Marketplace Item</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Listing ID</label>
+                        <Input placeholder="Enter listing ID" />
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full" variant="outline">
+                      Generate Listing-specific Link
+                    </Button>
+                    
+                    <div className="rounded-md border p-4 bg-muted/10">
+                      <h4 className="text-sm font-medium mb-2">Recently Generated Links</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between p-2 rounded-md bg-muted/10">
+                          <div className="text-sm truncate flex-1 mr-2">https://jobmate.vercel.app/item/item123?ref=user123</div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="whitespace-nowrap">Item</Badge>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between p-2 rounded-md bg-muted/10">
+                          <div className="text-sm truncate flex-1 mr-2">https://jobmate.vercel.app/job/job456?ref=user123</div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="whitespace-nowrap">Job</Badge>
+                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 

@@ -186,6 +186,13 @@ export const GlassmorphicSidebar = memo(function GlassmorphicSidebar({
         verificationLevel: 0
       },
       { 
+        href: "/referrals", 
+        label: "Referral Program", 
+        icon: <Share2 className="h-5 w-5" />,
+        badge: null,
+        verificationLevel: 0
+      },
+      { 
         href: "/verifications", 
         label: "Verifications", 
         icon: <Shield className="h-5 w-5" />,

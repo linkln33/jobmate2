@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MarketplacePreviewCard } from '@/components/ui/marketplace-preview-card';
+import { EnhancedMarketplacePreviewCard } from '@/components/ui/enhanced-marketplace-preview-card';
 import { Button } from '@/components/ui/button';
 import { marketplaceListings } from '@/data/marketplace-listings';
 
@@ -79,7 +79,8 @@ export function MarketplaceSection() {
                     key={`${listing.id}-${index}`} 
                     className="flex-shrink-0 w-72"
                   >
-                    <MarketplacePreviewCard
+                    <EnhancedMarketplacePreviewCard
+                      id={listing.id}
                       title={item.title}
                       description={item.description}
                       category={item.category}

@@ -9,6 +9,14 @@ export interface JobMateSettings {
   notifications: boolean;
   isPublic: boolean;
   isCollaborative: boolean;
+  autoScheduling?: boolean;
+  autoNegotiation?: boolean;
+  negotiationStyle?: 'aggressive' | 'balanced' | 'conservative';
+  locationAware?: boolean;
+  autoPosting?: boolean;
+  postingFrequency?: 'daily' | 'weekly' | 'when_engagement_drops';
+  chatCompanion?: boolean;
+  chatPersonality?: 'professional' | 'friendly' | 'enthusiastic' | 'technical';
 }
 
 export interface JobMate {
@@ -50,6 +58,9 @@ export interface JobMateTemplate {
   preferences: Partial<UserPreferences>;
   creatorId: string;
   isPublic: boolean;
+  downloads: number;
+  rating?: number;
+  tags: string[];
   usageCount: number;
   createdAt: Date;
   settings?: Partial<JobMateSettings>;
