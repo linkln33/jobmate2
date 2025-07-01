@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { X, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Sparkles, ArrowRight, Trophy, Lock } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 type WaitlistPopupProps = {
@@ -106,25 +106,43 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
     >
       <div 
         className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
       ></div>
       
       <motion.div 
         className="relative bg-white/20 backdrop-filter backdrop-blur-xl 
-                  border border-white/30 shadow-2xl rounded-2xl 
-                  w-full max-w-md overflow-hidden"
+                  shadow-2xl rounded-2xl 
+                  w-full max-w-xl overflow-hidden"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
       >
+        {/* Gradient border that matches rounded corners */}
+        <div className="absolute inset-0 rounded-2xl p-[2px] bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500">
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 to-blue-50/90 rounded-2xl"></div>
+        </div>
+      
         {/* Glassmorphism decorative elements */}
-        <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400 rounded-full blur-3xl opacity-20"></div>
-        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400 rounded-full blur-3xl opacity-20"></div>
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-blue-400 rounded-full blur-3xl opacity-30"></div>
+        <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-purple-400 rounded-full blur-3xl opacity-30"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-pink-400 rounded-full blur-3xl opacity-10"></div>
         
-        <div className="absolute top-4 right-4 z-10">
+        {/* VIP ribbon in corner */}
+        <div className="absolute top-5 -right-11 w-40 h-10 bg-gradient-to-r from-purple-600 to-pink-500 shadow-lg z-10 rotate-45 flex items-center justify-center">
+          <span className="text-white font-bold text-sm">VIP ACCESS</span>
+        </div>
+        
+        <div className="absolute top-4 left-4 z-20">
           <button 
-            onClick={onClose}
-            className="text-gray-600 hover:text-gray-900 transition-colors p-1 rounded-full hover:bg-white/30"
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
+            className="text-gray-600 hover:text-gray-900 transition-colors p-2 rounded-full hover:bg-white/30 flex items-center justify-center"
+            aria-label="Close popup"
           >
             <X size={20} />
           </button>
@@ -182,14 +200,14 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
           ) : (
             <>
               <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center mb-3 bg-blue-100/30 p-2 rounded-full">
-                  <Sparkles className="h-5 w-5 text-blue-600" />
+                <div className="flex flex-col items-center justify-center mb-3">
+                  <div className="text-5xl mb-2">👑</div>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Exclusive Early Access
+                <h2 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 mb-2">
+                  Secure Free Lifetime Access
                 </h2>
                 <p className="text-gray-700 mt-2">
-                  Join our waitlist today and get priority access, exclusive perks, and up to <span className="font-semibold text-blue-600">70% off</span> when we launch!
+                  Join our exclusive waitlist today and get <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">priority access</span>, premium perks, and up to <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">70% off</span> when we launch!
                 </p>
               </div>
               
@@ -240,31 +258,46 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
                   </div>
                 )}
                 
-                <Button 
+                <button 
                   type="submit" 
-                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                            text-white py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200" 
+                  className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 hover:from-blue-700 hover:via-purple-700 hover:to-pink-600
+                            text-white font-bold py-4 px-6 rounded-xl text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed transform hover:-translate-y-1" 
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? (
-                    'Joining...'
+                    <>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                      Securing Access...
+                    </>
                   ) : (
-                    <span className="flex items-center justify-center">
-                      Join Now & Skip the Line
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </span>
+                    <>
+                      <span className="text-xl">🔒</span>
+                      <span>Secure Free Lifetime Access</span>
+                      <ArrowRight className="h-5 w-5 animate-pulse" />
+                    </>
                   )}
-                </Button>
+                </button>
                 
-                <div className="flex items-center justify-center space-x-2 pt-2">
-                  <div className="flex -space-x-2">
-                    {/* User avatars */}
-                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
-                    <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
-                    <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
+                <div className="mt-4 text-center">
+                  <div className="inline-flex items-center justify-center px-4 py-1.5 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-full text-sm font-medium">
+                    <Trophy className="h-4 w-4 mr-1.5" />
+                    <span className="font-semibold">ONLY 1000 spots available</span>
                   </div>
-                  <p className="text-xs text-gray-600">
-                    <span className="font-semibold">247 people</span> joined today
+                  
+                  <div className="flex items-center justify-center space-x-2 pt-3">
+                    <div className="flex -space-x-2">
+                      {/* User avatars */}
+                      <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-7 h-7 rounded-full border-2 border-white" />
+                      <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-7 h-7 rounded-full border-2 border-white" />
+                      <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-7 h-7 rounded-full border-2 border-white" />
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      <span className="font-semibold">247 people</span> joined already!
+                    </p>
+                  </div>
+                  
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <span className="text-emerald-600 dark:text-emerald-400">Early adopters get exclusive rewards</span> • Join now before it's too late
                   </p>
                 </div>
                 

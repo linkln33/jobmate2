@@ -183,14 +183,14 @@ const PricingTier: React.FC<PricingTierProps> = ({
         pt: 1
       }}
     >
-      {/* Popular badge */}
+      {/* Limited Deal badge */}
       {isPopular && (
         <Box 
           sx={{ 
             position: 'absolute',
             top: -12,
             right: 24,
-            backgroundColor: '#ed6c02',
+            background: 'linear-gradient(90deg, #ff9800, #ff5722)',
             color: 'white',
             py: 0.5,
             px: 2,
@@ -204,7 +204,7 @@ const PricingTier: React.FC<PricingTierProps> = ({
           }}
         >
           <StarIcon fontSize="small" />
-          Most Popular
+          Limited Deal
         </Box>
       )}
       
@@ -220,12 +220,46 @@ const PricingTier: React.FC<PricingTierProps> = ({
         </Typography>
         
         <Box sx={{ display: 'flex', alignItems: 'baseline', mb: 0.5 }}>
-          <Typography variant="h4" component="span" fontWeight="bold">
-            ${price}
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1 }}>
-            /month
-          </Typography>
+          {tier === 'pro' ? (
+            <>
+              <Typography variant="h4" component="span" fontWeight="bold">
+                ${price}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1, textDecoration: 'none' }}>
+                /month
+              </Typography>
+              <Typography variant="body2" color="error" sx={{ ml: 1, textDecoration: 'line-through' }}>
+                $19.99
+              </Typography>
+              <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
+                50% OFF
+              </Typography>
+            </>
+          ) : tier === 'agency' ? (
+            <>
+              <Typography variant="h4" component="span" fontWeight="bold">
+                ${price}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1, textDecoration: 'none' }}>
+                /month
+              </Typography>
+              <Typography variant="body2" color="error" sx={{ ml: 1, textDecoration: 'line-through' }}>
+                $99.99
+              </Typography>
+              <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
+                50% OFF
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography variant="h4" component="span" fontWeight="bold">
+                ${price}
+              </Typography>
+              <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1 }}>
+                /month
+              </Typography>
+            </>
+          )}
         </Box>
         
         <Typography 
@@ -347,7 +381,7 @@ export const SubscriptionTiersShowcase: React.FC<SubscriptionTiersShowcaseProps>
           <PricingTier
             tier="agency"
             name="Agency"
-            price={29.99}
+            price={49.99}
             description="Full suite of features for teams and professionals"
             maxJobMates={20}
             features={PRICING_FEATURES}
