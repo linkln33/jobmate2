@@ -125,7 +125,12 @@ export function WaitlistPage() {
       }
       
       setUser(data.user);
+      // Store user data in localStorage for dashboard access
+      localStorage.setItem('waitlist_user', JSON.stringify(data.user));
       setRegistrationComplete(true);
+      
+      // Redirect to dashboard after successful registration
+      window.location.href = '/waitlist-dashboard';
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -275,9 +280,17 @@ export function WaitlistPage() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">
                     You're on the list!
                   </h2>
-                  <p className="text-gray-600 text-center">
+                  <p className="text-gray-600 text-center mb-6">
                     Thanks for joining the JobMate waitlist. We'll notify you when we launch!
                   </p>
+                  <div className="flex justify-center">
+                    <a 
+                      href="/waitlist-dashboard" 
+                      className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white font-medium rounded-full shadow-lg hover:shadow-xl transition-all"
+                    >
+                      View Your Dashboard
+                    </a>
+                  </div>
                 </div>
                 
                 {user && (

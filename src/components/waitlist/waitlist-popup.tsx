@@ -15,6 +15,8 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const [error, setError] = useState<string>('');
   const [errorType, setErrorType] = useState<'validation' | 'duplicate' | 'server' | null>(null);
 
@@ -72,16 +74,21 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
       }
       
       // Store user data in localStorage to indicate registration is complete
-      localStorage.setItem('waitlistUser', JSON.stringify({
+      const userData = {
         id: data.user.id,
         name: data.user.name,
         email: data.user.email,
         referralCode: data.user.referralCode || data.user.referral_code,
         registrationComplete: true
-      }));
+      };
       
-      // Redirect directly to the dashboard with the user's referral code
-      router.push(`/waitlist?ref=${data.user.referralCode || data.user.referral_code}&registered=true`);
+      localStorage.setItem('waitlistUser', JSON.stringify(userData));
+      
+      // Set success state and user data
+      setSuccess(true);
+      setUser(userData);
+      
+      // Don't redirect immediately, show success state with dashboard link instead
     } catch (err: any) {
       setError(err.message);
       console.error('Waitlist registration error:', err);
@@ -124,97 +131,149 @@ export function WaitlistPopup({ onClose }: WaitlistPopupProps) {
         </div>
         
         <div className="p-8 relative z-10">
-          <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center mb-3 bg-blue-100/30 p-2 rounded-full">
-              <Sparkles className="h-5 w-5 text-blue-600" />
+          {success ? (
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center mb-3 bg-green-100/30 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                You're on the list!
+              </h2>
+              <p className="text-gray-700 mt-2 mb-6">
+                Thank you for joining our waitlist. We'll notify you when we launch!
+              </p>
+              
+              {user?.referralCode && (
+                <div className="mb-6">
+                  <p className="mb-2 text-gray-700">Share your referral link to earn points:</p>
+                  <div className="flex">
+                    <input
+                      type="text"
+                      value={`${window.location.origin}/waitlist?ref=${user.referralCode}`}
+                      readOnly
+                      className="flex-1 p-2 border rounded-l text-sm bg-gray-50"
+                    />
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `${window.location.origin}/waitlist?ref=${user.referralCode}`
+                        );
+                        alert('Referral link copied!');
+                      }}
+                      className="bg-blue-500 text-white px-3 py-2 rounded-r"
+                    >
+                      Copy
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              <div className="mt-6">
+                <a 
+                  href="/waitlist-dashboard" 
+                  className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white font-medium rounded-full shadow-lg hover:shadow-xl transition-all"
+                >
+                  View Your Dashboard
+                </a>
+              </div>
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              Exclusive Early Access
-            </h2>
-            <p className="text-gray-700 mt-2">
-              Join our waitlist today and get priority access, exclusive perks, and up to <span className="font-semibold text-blue-600">70% off</span> when we launch!
-            </p>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div>
-              <label htmlFor="popup-name" className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <input
-                id="popup-name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-4 py-3 bg-white/70 border border-white/30 rounded-lg 
-                          focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                placeholder="Enter your name"
-                required
-              />
-            </div>
-            
-            <div>
-              <label htmlFor="popup-email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <input
-                id="popup-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-white/70 border border-white/30 rounded-lg 
-                          focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
-                placeholder="Enter your email"
-                required
-              />
-            </div>
-            
-            {referralCode && (
-              <div className="bg-blue-50/70 p-3 rounded-lg border border-blue-100/50">
-                <p className="text-sm text-blue-800">
-                  You were referred with code: <span className="font-semibold">{referralCode}</span>
+          ) : (
+            <>
+              <div className="text-center mb-6">
+                <div className="inline-flex items-center justify-center mb-3 bg-blue-100/30 p-2 rounded-full">
+                  <Sparkles className="h-5 w-5 text-blue-600" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Exclusive Early Access
+                </h2>
+                <p className="text-gray-700 mt-2">
+                  Join our waitlist today and get priority access, exclusive perks, and up to <span className="font-semibold text-blue-600">70% off</span> when we launch!
                 </p>
               </div>
-            )}
+              
+              <form onSubmit={handleSubmit} className="space-y-5">
+                <div>
+                  <label htmlFor="popup-name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name
+                  </label>
+                  <input
+                    id="popup-name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/70 border border-white/30 rounded-lg 
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                    placeholder="Enter your name"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="popup-email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    id="popup-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-4 py-3 bg-white/70 border border-white/30 rounded-lg 
+                              focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400"
+                    placeholder="Enter your email"
+                    required
+                  />
+                </div>
             
-            {error && (
-              <div className="bg-red-50/70 p-3 rounded-lg border border-red-100/50">
-                <p className="text-sm text-red-800">{error}</p>
-              </div>
-            )}
-            
-            <Button 
-              type="submit" 
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
-                        text-white py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                'Joining...'
-              ) : (
-                <span className="flex items-center justify-center">
-                  Join Now & Skip the Line
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </span>
-              )}
-            </Button>
-            
-            <div className="flex items-center justify-center space-x-2 pt-2">
-              <div className="flex -space-x-2">
-                {/* User avatars */}
-                <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
-                <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
-                <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
-              </div>
-              <p className="text-xs text-gray-600">
-                <span className="font-semibold">247 people</span> joined today
-              </p>
-            </div>
-            
-            <p className="text-xs text-center text-gray-600 mt-4">
-              By joining, you agree to our Terms of Service and Privacy Policy
-            </p>
-          </form>
+                {referralCode && (
+                  <div className="bg-blue-50/70 p-3 rounded-lg border border-blue-100/50">
+                    <p className="text-sm text-blue-800">
+                      You were referred with code: <span className="font-semibold">{referralCode}</span>
+                    </p>
+                  </div>
+                )}
+                
+                {error && (
+                  <div className="bg-red-50/70 p-3 rounded-lg border border-red-100/50">
+                    <p className="text-sm text-red-800">{error}</p>
+                  </div>
+                )}
+                
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700
+                            text-white py-3 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200" 
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? (
+                    'Joining...'
+                  ) : (
+                    <span className="flex items-center justify-center">
+                      Join Now & Skip the Line
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </span>
+                  )}
+                </Button>
+                
+                <div className="flex items-center justify-center space-x-2 pt-2">
+                  <div className="flex -space-x-2">
+                    {/* User avatars */}
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
+                    <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
+                    <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-6 h-6 rounded-full border-2 border-white" />
+                  </div>
+                  <p className="text-xs text-gray-600">
+                    <span className="font-semibold">247 people</span> joined today
+                  </p>
+                </div>
+                
+                <p className="text-xs text-center text-gray-600 mt-4">
+                  By joining, you agree to our Terms of Service and Privacy Policy
+                </p>
+              </form>
+            </>
+          )}
         </div>
       </motion.div>
     </motion.div>
