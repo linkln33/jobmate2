@@ -158,18 +158,40 @@ export function UnifiedHomePageFinal() {
                 </Button>
               </div>
               
-              <div className="mt-8 flex items-center">
-                <div className="flex -space-x-2">
-                  {/* Real people avatars */}
-                  <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
-                  <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
-                  <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
-                  <img src="https://randomuser.me/api/portraits/men/36.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+              <div className="mt-8 flex flex-col space-y-3">
+                {/* Trustpilot with 5 stars */}
+                <div className="flex items-center">
+                  <div className="flex items-center">
+                    <img 
+                      src="https://cdn.trustpilot.net/brand-assets/1.1.0/logo-white.svg" 
+                      alt="Trustpilot" 
+                      className="h-6 mr-2 bg-blue-600 p-1 px-3 rounded"
+                    />
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className="w-5 h-5 text-blue-600 fill-current" viewBox="0 0 24 24">
+                          <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                        </svg>
+                      ))}
+                    </div>
+                    <span className="ml-2 text-sm font-medium text-gray-600 dark:text-gray-400">4.9/5</span>
+                  </div>
                 </div>
-                <div className="ml-4">
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
-                    Trusted by <span className="font-semibold text-blue-600 dark:text-blue-400">10,000+</span> professionals
-                  </span>
+                
+                {/* User avatars and trusted by text */}
+                <div className="flex items-center">
+                  <div className="flex -space-x-2">
+                    {/* Real people avatars */}
+                    <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                    <img src="https://randomuser.me/api/portraits/men/86.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                    <img src="https://randomuser.me/api/portraits/women/63.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                    <img src="https://randomuser.me/api/portraits/men/36.jpg" alt="User" className="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800" />
+                  </div>
+                  <div className="ml-4">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                      Trusted by <span className="font-semibold text-blue-600 dark:text-blue-400">10,000+</span> professionals
+                    </span>
+                  </div>
                 </div>
               </div>
             </motion.div>

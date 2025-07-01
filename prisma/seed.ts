@@ -1,4 +1,4 @@
-import { PrismaClient, UserRole, JobStatus } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
@@ -16,7 +16,7 @@ async function main() {
       passwordHash: adminPassword,
       firstName: 'Admin',
       lastName: 'User',
-      role: UserRole.ADMIN,
+      role: 'ADMIN',
       isVerified: true,
       emailVerified: true,
       isActive: true,
@@ -111,7 +111,7 @@ async function main() {
       passwordHash: customerPassword,
       firstName: 'Demo',
       lastName: 'Customer',
-      role: UserRole.CUSTOMER,
+      role: 'CUSTOMER',
       isVerified: true,
       emailVerified: true,
       isActive: true,
@@ -138,7 +138,7 @@ async function main() {
       passwordHash: specialistPassword,
       firstName: 'Demo',
       lastName: 'Specialist',
-      role: UserRole.SPECIALIST,
+      role: 'SPECIALIST',
       isVerified: true,
       emailVerified: true,
       isActive: true,
@@ -196,7 +196,7 @@ async function main() {
           id: 'sample-job-1',
           title: 'Fix leaking kitchen sink',
           description: 'The kitchen sink has been leaking for a few days. Need someone to fix it as soon as possible.',
-          status: JobStatus.OPEN,
+          status: 'OPEN',
           address: '123 Main St, San Francisco, CA 94105',
           city: 'San Francisco',
           zipCode: '94105',
@@ -218,7 +218,7 @@ async function main() {
           id: 'sample-job-2',
           title: 'Install new ceiling light',
           description: 'Need to install a new ceiling light fixture in the living room. I have the fixture already.',
-          status: JobStatus.OPEN,
+          status: 'OPEN',
           address: '456 Market St, San Francisco, CA 94105',
           city: 'San Francisco',
           zipCode: '94105',

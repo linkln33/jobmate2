@@ -8,7 +8,7 @@ import { ReferralBarChart, PointsPieChart, LeaderboardChart } from '@/components
 import { WaitlistGrowthChart } from '@/components/waitlist/dashboard/growth-chart';
 import { BadgeGrid, AchievementBadge } from '@/components/waitlist/dashboard/achievement-badges';
 import { PointsLegend } from '@/components/waitlist/dashboard/points-legend';
-import { BackToHomeButton } from '@/components/waitlist/dashboard/navigation';
+import { WaitlistNavigation } from '@/components/waitlist/dashboard/navigation';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { UserStats } from '@/utils/progress-tracker';
@@ -227,93 +227,94 @@ export default function WaitlistDashboard() {
   }
 
   return (
-    <div 
-      style={cssVariables as React.CSSProperties} 
-      className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800"
-    >
-      <BackToHomeButton />
-      <ToastContainer position="bottom-right" theme="colored" />
-      {/* <ParticleBackground /> */}
-      <div className="container mx-auto px-4 py-8 relative z-10">{/* Main content container */}
-        <div className="absolute inset-0 z-0">
-          {/* Decorative elements - subtle blue accents matching home page */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full filter blur-3xl opacity-10 dark:opacity-20"></div>
-          <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-400 rounded-full filter blur-3xl opacity-10 dark:opacity-20"></div>
-        </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-indigo-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800">
+      <WaitlistNavigation userName={user?.name} />
+      <div 
+        className="flex-1 pb-12"
+        style={cssVariables as React.CSSProperties}
+      >
         
-        <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              <span className="text-blue-600 dark:text-blue-400">Waitlist</span> Dashboard
-            </h1>
-            <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto whitespace-nowrap mb-8">
-              Track your position, invite friends, and earn rewards while you wait for access.
-            </p>
+        {/* Hero Section */}
+        <div className="relative overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            {/* Decorative elements - subtle blue accents matching home page */}
+            <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500 rounded-full filter blur-3xl opacity-10 dark:opacity-20"></div>
+            <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-400 rounded-full filter blur-3xl opacity-10 dark:opacity-20"></div>
           </div>
           
-          {/* User Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-3xl mx-auto">
-            <GlassCard className="p-6" delay={0.1}>
-              <div className="text-center">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-xl font-bold">Rank</h3>
-                  <Trophy className="text-amber-500" />
-                </div>
-                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
-                  #{userStats.rank}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  on leaderboard
-                </p>
-              </div>
-            </GlassCard>
-            
-            <GlassCard className="p-6" delay={0.2}>
-              <div className="text-center">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-xl font-bold">Points</h3>
-                  <Star className="text-purple-500" />
-                </div>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
-                  {userStats.points}
-                </p>
-                <ProgressBar 
-                  value={userStats.points} 
-                  max={userStats.nextMilestone} 
-                  color="purple" 
-                  height={6} 
-                />
-              </div>
-            </GlassCard>
-            
-            <GlassCard className="p-6" delay={0.3}>
-              <div className="text-center">
-                <div className="flex justify-between items-center mb-2">
-                  <h3 className="text-xl font-bold">Referrals</h3>
-                  <Share2 className="text-green-500" />
-                </div>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                  {userStats.referrals}
-                </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  invites sent
-                </p>
-              </div>
-            </GlassCard>
-          </div>
-          
-          {/* Achievement Badges Row */}
-          <div className="mb-12 max-w-4xl mx-auto">
-            <div className="flex justify-center items-center gap-4 overflow-x-auto py-2 px-4">
-              <AchievementBadge type="earlyAccess" earned={userStats.points >= 10} size="sm" showName={true} />
-              <AchievementBadge type="freeProMonth" earned={userStats.points >= 50} size="sm" showName={true} />
-              <AchievementBadge type="proYearDiscount" earned={userStats.points >= 150} size="sm" showName={true} />
-              <AchievementBadge type="proSixMonths" earned={userStats.points >= 350} size="sm" showName={true} />
-              <AchievementBadge type="proOneYear" earned={userStats.points >= 540} size="sm" showName={true} />
-              <AchievementBadge type="proTwoYears" earned={userStats.points >= 1000} size="sm" showName={true} />
-              <AchievementBadge type="proLifetime" earned={userStats.points >= 3000} size="sm" showName={true} />
+          <div className="container mx-auto px-4 pt-24 pb-12 relative z-10">
+            <div className="text-center">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4">
+                <span className="text-blue-600 dark:text-blue-400">Waitlist</span> Dashboard
+              </h1>
+              <p className="text-lg text-gray-700 dark:text-gray-300 max-w-3xl mx-auto mb-8">
+                Track your position, invite friends, and earn rewards while you wait for access.
+              </p>
             </div>
-          </div>
+            
+            {/* User Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 max-w-3xl mx-auto">
+              <GlassCard className="p-6" delay={0.1}>
+                <div className="text-center">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-bold">Rank</h3>
+                    <Trophy className="text-amber-500" />
+                  </div>
+                  <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">
+                    #{userStats.rank}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    on leaderboard
+                  </p>
+                </div>
+              </GlassCard>
+              
+              <GlassCard className="p-6" delay={0.2}>
+                <div className="text-center">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-bold">Points</h3>
+                    <Star className="text-purple-500" />
+                  </div>
+                  <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                    {userStats.points}
+                  </p>
+                  <ProgressBar 
+                    value={userStats.points} 
+                    max={userStats.nextMilestone} 
+                    color="purple" 
+                    height={6} 
+                  />
+                </div>
+              </GlassCard>
+              
+              <GlassCard className="p-6" delay={0.3}>
+                <div className="text-center">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-bold">Referrals</h3>
+                    <Share2 className="text-green-500" />
+                  </div>
+                  <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                    {userStats.referrals}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    invites sent
+                  </p>
+                </div>
+              </GlassCard>
+            </div>
+            
+            {/* Achievement Badges Row */}
+            <div className="mb-12 max-w-4xl mx-auto">
+              <div className="flex justify-center items-center gap-4 overflow-x-auto py-2 px-4">
+                <AchievementBadge type="earlyAccess" earned={userStats.points >= 10} size="sm" showName={true} />
+                <AchievementBadge type="freeProMonth" earned={userStats.points >= 50} size="sm" showName={true} />
+                <AchievementBadge type="proYearDiscount" earned={userStats.points >= 150} size="sm" showName={true} />
+                <AchievementBadge type="proSixMonths" earned={userStats.points >= 350} size="sm" showName={true} />
+                <AchievementBadge type="proOneYear" earned={userStats.points >= 540} size="sm" showName={true} />
+                <AchievementBadge type="proTwoYears" earned={userStats.points >= 1000} size="sm" showName={true} />
+                <AchievementBadge type="proLifetime" earned={userStats.points >= 3000} size="sm" showName={true} />
+              </div>
+            </div>
         </div>
       </div>
       

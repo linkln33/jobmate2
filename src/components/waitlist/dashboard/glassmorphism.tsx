@@ -76,6 +76,7 @@ interface ProgressBarProps {
   label?: string;
   showValue?: boolean;
   currentBadge?: React.ReactNode;
+  nextBadge?: React.ReactNode;
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({ 
@@ -85,7 +86,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   height = 8,
   label,
   showValue = true,
-  currentBadge
+  currentBadge,
+  nextBadge
 }) => {
   const percentage = Math.min(100, Math.max(0, (value / max) * 100));
   
@@ -106,16 +108,23 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
-        {label && (
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-        )}
         <div className="flex items-center gap-2">
           {currentBadge && (
             <div className="flex-shrink-0">
               {currentBadge}
             </div>
           )}
+          {label && (
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
           {showValue && <span className="text-sm font-medium text-blue-600 dark:text-blue-400">{value}/{max} points</span>}
+          {nextBadge && (
+            <div className="flex-shrink-0">
+              {nextBadge}
+            </div>
+          )}
         </div>
       </div>
       <div 
@@ -241,56 +250,56 @@ export const CallToAction: React.FC<CallToActionProps> = ({
   
   return (
     <motion.div 
-      className="text-center p-6"
+      className="text-center p-5"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.4 }}
     >
-      <h2 className="text-2xl font-bold mb-2">{title}</h2>
-      <p className="mb-6 opacity-80">{description}</p>
+      <h2 className="text-xl font-bold mb-3">{title}</h2>
+      <p className="mb-5 opacity-80 text-sm">{description}</p>
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
-        className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white font-medium rounded-full shadow-lg"
+        className="px-8 py-3 bg-gradient-to-r from-purple-600 to-blue-500 text-white text-sm font-medium rounded-full shadow-lg"
         onClick={onClick}
       >
         {buttonText}
       </motion.button>
       
       {showSocialButtons && (
-        <div className="mt-6">
-          <p className="text-sm mb-3">Or share directly on:</p>
+        <div className="mt-5">
+          <p className="text-xs mb-3">Or share directly on:</p>
           <div className="flex justify-center space-x-4">
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 bg-[#1DA1F2] rounded-full"
+              className="p-1 bg-[#1DA1F2] rounded-full"
               onClick={() => handleSocialShare('twitter')}
               aria-label="Share on Twitter"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                 <path d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z"></path>
               </svg>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 bg-[#4267B2] rounded-full"
+              className="p-1 bg-[#4267B2] rounded-full"
               onClick={() => handleSocialShare('facebook')}
               aria-label="Share on Facebook"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                 <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>
               </svg>
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
-              className="p-2 bg-[#0077B5] rounded-full"
+              className="p-1 bg-[#0077B5] rounded-full"
               onClick={() => handleSocialShare('linkedin')}
               aria-label="Share on LinkedIn"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white">
                 <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
                 <rect x="2" y="9" width="4" height="12"></rect>
                 <circle cx="4" cy="4" r="2"></circle>

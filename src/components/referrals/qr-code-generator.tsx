@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import QRCode from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Download } from 'lucide-react';
@@ -41,7 +41,7 @@ export function QRCodeGenerator({ url, size = 200, logoUrl }: QRCodeGeneratorPro
   return (
     <Card className="p-4 flex flex-col items-center">
       <div className="mb-4">
-        <QRCode
+        <QRCodeCanvas
           id="referral-qrcode"
           value={url}
           size={size}

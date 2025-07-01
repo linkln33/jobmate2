@@ -1,0 +1,25 @@
+"use client";
+
+import React, { useState, useEffect } from 'react';
+import { WaitlistNavigation } from '@/components/waitlist/dashboard/navigation';
+
+export default function WaitlistDashboard() {
+  const [user, setUser] = useState<any>(null);
+  
+  useEffect(() => {
+    // Simplified effect
+    const storedUser = localStorage.getItem('waitlist_user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  return (
+    <div className="min-h-screen">
+      <WaitlistNavigation userName={user?.name} />
+      <div className="p-4">
+        <h1>Dashboard Content</h1>
+      </div>
+    </div>
+  );
+}

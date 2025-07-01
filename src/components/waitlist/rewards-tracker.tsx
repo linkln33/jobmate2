@@ -65,32 +65,53 @@ export function RewardsTracker({
   // Define reward milestones
   const rewardMilestones: RewardMilestone[] = [
     {
-      threshold: 1,
-      type: 'badge',
-      name: 'Early Adopter',
-      description: 'First to join our community',
-      icon: <Star className="h-5 w-5 text-purple-500" />
-    },
-    {
-      threshold: 3,
+      threshold: 10,
       type: 'feature',
-      name: 'Beta Spotlight',
-      description: 'Early access to beta features',
+      name: 'Early Access',
+      description: 'Early access to platform',
       icon: <Zap className="h-5 w-5 text-yellow-500" />
     },
     {
-      threshold: 5,
-      type: 'credit',
-      name: 'Platform Credit ($5)',
-      description: '$5 credit for JobMate services',
+      threshold: 50,
+      type: 'perk',
+      name: 'Free Pro - 1 Month',
+      description: 'Free pro plan for the 1st month',
       icon: <Gift className="h-5 w-5 text-green-500" />
     },
     {
-      threshold: 10,
+      threshold: 150,
       type: 'perk',
-      name: '0% Fee for Life',
-      description: 'No platform fees forever',
+      name: 'Free Pro - 3 Months',
+      description: 'Free pro plan for 3 months',
+      icon: <Star className="h-5 w-5 text-purple-500" />
+    },
+    {
+      threshold: 350,
+      type: 'perk',
+      name: 'Pro - 6 Months',
+      description: 'Free pro plan for 6 months',
       icon: <Award className="h-5 w-5 text-blue-500" />
+    },
+    {
+      threshold: 540,
+      type: 'perk',
+      name: 'Pro - 1 Year',
+      description: 'Free pro plan for 1 year',
+      icon: <Award className="h-5 w-5 text-indigo-500" />
+    },
+    {
+      threshold: 1000,
+      type: 'perk',
+      name: 'Pro - 2 Years',
+      description: 'Free pro plan for two years',
+      icon: <Award className="h-5 w-5 text-pink-500" />
+    },
+    {
+      threshold: 3000,
+      type: 'perk',
+      name: 'Pro Lifetime',
+      description: 'Free pro plan lifetime with special perks',
+      icon: <Award className="h-5 w-5 text-red-500" />
     }
   ];
   

@@ -28,14 +28,14 @@ const updateListingSchema = createListingSchema.partial();
 // GET /api/listings - Get listings with optional search parameters
 export const GET = createApiHandler(async (req) => {
   // Get search parameters from query string
-  const searchTerm = getQueryParam(req, 'search');
-  const categoryId = getQueryParam(req, 'category');
+  const searchTerm = getQueryParam(req, 'search') || undefined;
+  const categoryId = getQueryParam(req, 'category') || undefined;
   const minBudget = getNumericQueryParam(req, 'minBudget', 0);
   const maxBudget = getNumericQueryParam(req, 'maxBudget', 0);
-  const location = getQueryParam(req, 'location');
+  const location = getQueryParam(req, 'location') || undefined;
   const maxDistance = getNumericQueryParam(req, 'maxDistance', 0);
   const status = getQueryParam(req, 'status')?.split(',') || ['open'];
-  const tags = getQueryParam(req, 'tags')?.split(',');
+  const tags = getQueryParam(req, 'tags')?.split(',') || undefined;
   const sortBy = getQueryParam(req, 'sortBy') || 'created_at';
   const sortDirection = getQueryParam(req, 'sortDirection') === 'asc' ? 'asc' : 'desc';
   const pageSize = getNumericQueryParam(req, 'pageSize', 10);
@@ -68,41 +68,28 @@ export const GET = createApiHandler(async (req) => {
 export const POST = createApiHandler(async (req) => {
   const data = await validateBody(req, createListingSchema);
   
-  // Extract tags if provided
-  const { tags, ...listingData } = data;
+  // Create the listing with all data
+  const listing = await listingService.createListing(data as any);
   
-  // Create the listing
-  const listing = await listingService.createListing(listingData);
-  
-  // Add tags if provided
-  if (tags && tags.length > 0) {
-    await listingService.addListingTags(listing.id, tags);
-  }
+  // Add tags if provided (handled by the service)
   
   return listing;
 });
 
-// Helper function to handle listing-specific operations
-export async function getListingById(id: string) {
+async function getListingByIdHelper(id: string) {
   return await listingService.getListingById(id);
 }
 
-export async function updateListing(id: string, data: any) {
-  const { tags, ...listingData } = data;
+async function updateListingHelper(id: string, data: any) {
+  // Validate the request body
+  const validatedData = updateListingSchema.parse(data);
   
   // Update the listing
-  const listing = await listingService.updateListing(id, listingData);
+  const updatedListing = await listingService.updateListing(id, validatedData);
   
-  // Update tags if provided
-  if (tags && Array.isArray(tags)) {
-    // This would require additional implementation to handle tag updates
-    // For now, we're just adding new tags
-    await listingService.addListingTags(listing.id, tags);
-  }
-  
-  return listing;
+  return updatedListing;
 }
 
-export async function deleteListing(id: string) {
+async function deleteListingHelper(id: string) {
   return await listingService.deleteListing(id);
 }

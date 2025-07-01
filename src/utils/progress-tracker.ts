@@ -3,12 +3,13 @@ import confetti from 'canvas-confetti';
 
 // Define achievement types
 export type AchievementType = 
-  | 'earlyBird' 
-  | 'referrer' 
-  | 'influencer' 
-  | 'champion' 
-  | 'topTen' 
-  | 'vip';
+  | 'earlyAccess' 
+  | 'freeProMonth' 
+  | 'proYearDiscount' 
+  | 'proSixMonths' 
+  | 'proOneYear' 
+  | 'proTwoYears' 
+  | 'proLifetime';
 
 // Define achievement data
 export interface Achievement {
@@ -30,46 +31,53 @@ export interface UserStats {
 // Define achievements
 export const achievements: Achievement[] = [
   {
-    type: 'earlyBird',
-    name: 'Early Bird',
-    description: 'Joined during the early access period',
+    type: 'earlyAccess',
+    name: 'Early Access',
+    description: 'Early access to platform',
     points: 10,
-    condition: () => true, // Always true for early access users
+    condition: (stats) => stats.points >= 10,
   },
   {
-    type: 'referrer',
-    name: 'Referrer',
-    description: 'Successfully referred at least one person',
-    points: 15,
-    condition: (stats) => stats.referrals >= 1,
+    type: 'freeProMonth',
+    name: 'Free Pro - 1 Month',
+    description: 'Free pro plan for the 1st month',
+    points: 0,
+    condition: (stats) => stats.points >= 50,
   },
   {
-    type: 'influencer',
-    name: 'Influencer',
-    description: 'Referred 5 or more people to join',
-    points: 50,
-    condition: (stats) => stats.referrals >= 5,
+    type: 'proYearDiscount',
+    name: 'Free Pro - 3 Months',
+    description: 'Free pro plan for 3 months',
+    points: 0,
+    condition: (stats) => stats.points >= 150,
   },
   {
-    type: 'champion',
-    name: 'Champion',
-    description: 'Referred 10 or more people to join',
-    points: 100,
-    condition: (stats) => stats.referrals >= 10,
+    type: 'proSixMonths',
+    name: 'Pro - 6 Months',
+    description: 'Free pro plan for 6 months',
+    points: 0,
+    condition: (stats) => stats.points >= 350,
   },
   {
-    type: 'topTen',
-    name: 'Top 10',
-    description: 'Ranked in the top 10 on the leaderboard',
-    points: 50,
-    condition: (stats) => stats.rank <= 10,
+    type: 'proOneYear',
+    name: 'Pro - 1 Year',
+    description: 'Free pro plan for 1 year',
+    points: 0,
+    condition: (stats) => stats.points >= 540,
   },
   {
-    type: 'vip',
-    name: 'VIP',
-    description: 'Earned 100 or more points',
-    points: 0, // No additional points for this achievement
-    condition: (stats) => stats.points >= 100,
+    type: 'proTwoYears',
+    name: 'Pro - 2 Years',
+    description: 'Free pro plan for two years',
+    points: 0,
+    condition: (stats) => stats.points >= 1000,
+  },
+  {
+    type: 'proLifetime',
+    name: 'Pro Lifetime',
+    description: 'Free pro plan lifetime with special perks',
+    points: 0,
+    condition: (stats) => stats.points >= 3000,
   },
 ];
 

@@ -6,39 +6,39 @@ import { Award, Star, Users, Zap, Trophy, Crown, Clock, Share2 } from 'lucide-re
 
 // Define badge types and their properties
 const BADGE_CONFIGS = {
-  earlyBird: {
-    name: 'Early Bird',
-    description: 'Joined during the early access period',
-    icon: Clock,
+  earlyAccess: {
+    name: 'Early Access',
+    description: 'Early access to platform (10+ points)',
+    icon: Zap,
     colors: {
       primary: '#EF4444', // red-500
       secondary: '#FCA5A5', // red-300
       background: 'bg-red-500',
     }
   },
-  referrer: {
-    name: 'Referrer',
-    description: 'Successfully referred at least one person',
-    icon: Share2,
+  freeProMonth: {
+    name: 'Free Pro - 1 Month',
+    description: 'Free pro plan for the 1st month (50+ points)',
+    icon: Award,
     colors: {
       primary: '#F97316', // orange-500
       secondary: '#FDBA74', // orange-300
       background: 'bg-orange-500',
     }
   },
-  influencer: {
-    name: 'Influencer',
-    description: 'Referred 5 or more people to join',
-    icon: Users,
+  proYearDiscount: {
+    name: 'Free Pro - 3 Months',
+    description: 'Free pro plan for 3 months (150+ points)',
+    icon: Star,
     colors: {
       primary: '#EAB308', // yellow-500
       secondary: '#FDE68A', // yellow-300
       background: 'bg-yellow-500',
     }
   },
-  champion: {
-    name: 'Champion',
-    description: 'Referred 10 or more people to join',
+  proSixMonths: {
+    name: 'Pro - 6 Months',
+    description: 'Free pro plan for 6 months (350+ points)',
     icon: Trophy,
     colors: {
       primary: '#22C55E', // green-500
@@ -46,30 +46,30 @@ const BADGE_CONFIGS = {
       background: 'bg-green-500',
     }
   },
-  topTen: {
-    name: 'Top 10',
-    description: 'Reached the top 10 on the leaderboard',
-    icon: Award,
+  proOneYear: {
+    name: 'Pro - 1 Year',
+    description: 'Free pro plan for 1 year (540+ points)',
+    icon: Users,
     colors: {
       primary: '#38BDF8', // light blue-500
       secondary: '#7DD3FC', // light blue-300
       background: 'bg-sky-500',
     }
   },
-  vip: {
-    name: 'VIP',
-    description: 'Earned 100+ points on the waitlist',
-    icon: Star,
+  proTwoYears: {
+    name: 'Pro - 2 Years',
+    description: 'Free pro plan for two years (1000+ points)',
+    icon: Crown,
     colors: {
       primary: '#3B82F6', // blue-500
       secondary: '#93C5FD', // blue-300
       background: 'bg-blue-500',
     }
   },
-  legend: {
-    name: 'Legend',
-    description: 'Earned 250+ points on the waitlist',
-    icon: Crown,
+  proLifetime: {
+    name: 'Pro Lifetime',
+    description: 'Free pro plan lifetime with special perks (3000+ points)',
+    icon: Share2,
     colors: {
       primary: '#8B5CF6', // purple-500
       secondary: '#C4B5FD', // purple-300
@@ -85,6 +85,7 @@ interface AchievementBadgeProps {
   earned: boolean;
   size?: 'sm' | 'md' | 'lg';
   showDescription?: boolean;
+  showName?: boolean;
   points?: number;
 }
 
@@ -93,6 +94,7 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
   earned = false, 
   size = 'md',
   showDescription = false,
+  showName = true,
   points
 }) => {
   const config = BADGE_CONFIGS[type];
@@ -150,9 +152,11 @@ export const AchievementBadge: React.FC<AchievementBadgeProps> = ({
       </div>
       
       {/* Badge name */}
-      <span className={`${currentSize.nameText} font-medium mt-2 text-center ${earned ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
-        {config.name}
-      </span>
+      {showName && (
+        <span className={`${currentSize.nameText} font-medium mt-2 text-center ${earned ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+          {config.name}
+        </span>
+      )}
       
       {/* Badge description - optional */}
       {showDescription && (
@@ -187,40 +191,46 @@ export const BadgeGrid: React.FC<BadgeGridProps> = ({
   showDescriptions = false
 }) => {
   return (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 gap-2">
       <AchievementBadge 
-        type="earlyBird" 
-        earned={true}
+        type="earlyAccess" 
+        earned={userStats.points >= 10}
         size={size}
         showDescription={showDescriptions}
       />
       <AchievementBadge 
-        type="referrer" 
-        earned={userStats.referrals > 0}
+        type="freeProMonth" 
+        earned={userStats.points >= 50}
         size={size}
         showDescription={showDescriptions}
       />
       <AchievementBadge 
-        type="influencer" 
-        earned={userStats.referrals >= 5}
+        type="proYearDiscount" 
+        earned={userStats.points >= 150}
         size={size}
         showDescription={showDescriptions}
       />
       <AchievementBadge 
-        type="champion" 
-        earned={userStats.referrals >= 10}
+        type="proSixMonths" 
+        earned={userStats.points >= 350}
         size={size}
         showDescription={showDescriptions}
       />
       <AchievementBadge 
-        type="topTen" 
-        earned={userStats.rank <= 10}
+        type="proOneYear" 
+        earned={userStats.points >= 540}
         size={size}
         showDescription={showDescriptions}
       />
       <AchievementBadge 
-        type="vip" 
-        earned={userStats.points >= 100}
+        type="proTwoYears" 
+        earned={userStats.points >= 1000}
+        size={size}
+        showDescription={showDescriptions}
+      />
+      <AchievementBadge 
+        type="proLifetime" 
+        earned={userStats.points >= 3000}
         size={size}
         showDescription={showDescriptions}
       />

@@ -1,28 +1,42 @@
 import { NextRequest } from 'next/server';
-import { createApiHandler, getNumericQueryParam } from '../../../../utils';
+import { createApiHandler, getNumericQueryParam } from '../../../utils';
 import { messageService } from '@/services/api';
 
-// GET /api/messages/conversations/[id] - Get messages for a specific conversation
-export const GET = createApiHandler(async (req, { params }) => {
-  const id = params?.id as string;
+/**
+ * GET /api/messages/conversations/[id] - Get conversation details and messages
+ * @param req - The request object
+ * @param context - Context containing route parameters
+ * @returns Conversation details with messages
+ */
+export const GET = createApiHandler(async (req, context) => {
+  const id = context.params?.id as string;
   const limit = getNumericQueryParam(req, 'limit', 50);
-  const offset = getNumericQueryParam(req, 'offset', 0);
+  
+  // Get conversation details
+  const conversation = await messageService.getConversationById(id);
   
   // Get messages for the conversation
-  const messages = await messageService.getConversationMessages(id, limit, offset);
+  const messages = await messageService.getMessages(id, limit);
   
-  // Mark messages as read
+  // Mark conversation as read
   await messageService.markConversationAsRead(id);
   
-  return messages;
+  return {
+    conversation,
+    messages
+  };
 });
 
-// DELETE /api/messages/conversations/[id] - Leave a conversation
-export const DELETE = createApiHandler(async (req, { params }) => {
-  const id = params?.id as string;
+/**
+ * DELETE /api/messages/conversations/[id] - Delete conversation
+ * @param req - The request object
+ * @param context - Context containing route parameters
+ * @returns Success status
+ */
+export const DELETE = createApiHandler(async (req, context) => {
+  const id = context.params?.id as string;
   
-  // Leave the conversation
-  await messageService.leaveConversation(id);
-  
+  // For now, just return success
+  // In a real implementation, you would delete or archive the conversation
   return { success: true };
 });

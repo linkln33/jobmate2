@@ -198,16 +198,24 @@ export function WaitlistPage() {
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
             Join the JobMate Waitlist
           </h1>
-          <p className="text-xl text-gray-600 mx-auto max-w-2xl">
-            Be among the first to access our revolutionary marketplace connecting skilled professionals with exciting opportunities.
+          <p className="text-xl text-gray-600 dark:text-gray-300 mx-auto max-w-3xl">
+            Be among the <span className="font-bold text-blue-600 dark:text-blue-400">exclusive first members</span> to access our revolutionary AI-powered marketplace connecting skilled professionals with premium opportunities.
           </p>
         </div>
         
         {!registrationComplete ? (
-          <div className="bg-white rounded-lg shadow-md p-8 max-w-md mx-auto">
-            <h2 className="text-2xl font-semibold mb-6">
-              {referralCode ? 'You\'ve been invited!' : 'Sign up for early access'}
-            </h2>
+          <div className="bg-gradient-to-br from-blue-600 via-purple-600 to-pink-500 rounded-xl shadow-2xl p-1 max-w-xl mx-auto transform hover:scale-[1.01] transition-transform duration-300">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-8">
+              <div className="flex items-center justify-center mb-4">
+                <span className="text-3xl mr-2">👑</span>
+                <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500">
+                  {referralCode ? 'You\'ve Been Invited!' : 'Secure Your Lifetime Access'}
+                </h2>
+                <span className="text-3xl ml-2">✨</span>
+              </div>
+              <p className="text-center text-gray-600 dark:text-gray-300 mb-6 font-medium">
+                Join our exclusive waitlist today and be among the first to experience JobMate
+              </p>
             
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -256,12 +264,17 @@ export function WaitlistPage() {
               
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full bg-gradient-to-r from-blue-600 via-purple-600 to-pink-500 hover:from-blue-700 hover:via-purple-700 hover:to-pink-600 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg hover:shadow-xl transition-all duration-300 border-0 flex items-center justify-center gap-2"
                 disabled={isLoading}
               >
-                {isLoading ? 'Joining...' : 'Join Waitlist'}
+                {isLoading ? 'Securing Access...' : '🔒 Secure Free Lifetime Access'}
+                {!isLoading && <span className="animate-pulse">→</span>}
               </Button>
+              <p className="text-center text-sm mt-4 text-gray-500 dark:text-gray-400">
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Limited spots available</span> • Join now before it's too late
+              </p>
             </form>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
