@@ -243,44 +243,7 @@ export function FeatureHighlightsSection() {
           </motion.div>
         </AnimatePresence>
         
-        {/* Compare with competitors */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="mt-16 bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-100 dark:border-gray-700"
-        >
-          <h3 className="text-xl font-bold mb-4 text-center">How JobMate Compares</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="py-3 text-left">Feature</th>
-                  <th className="py-3 text-center">JobMate</th>
-                  <th className="py-3 text-center">Others</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="py-3">AI Matching</td>
-                  <td className="py-3 text-center"><span className="text-green-500">✓</span></td>
-                  <td className="py-3 text-center"><span className="text-red-500">✗</span></td>
-                </tr>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <td className="py-3">Unified Services</td>
-                  <td className="py-3 text-center"><span className="text-green-500">✓</span></td>
-                  <td className="py-3 text-center"><span className="text-red-500">✗</span></td>
-                </tr>
-                <tr>
-                  <td className="py-3">Dynamic Pricing</td>
-                  <td className="py-3 text-center"><span className="text-green-500">✓</span></td>
-                  <td className="py-3 text-center"><span className="text-red-500">Limited</span></td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
+        {/* Comparison table removed */}
       </div>
     </section>
   );

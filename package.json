@@ -111,6 +111,7 @@
     "jest": "^30.0.3",
     "jest-environment-jsdom": "^30.0.2",
     "ts-jest": "^29.4.0",
-    "typescript": "5.8.3"
+    "typescript": "5.8.3",
+    "vercel": "^44.2.8"
   }
 }
