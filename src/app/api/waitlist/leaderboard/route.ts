@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getLeaderboard } from '@/services/waitlist/waitlistService';
+import { supabaseAdmin } from '@/utils/supabase-admin';
 
 /**
  * GET handler for waitlist leaderboard
@@ -19,20 +19,40 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const limit = parseInt(searchParams.get('limit') || '10');
     
-    // Get leaderboard data
-    const leaderboard = await getLeaderboard(limit);
+    // Query the database for leaderboard data
+    const { data: leaderboardData, error } = await supabaseAdmin
+      .from('waitlist_users')
+      .select('id, name, referral_code, points')
+      .order('points', { ascending: false })
+      .limit(limit);
+    
+    if (error) {
+      throw error;
+    }
+    
+    // Format the leaderboard data
+    const leaderboard = leaderboardData.map((user, index) => ({
+      rank: index + 1,
+      id: user.id,
+      name: user.name,
+      points: user.points,
+      referralCode: user.referral_code
+    }));
     
     // Return success response with leaderboard data
     return NextResponse.json({
       success: true,
       leaderboard
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching leaderboard:', error);
     
     // Handle errors
     return NextResponse.json(
-      { error: 'Failed to fetch leaderboard data. Please try again later.' },
+      { 
+        error: 'Failed to fetch leaderboard data. Please try again later.',
+        details: error.message 
+      },
       { status: 500 }
     );
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { StickyNavbar } from '@/components/ui/sticky-navbar';
 import { ModernFooter } from '@/components/ui/modern-footer';
@@ -23,10 +23,51 @@ import { MarketplaceSection } from '@/components/sections/marketplace-section';
 import { AIAssistantSection } from '@/components/sections/ai-assistant-section';
 import { OnboardingWizardSection } from '@/components/sections/onboarding-wizard-section';
 import { CTASection } from '@/components/sections/cta-section';
+import { WaitlistPopup } from '@/components/waitlist/waitlist-popup';
 
 
 export function UnifiedHomePageFinal() {
   const { isAuthenticated } = useAuth();
+  
+  // State for controlling the waitlist popup
+  const [showWaitlistPopup, setShowWaitlistPopup] = useState(true); // Set to true for immediate display
+  
+  useEffect(() => {
+    // For testing: Show popup immediately without scroll
+    // Remove localStorage check temporarily
+    console.log('Waitlist popup should show immediately');
+    
+    // Comment out scroll logic for testing
+    /*
+    // Add scroll event listener
+    const handleScroll = () => {
+      // Calculate scroll percentage
+      const scrollTop = window.scrollY;
+      const scrollHeight = document.documentElement.scrollHeight;
+      const clientHeight = window.innerHeight;
+      const scrollPercentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
+      
+      // Show popup when user scrolls past 60% of the page
+      if (scrollPercentage > 60 && !isAuthenticated) {
+        setShowWaitlistPopup(true);
+        // Store that user has seen the popup
+        localStorage.setItem('jobmate_waitlist_popup_seen', new Date().toISOString());
+        // Remove scroll listener after showing popup
+        window.removeEventListener('scroll', handleScroll);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+    */
+  }, []);
+  
+  const closeWaitlistPopup = () => {
+    setShowWaitlistPopup(false);
+  };
   
   // Sample jobs data for the map
   const sampleJobs: Job[] = [
@@ -74,6 +115,8 @@ export function UnifiedHomePageFinal() {
   
   return (
     <UnifiedDashboardLayout title="JobMate - AI-Powered Job Matching" hideSidebar showMap={false} isPublicPage={true} hideDashboardButton={true}>
+      {/* Waitlist Popup */}
+      {showWaitlistPopup && <WaitlistPopup onClose={closeWaitlistPopup} />}
       
       {/* Floating AI Assistant is provided by UnifiedDashboardLayout */}
       
@@ -177,6 +220,9 @@ export function UnifiedHomePageFinal() {
       
       {/* Footer */}
       <ModernFooter />
+      
+      {/* Waitlist Popup */}
+      {showWaitlistPopup && <WaitlistPopup onClose={closeWaitlistPopup} />}
     </UnifiedDashboardLayout>
   );
 }

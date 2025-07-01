@@ -9,6 +9,36 @@ import { supabase } from '@/utils/supabase';
 import { nanoid } from 'nanoid';
 
 /**
+ * Initialize the database tables if they don't exist
+ * This is a temporary solution for development purposes
+ */
+async function initializeDatabase() {
+  try {
+    // Check if waitlist_users table exists
+    const { error: userTableError } = await supabase
+      .from('waitlist_users')
+      .select('id')
+      .limit(1);
+
+    if (userTableError) {
+      console.log('Creating waitlist tables...');
+      
+      // Create waitlist_users table
+      await supabase.rpc('create_waitlist_tables');
+      
+      console.log('Waitlist tables created successfully');
+    } else {
+      console.log('Waitlist tables already exist');
+    }
+  } catch (error) {
+    console.error('Error initializing database:', error);
+  }
+}
+
+// Initialize database on service import
+initializeDatabase();
+
+/**
  * Waitlist user interface
  */
 export interface WaitlistUser {
@@ -73,49 +103,71 @@ export async function registerWaitlistUser(userData: {
   interests?: string[];
   referredBy?: string;
 }): Promise<WaitlistUser> {
-  // Generate a unique referral code for this user
-  const referralCode = generateReferralCode(userData.name);
-  
-  // Find referrer ID if a referral code was provided
-  let referrerId = null;
-  if (userData.referredBy) {
-    const { data: referrer } = await supabase
+  try {
+    // Generate a unique referral code for this user
+    const referralCode = generateReferralCode(userData.name);
+    
+    // Find referrer ID if a referral code was provided
+    let referrerId = null;
+    if (userData.referredBy) {
+      try {
+        const { data: referrer } = await supabase
+          .from('waitlist_users')
+          .select('id')
+          .eq('referral_code', userData.referredBy)
+          .single();
+          
+        if (referrer) {
+          referrerId = referrer.id;
+        }
+      } catch (err) {
+        console.log('Referrer not found, continuing without referrer');
+      }
+    }
+    
+    // Insert the new user into the waitlist_users table
+    const { data, error } = await supabase
       .from('waitlist_users')
-      .select('id')
-      .eq('referral_code', userData.referredBy)
+      .insert({
+        email: userData.email,
+        name: userData.name,
+        referral_code: referralCode,
+        referred_by: referrerId,
+        points: 10, // Starting points for signing up
+        location: userData.location || null,
+        interests: userData.interests || []
+      })
+      .select()
       .single();
       
-    if (referrer) {
-      referrerId = referrer.id;
+    if (error) {
+      // If the error is because the table doesn't exist, try to initialize the database
+      if (error.code === '42P01') { // PostgreSQL code for undefined_table
+        console.log('Tables not found, attempting to initialize database...');
+        await fetch('/api/waitlist/init', { method: 'POST' });
+        
+        // Try again after initializing
+        return registerWaitlistUser(userData);
+      }
+      
+      console.error('Error registering waitlist user:', error);
+      throw error;
     }
-  }
-  
-  // Insert the new user into the waitlist_users table
-  const { data, error } = await supabase
-    .from('waitlist_users')
-    .insert({
-      email: userData.email,
-      name: userData.name,
-      referral_code: referralCode,
-      referred_by: referrerId,
-      points: 10, // Starting points for signing up
-      location: userData.location || null,
-      interests: userData.interests || []
-    })
-    .select()
-    .single();
     
-  if (error) {
-    console.error('Error registering waitlist user:', error);
+    // If this user was referred by someone, track the successful referral
+    if (referrerId) {
+      try {
+        await trackSuccessfulReferral(referrerId, userData.email);
+      } catch (err) {
+        console.error('Error tracking referral, but user was created:', err);
+      }
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in registerWaitlistUser:', error);
     throw error;
   }
-  
-  // If this user was referred by someone, track the successful referral
-  if (referrerId) {
-    await trackSuccessfulReferral(referrerId, userData.email);
-  }
-  
-  return data;
 }
 
 /**
@@ -195,13 +247,14 @@ export async function getLeaderboard(limit = 10): Promise<any[]> {
     throw error;
   }
   
-  // Format the response to include referral count
-  return data.map(user => ({
+  // Format the response to include referral count and position
+  return data.map((user, index) => ({
     id: user.id,
     name: user.name,
     referral_code: user.referral_code,
     points: user.points,
-    referral_count: user.waitlist_referrals?.[0]?.count || 0
+    referral_count: user.waitlist_referrals?.[0]?.count || 0,
+    position: index + 1 // Add position based on array index
   }));
 }
 
@@ -322,6 +375,71 @@ export async function getUserWaitlistStatus(userId: string): Promise<any> {
  * @returns Next threshold or null if all thresholds reached
  */
 function getNextRewardThreshold(currentReferrals: number): number | null {
-  const thresholds = [1, 3, 5, 10, 25];
-  return thresholds.find(t => t > currentReferrals) || null;
+  const thresholds = [1, 3, 5, 10, 25, 50, 100];
+  const nextThreshold = thresholds.find(t => t > currentReferrals);
+  return nextThreshold || null;
+}
+
+/**
+ * Get badges for a specific user
+ * @param userId ID of the user to get badges for
+ * @returns Array of badge IDs that the user has unlocked
+ */
+export async function getUserBadges(userId: string): Promise<string[]> {
+  try {
+    // Get user's rewards that are badges
+    const { data: badgeRewards, error: badgeError } = await supabase
+      .from('waitlist_rewards')
+      .select('reward_name')
+      .eq('user_id', userId)
+      .eq('reward_type', 'badge');
+      
+    if (badgeError) {
+      console.error('Error fetching user badges:', badgeError);
+      throw badgeError;
+    }
+    
+    // Get user's referral count for badge calculation
+    const { data: referrals, error: refError } = await supabase
+      .from('waitlist_referrals')
+      .select('id')
+      .eq('referrer_id', userId)
+      .eq('status', 'joined');
+      
+    if (refError) {
+      console.error('Error counting referrals:', refError);
+      throw refError;
+    }
+    
+    const referralCount = referrals?.length || 0;
+    
+    // Define badge IDs based on rewards and referral count
+    const badges: string[] = [];
+    
+    // Early adopter badge (everyone gets this)
+    badges.push('early_adopter');
+    
+    // First referral badge
+    if (referralCount >= 1) {
+      badges.push('first_referral');
+    }
+    
+    // Influencer badge (5+ referrals)
+    if (referralCount >= 5) {
+      badges.push('influencer');
+    }
+    
+    // Add any additional badges from the rewards table
+    badgeRewards?.forEach(reward => {
+      // Map reward names to badge IDs if needed
+      if (reward.reward_name === 'Super Referrer' && !badges.includes('super_referrer')) {
+        badges.push('super_referrer');
+      }
+    });
+    
+    return badges;
+  } catch (error) {
+    console.error('Error in getUserBadges:', error);
+    throw error;
+  }
 }
