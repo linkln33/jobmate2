@@ -1,5 +1,15 @@
 "use client";
 
+/**
+ * @file Feature Highlights Section Component
+ * @module components/sections/feature-highlights-section
+ * 
+ * This component displays a categorized grid of feature cards highlighting
+ * the key capabilities of the JobMate platform. Features are organized into
+ * categories (AI Technology, Security & Trust, Marketplace, Business Tools)
+ * and can be filtered by category.
+ */
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FeatureCard } from '@/components/ui/feature-card';
@@ -10,6 +20,15 @@ import {
   CreditCard, MessageSquare, Star, Rocket, PieChart
 } from 'lucide-react';
 
+/**
+ * Feature Highlights Section Component
+ * 
+ * Displays an interactive grid of feature cards with category filtering.
+ * Features are organized into categories and displayed with icons and descriptions.
+ * Users can filter features by category using the category tabs.
+ * 
+ * @returns {JSX.Element} The rendered Feature Highlights Section
+ */
 export function FeatureHighlightsSection() {
   const [activeCategory, setActiveCategory] = useState('all');
   

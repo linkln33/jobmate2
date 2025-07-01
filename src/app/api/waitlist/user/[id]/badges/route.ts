@@ -1,6 +1,19 @@
+/**
+ * @file API route for waitlist user badges
+ * @module app/api/waitlist/user/[id]/badges
+ * 
+ * This API endpoint retrieves badges earned by a waitlist user based on their referral activity.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/utils/supabase-admin';
 
+/**
+ * GET handler for retrieving user badges
+ * @param request The incoming request object
+ * @param params Route parameters containing the user ID
+ * @returns API response with user badges or error
+ */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }

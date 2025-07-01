@@ -76,6 +76,17 @@ ALTER TABLE waitlist_referrals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waitlist_rewards ENABLE ROW LEVEL SECURITY;
 ALTER TABLE waitlist_badges ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies if they exist (comment out if running for the first time)
+DROP POLICY IF EXISTS waitlist_users_policy ON waitlist_users;
+DROP POLICY IF EXISTS waitlist_referrals_policy ON waitlist_referrals;
+DROP POLICY IF EXISTS waitlist_rewards_policy ON waitlist_rewards;
+DROP POLICY IF EXISTS waitlist_badges_policy ON waitlist_badges;
+
+DROP POLICY IF EXISTS waitlist_users_anon_policy ON waitlist_users;
+DROP POLICY IF EXISTS waitlist_referrals_anon_policy ON waitlist_referrals;
+DROP POLICY IF EXISTS waitlist_rewards_anon_policy ON waitlist_rewards;
+DROP POLICY IF EXISTS waitlist_badges_anon_policy ON waitlist_badges;
+
 -- Then create policies that allow all operations for authenticated users
 CREATE POLICY waitlist_users_policy ON waitlist_users FOR ALL TO authenticated USING (true);
 CREATE POLICY waitlist_referrals_policy ON waitlist_referrals FOR ALL TO authenticated USING (true);
