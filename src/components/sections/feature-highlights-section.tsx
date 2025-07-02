@@ -120,14 +120,14 @@ export function FeatureHighlightsSection() {
     : allFeatures[activeCategory as keyof typeof allFeatures] || [];
 
   return (
-    <section className="py-16 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900/30">
+    <section className="py-6 bg-gradient-to-b from-transparent to-gray-50 dark:to-gray-900/30">
       <div className="container px-4 mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-4"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
             <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">

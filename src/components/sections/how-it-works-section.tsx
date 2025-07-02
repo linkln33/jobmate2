@@ -96,7 +96,7 @@ export function HowItWorksSection() {
   ];
 
   return (
-    <section className="py-20 relative overflow-hidden">
+    <section className="py-10 relative overflow-hidden">
       {/* Glassmorphism background elements */}
       <div className="absolute top-1/4 left-10 w-64 h-64 bg-blue-500/10 rounded-full filter blur-3xl -z-10"></div>
       <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-purple-500/10 rounded-full filter blur-3xl -z-10"></div>

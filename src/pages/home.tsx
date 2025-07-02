@@ -25,6 +25,7 @@ import Image from 'next/image';
 import SubscriptionTiersShowcase from '@/components/subscription/subscription-tiers-showcase';
 import { SubscriptionTier } from '@/types/subscription';
 import SubscriptionService from '@/services/subscription-service';
+import { ScrollTriggeredWaitlist } from '@/components/waitlist/scroll-triggered-waitlist';
 
 export const HomePage: React.FC = () => {
   const theme = useTheme();
@@ -591,6 +592,9 @@ export const HomePage: React.FC = () => {
           </Typography>
         </Container>
       </Box>
+      
+      {/* Scroll Triggered Waitlist Popup */}
+      <ScrollTriggeredWaitlist />
     </Box>
   );
 };

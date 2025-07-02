@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Box, 
   Typography, 
@@ -21,7 +21,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper
+  Paper,
+  Switch,
+  FormControlLabel,
+  styled
 } from '@mui/material';
 import { 
   Check as CheckIcon,
@@ -112,7 +115,35 @@ interface PricingTierProps {
   isPopular?: boolean;
   ctaText: string;
   onSelect: (tier: SubscriptionTier) => void;
+  isAnnual: boolean;
+  spotsTaken?: number;
+  totalSpots?: number;
 }
+
+// Styled component for the pulsing dot
+const PulsingDot = styled('span')(({ theme }) => ({
+  display: 'inline-block',
+  width: '10px',
+  height: '10px',
+  borderRadius: '50%',
+  backgroundColor: '#ff1744',
+  marginRight: '8px',
+  animation: 'pulse 1.5s infinite',
+  '@keyframes pulse': {
+    '0%': {
+      transform: 'scale(0.95)',
+      boxShadow: '0 0 0 0 rgba(255, 23, 68, 0.7)'
+    },
+    '70%': {
+      transform: 'scale(1)',
+      boxShadow: '0 0 0 10px rgba(255, 23, 68, 0)'
+    },
+    '100%': {
+      transform: 'scale(0.95)',
+      boxShadow: '0 0 0 0 rgba(255, 23, 68, 0)'
+    }
+  }
+}));
 
 const PricingTier: React.FC<PricingTierProps> = ({
   tier,
@@ -123,7 +154,10 @@ const PricingTier: React.FC<PricingTierProps> = ({
   features,
   isPopular = false,
   ctaText,
-  onSelect
+  onSelect,
+  isAnnual,
+  spotsTaken,
+  totalSpots
 }) => {
   const theme = useTheme();
   
@@ -223,32 +257,30 @@ const PricingTier: React.FC<PricingTierProps> = ({
           {tier === 'pro' ? (
             <>
               <Typography variant="h4" component="span" fontWeight="bold">
-                ${price}
+                ${isAnnual ? (price * 0.75).toFixed(2) : price}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1, textDecoration: 'none' }}>
-                /month
+                /{isAnnual ? 'year' : 'month'}
               </Typography>
-              <Typography variant="body2" color="error" sx={{ ml: 1, textDecoration: 'line-through' }}>
-                $19.99
-              </Typography>
-              <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
-                50% OFF
-              </Typography>
+              {isAnnual && (
+                <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
+                  25% OFF
+                </Typography>
+              )}
             </>
           ) : tier === 'agency' ? (
             <>
               <Typography variant="h4" component="span" fontWeight="bold">
-                ${price}
+                ${isAnnual ? (price * 0.75).toFixed(2) : price}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1, textDecoration: 'none' }}>
-                /month
+                /{isAnnual ? 'year' : 'month'}
               </Typography>
-              <Typography variant="body2" color="error" sx={{ ml: 1, textDecoration: 'line-through' }}>
-                $99.99
-              </Typography>
-              <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
-                50% OFF
-              </Typography>
+              {isAnnual && (
+                <Typography variant="caption" sx={{ ml: 1, color: '#4caf50', fontWeight: 'bold' }}>
+                  25% OFF
+                </Typography>
+              )}
             </>
           ) : (
             <>
@@ -256,11 +288,30 @@ const PricingTier: React.FC<PricingTierProps> = ({
                 ${price}
               </Typography>
               <Typography variant="subtitle1" color="text.secondary" sx={{ ml: 1 }}>
-                /month
+                /{isAnnual ? 'year' : 'month'}
               </Typography>
             </>
           )}
         </Box>
+        
+        {/* Limited spots information with pulsing dot */}
+        {tier === 'pro' && totalSpots && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <PulsingDot />
+            <Typography variant="body2" color="text.secondary">
+              Price after {totalSpots} spots: $19.99 ({spotsTaken}/{totalSpots} taken)
+            </Typography>
+          </Box>
+        )}
+        
+        {tier === 'agency' && totalSpots && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <PulsingDot />
+            <Typography variant="body2" color="text.secondary">
+              Price after {totalSpots} spots: $99.99 (77/{totalSpots} taken)
+            </Typography>
+          </Box>
+        )}
         
         <Typography 
           variant="body2" 
@@ -345,9 +396,52 @@ export const SubscriptionTiersShowcase: React.FC<SubscriptionTiersShowcaseProps>
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  const [isAnnual, setIsAnnual] = useState(false);
+  
+  // Spots taken information
+  const spotsTaken = 371;
+  
+  const handleBillingToggle = () => {
+    setIsAnnual(!isAnnual);
+  };
   
   return (
     <Box sx={{ position: 'relative', zIndex: 1 }}>
+      {/* Billing Toggle */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 4 }}>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={isAnnual}
+              onChange={handleBillingToggle}
+              color="primary"
+            />
+          }
+          label={
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography sx={{ mr: 1 }}>
+                {isAnnual ? 'Annual Billing' : 'Monthly Billing'}
+              </Typography>
+              {isAnnual && (
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    backgroundColor: '#4caf50', 
+                    color: 'white', 
+                    px: 1, 
+                    py: 0.5, 
+                    borderRadius: 1,
+                    fontWeight: 'bold'
+                  }}
+                >
+                  Save 25%
+                </Typography>
+              )}
+            </Box>
+          }
+        />
+      </Box>
+      
       {/* Pricing Cards */}
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: { xs: 4, md: 2 }, mb: 4 }}>
         <Box sx={{ flex: 1 }}>
@@ -360,6 +454,7 @@ export const SubscriptionTiersShowcase: React.FC<SubscriptionTiersShowcaseProps>
             features={PRICING_FEATURES}
             ctaText={currentTier === 'free' ? 'Current Plan' : 'Get Started'}
             onSelect={onSelectTier}
+            isAnnual={isAnnual}
           />
         </Box>
         
@@ -374,6 +469,9 @@ export const SubscriptionTiersShowcase: React.FC<SubscriptionTiersShowcaseProps>
             isPopular={true}
             ctaText={currentTier === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
             onSelect={onSelectTier}
+            isAnnual={isAnnual}
+            spotsTaken={spotsTaken}
+            totalSpots={1000}
           />
         </Box>
         
@@ -387,6 +485,9 @@ export const SubscriptionTiersShowcase: React.FC<SubscriptionTiersShowcaseProps>
             features={PRICING_FEATURES}
             ctaText={currentTier === 'agency' ? 'Current Plan' : 'Upgrade to Agency'}
             onSelect={onSelectTier}
+            isAnnual={isAnnual}
+            spotsTaken={spotsTaken}
+            totalSpots={300}
           />
         </Box>
       </Box>

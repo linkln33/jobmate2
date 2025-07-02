@@ -35,14 +35,14 @@ export function SubscriptionTiersSection() {
     <Box 
       id="pricing"
       sx={{
-        pt: 2,
-        pb: 6,
+        pt: 1,
+        pb: 4,
         position: 'relative',
         overflow: 'hidden'
       }}
     >
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}>
-        <Box sx={{ textAlign: 'center', mb: 3 }}>
+        <Box sx={{ textAlign: 'center', mb: 2 }}>
           <Typography 
             variant="h2" 
             component="h2" 
@@ -57,7 +57,7 @@ export function SubscriptionTiersSection() {
           >
             Choose Your Plan
           </Typography>
-          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '700px', mx: 'auto', mb: 4 }}>
+          <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '700px', mx: 'auto', mb: 2 }}>
             Select the perfect plan that fits your job search needs
           </Typography>
         </Box>

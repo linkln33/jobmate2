@@ -121,7 +121,7 @@ export function UnifiedHomePageFinal() {
       {/* Floating AI Assistant is provided by UnifiedDashboardLayout */}
       
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-12 overflow-hidden">
+      <section className="relative min-h-[85vh] flex items-center pt-6 overflow-hidden">
         
         <div className="container mx-auto px-4 z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -136,7 +136,7 @@ export function UnifiedHomePageFinal() {
                 </span>
                 <br />
                 <span className="text-gray-900 dark:text-gray-100">
-                  For The Future Of Work
+                  Grind. Earn. Repeat.
                 </span>
               </h1>
               
@@ -213,32 +213,38 @@ export function UnifiedHomePageFinal() {
         </div>
       </section>
       
-      {/* Feature Highlights Section */}
-      <FeatureHighlightsSection />
+      {/* Feature Highlights Section - Moved up with negative margin to overlap with hero */}
+      <div className="mt-[-50px] relative z-10">
+        <FeatureHighlightsSection />
+      </div>
       
-      {/* How It Works Section */}
-      <HowItWorksSection />
-      
-      {/* Onboarding Wizard Preview */}
-      <OnboardingWizardSection />
+      {/* Wrapper div with reduced spacing between sections */}
+      <div className="space-y-12"> {/* Reduced from default spacing */}
+        
+        {/* How It Works Section */}
+        <HowItWorksSection />
+        
+        {/* Onboarding Wizard Preview */}
+        <OnboardingWizardSection />
 
-      {/* AI Assistant Section */}
-      <AIAssistantSection />
-      
-      {/* Comparison Section */}
-      <ComparisonSection />
-      
-      {/* Subscription Tiers Section */}
-      <SubscriptionTiersSection />
-      
-      {/* Marketplace Preview */}
-      <MarketplaceSection />
-      
-      {/* Testimonials Section */}
-      <TestimonialsSection />
-      
-      {/* CTA Section */}
-      <CTASection />
+        {/* AI Assistant Section */}
+        <AIAssistantSection />
+        
+        {/* Comparison Section */}
+        <ComparisonSection />
+        
+        {/* Subscription Tiers Section */}
+        <SubscriptionTiersSection />
+        
+        {/* Marketplace Preview */}
+        <MarketplaceSection />
+        
+        {/* Testimonials Section */}
+        <TestimonialsSection />
+        
+        {/* CTA Section */}
+        <CTASection />
+      </div>
       
       {/* Footer */}
       <ModernFooter />
