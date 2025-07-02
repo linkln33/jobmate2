@@ -1,8 +1,8 @@
 # API Routes Directory
 
-This directory contains all the API routes for the JobMate application using Next.js App Router.
+This directory contains all the API routes for the JobMate application using Next.js App Router. These routes follow the Next.js App Router convention with route handlers in `route.ts` files and dynamic routes using folder names with square brackets (e.g., `[id]`).
 
-## Directory Structure
+## API Structure Overview
 
 - `/applications`: Job application management endpoints
 - `/assistant`: AI assistant interaction endpoints
@@ -18,6 +18,56 @@ This directory contains all the API routes for the JobMate application using Nex
 - `/preferences`: User preference management endpoints
 - `/profile`: User profile management endpoints
 - `/referrals`: Referral system endpoints
+
+## Key API Endpoints
+
+### Applications API
+
+```
+GET /api/applications - Get all applications for the current user
+POST /api/applications - Create a new application
+GET /api/applications/[id] - Get application by ID
+PUT /api/applications/[id] - Update application status
+DELETE /api/applications/[id] - Delete an application
+```
+
+### Listings API
+
+```
+GET /api/listings - Get all listings with filtering options
+POST /api/listings - Create a new listing
+GET /api/listings/[id] - Get listing by ID
+PUT /api/listings/[id] - Update a listing
+DELETE /api/listings/[id] - Delete a listing
+POST /api/listings/[id]/publish - Publish a listing
+```
+
+### Compatibility API
+
+```
+POST /api/compatibility - Calculate compatibility scores for listings
+GET /api/compatibility/preferences - Get user compatibility preferences
+PUT /api/compatibility/preferences - Update user compatibility preferences
+```
+
+### Messages API
+
+```
+GET /api/messages - Get all messages for the current user
+POST /api/messages - Send a new message
+GET /api/messages/conversations - Get all conversations
+GET /api/messages/conversations/[id] - Get messages in a conversation
+POST /api/messages/conversations/[id]/read - Mark conversation as read
+```
+
+### Profile API
+
+```
+GET /api/profile - Get current user profile
+PUT /api/profile - Update user profile
+POST /api/profile/avatar - Upload profile avatar
+GET /api/profile/[id] - Get public profile by ID
+```
 - `/reviews`: Review management endpoints
 - `/skills`: Skill management endpoints
 - `/specialists`: Specialist management endpoints

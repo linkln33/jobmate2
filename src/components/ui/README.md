@@ -1,16 +1,27 @@
 # UI Components
 
-This directory contains reusable UI components that form the foundation of JobMate's design system. These components are built with accessibility, consistency, and flexibility in mind.
+This directory contains reusable UI components that form the foundation of JobMate's design system. These components are built with accessibility, consistency, and flexibility in mind, leveraging Tailwind CSS and Radix UI for a robust foundation.
 
-## Overview
+## Design System Overview
 
-The UI components in this directory are designed to be:
+JobMate's design system follows these core principles:
 
 1. **Reusable** - Components can be used across multiple pages and features
 2. **Consistent** - Components follow a unified design language
-3. **Accessible** - Components adhere to WCAG accessibility guidelines
+3. **Accessible** - Components adhere to WCAG 2.1 AA accessibility guidelines
 4. **Customizable** - Components accept props for styling and behavior variations
 5. **Performant** - Components are optimized for rendering performance
+6. **Responsive** - Components adapt to different screen sizes and devices
+7. **Dark Mode Compatible** - Components support both light and dark themes
+
+## Component Architecture
+
+Our UI components follow a layered architecture:
+
+1. **Primitive Components** - Low-level UI elements (buttons, inputs, etc.)
+2. **Compound Components** - Combinations of primitives (form fields, cards, etc.)
+3. **Pattern Components** - UI patterns for specific use cases (search bars, filters, etc.)
+4. **Page Components** - Full page layouts and templates
 
 ## Component Categories
 
