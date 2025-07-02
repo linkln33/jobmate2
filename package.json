@@ -1,13 +1,13 @@
 {
   "name": "jobmate-root",
   "version": "1.0.0",
-  "description": "Root package for JobMate Netlify deployment",
+  "description": "Root package for JobMate Vercel deployment",
   "scripts": {
     "dev": "next dev -p 3000",
     "build": "NEXT_TELEMETRY_DISABLED=1 next build --no-lint",
     "start": "next start",
     "lint": "next lint",
-    "netlify-build": "prisma generate && next build",
+    "vercel-build": "prisma generate && next build",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",

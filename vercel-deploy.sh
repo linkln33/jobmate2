@@ -1,5 +1,5 @@
 #!/bin/bash
-# Netlify deploy script for JobMate
+# Vercel deploy script for JobMate
 
 # Print Node.js and npm versions
 echo "Node version: $(node -v)"
@@ -11,12 +11,8 @@ if [ ! -d "node_modules" ]; then
   npm install
 fi
 
-# Build the Next.js application
-echo "Building Next.js application..."
-npm run build
-
-# Deploy to Netlify
-echo "Deploying to Netlify..."
-npx netlify deploy --prod
+# Deploy to Vercel
+echo "Deploying to Vercel..."
+npx vercel deploy --prod
 
 echo "Deployment completed!"

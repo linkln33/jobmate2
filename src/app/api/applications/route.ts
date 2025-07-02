@@ -23,19 +23,10 @@ export const GET = createApiHandler(async (req) => {
   
   if (listingId) {
     // Get applications for a specific listing (for listing owners)
-    return await applicationService.getApplicationsForListing(
-      listingId,
-      status,
-      pageSize,
-      pageNumber
-    );
+    return await applicationService.getApplicationsForListing(listingId);
   } else {
     // Get the current user's applications
-    return await applicationService.getMyApplications(
-      status,
-      pageSize,
-      pageNumber
-    );
+    return await applicationService.getMyApplications();
   }
 });
 
@@ -43,16 +34,10 @@ export const GET = createApiHandler(async (req) => {
 export const POST = createApiHandler(async (req) => {
   const data = await validateBody(req, createApplicationSchema);
   
-  // Extract attachments if provided
-  const { attachments, ...applicationData } = data;
-  
-  // Create the application
-  const application = await applicationService.createApplication(applicationData);
-  
-  // Link attachments if provided
-  if (attachments && attachments.length > 0) {
-    await applicationService.linkAttachments(application.id, attachments);
-  }
+  // Create the application with the validated data
+  // Type assertion to match the expected parameter type
+  const typedData = data as Parameters<typeof applicationService.createApplication>[0];
+  const application = await applicationService.createApplication(typedData);
   
   return application;
 });

@@ -120,7 +120,7 @@ function calculateCompatibility(
     category,
     subcategory: listing.subcategory || 'unknown',
     listingId: listing.id,
-    userId: userPreferences.userId,
+    userId: userPreferences.userId || '',
     timestamp: new Date(),
     primaryMatchReason: overallScore >= 80 
       ? 'High overall compatibility with your preferences'

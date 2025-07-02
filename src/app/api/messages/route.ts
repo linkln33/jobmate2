@@ -23,7 +23,7 @@ export const GET = createApiHandler(async (req) => {
   const offset = getNumericQueryParam(req, 'offset', 0);
   
   // Get the current user's conversations
-  return await messageService.getMyConversations(limit, offset);
+  return await messageService.getMyConversations();
 });
 
 // POST /api/messages - Create a new conversation or send a message

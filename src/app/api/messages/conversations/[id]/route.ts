@@ -9,7 +9,10 @@ import { messageService } from '@/services/api';
  * @returns Conversation details with messages
  */
 export const GET = createApiHandler(async (req, context) => {
-  const id = context.params?.id as string;
+  // Extract ID from the URL path
+  const url = new URL(req.url);
+  const pathSegments = url.pathname.split('/');
+  const id = pathSegments[pathSegments.length - 1];
   const limit = getNumericQueryParam(req, 'limit', 50);
   
   // Get conversation details
@@ -34,7 +37,10 @@ export const GET = createApiHandler(async (req, context) => {
  * @returns Success status
  */
 export const DELETE = createApiHandler(async (req, context) => {
-  const id = context.params?.id as string;
+  // Extract ID from the URL path
+  const url = new URL(req.url);
+  const pathSegments = url.pathname.split('/');
+  const id = pathSegments[pathSegments.length - 1];
   
   // For now, just return success
   // In a real implementation, you would delete or archive the conversation
