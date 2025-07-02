@@ -29,19 +29,24 @@ The global gig economy is projected to reach $455 billion by 2026, with skilled 
 
 ### 1.3 Target Audience
 
-JobMate serves two primary user groups:
+JobMate serves users through a unified platform model where individuals can participate in multiple roles:
 
-**Customers**:
-- Homeowners and renters seeking maintenance and repair services
-- Small business owners requiring facility maintenance
-- Property managers overseeing multiple locations
-- Time-constrained professionals willing to pay for convenience and quality
-
-**Specialists**:
+**Primary User Base**:
+- Homeowners and renters seeking and/or providing maintenance services
+- Small business owners both requiring and offering facility maintenance
+- Property managers overseeing locations and connecting with service providers
+- Time-constrained professionals seeking services and skilled individuals offering expertise
 - Licensed tradespeople (plumbers, electricians, HVAC technicians)
 - Skilled handymen and maintenance professionals
 - Independent contractors seeking flexible work opportunities
 - Service businesses looking to expand their client base
+
+**User Roles**:
+All users access the platform through a single unified account that can operate in different modes:
+- **Customer mode**: When users need services performed
+- **Specialist mode**: When users offer their skills and services
+
+This unified approach eliminates traditional platform barriers and enables users to seamlessly transition between requesting and providing services based on their needs and capabilities.
 
 ## 2. The JobMate Platform
 
@@ -97,15 +102,33 @@ JobMate's marketplace is designed for flexibility and comprehensive service cove
 - **Verified Listings**: Trust badges, verification status, and quality indicators
 - **Intelligent Recommendations**: Personalized suggestions based on user history and preferences
 
-### 3.3 User-Centric Profiles
+### 3.3 Unified User Profiles
 
-Comprehensive profiles that build trust and facilitate better matches:
+JobMate's innovative unified user model provides comprehensive profiles that adapt based on active role:
 
+- **Single Account System**: One profile that seamlessly transitions between customer and specialist modes
+- **Role-Based UI**: Dynamic interface that changes based on active role while maintaining consistent experience
+- **Shared Reputation**: Unified reputation system that tracks trustworthiness across all platform activities
+- **Contextual Information Display**: Profile information that adapts to show relevant details based on current context
+
+**Core Profile Features**:
+- **Identity Verification**: Secure verification for all users regardless of role
+- **Communication Preferences**: Unified messaging settings across all platform interactions
+- **Payment Methods**: Centralized payment information for both paying and receiving funds
+- **Notification Settings**: Consolidated alerts for all platform activities
+
+**Specialist Mode Features**:
 - **Skill Verification**: License and certification verification
 - **Portfolio Showcase**: Past work examples with client testimonials
 - **Availability Calendar**: Real-time availability with Google Calendar integration
 - **Service Area Mapping**: Visual representation of service coverage areas
 - **Transparent Pricing**: Clear rate structures with custom quote options
+
+**Customer Mode Features**:
+- **Job History**: Record of past service requests and outcomes
+- **Saved Locations**: Multiple service addresses for different properties
+- **Preferred Specialists**: Quick access to favorite service providers
+- **Payment History**: Transparent record of past transactions
 
 ### 3.4 Communication Suite
 

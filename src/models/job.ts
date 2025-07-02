@@ -253,7 +253,7 @@ export interface JobProposal {
   /** Current status of the proposal */
   status: ProposalStatus;
   
-  /** Specialist's availability for the job */
+  /** User's availability for the job when acting as a specialist */
   availability?: {
     /** Earliest date the specialist can start */
     startDate: string;
@@ -302,14 +302,14 @@ export interface MatchResult {
   /** Job being matched */
   job: Job;
   
-  /** Specialist being matched */
-  specialist: Specialist;
+  /** User acting as a specialist being matched */
+  specialist: User;
   
   /** Timestamp when the match was calculated */
   calculatedAt: string;
 }
 
 /**
- * Import the Specialist type for reference in MatchResult
+ * Import the User type for reference in MatchResult
  */
-import { Specialist } from './specialist';
+import { User } from './user';

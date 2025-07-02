@@ -34,12 +34,20 @@ Our platform connects customers with skilled local specialists through:
 - **Real-time Communication**: Instant messaging and status updates
 - **Secure Payments**: Integrated wallet and milestone payment options
 
-## 🧩 Platform Roles
+## 🧩 Platform Features
 
-### 👤 Users (Unified Role System)
-JobMate uses a unified role system where all users can act as both customers and specialists, with seamless switching between roles:
+### 👤 Unified User System
+JobMate uses a unified user model where all users have a single account with access to both customer and specialist functionality:
 
-**As Customers:**
+**Core Features:**
+- Single unified profile with role-based functionality
+- Seamless switching between customer and specialist modes
+- Shared dashboard for all platform activities
+- Consistent user experience across all platform interactions
+- Unified notification system for all account activities
+- Integrated reputation system across all platform roles
+
+**Customer Features:**
 - Post jobs with rich media (photos, videos, voice descriptions)
 - Receive AI-powered issue diagnosis and cost estimates
 - Schedule appointments with smart calendar integration
@@ -47,10 +55,10 @@ JobMate uses a unified role system where all users can act as both customers and
 - Pay via integrated wallet, Stripe, or milestone payments
 - Rate and review completed services
 
-**As Specialists:**
-- Create verified profiles with ID/license verification
+**Specialist Features:**
+- Create verified credentials with ID/license verification
 - Define service areas, specialties, and pricing models
-- Toggle availability status ("On Duty"/"Off Duty")
+- Set availability preferences and service hours
 - Browse jobs via map or list view with compatibility scores
 - Accept, decline, or negotiate terms through built-in chat
 - Manage appointments with calendar synchronization
@@ -58,7 +66,7 @@ JobMate uses a unified role system where all users can act as both customers and
 
 ### 🔧️ Admin
 - Manage disputes and platform governance
-- Verify specialist credentials and maintain trust standards
+- Verify user credentials and maintain trust standards
 - Monitor platform health metrics and generate reports
 - Create and manage community features (guilds, regions, rewards)
 

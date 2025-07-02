@@ -31,29 +31,24 @@ export interface Job {
   };
 }
 
-// Specialist type definition
-export interface Specialist {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phone?: string;
-  bio?: string;
-  skills?: string[];
-  hourlyRate?: number;
-  rating?: number;
-  completedJobs?: number;
-  responseTime?: number;
-  verificationLevel?: number;
-  yearsOfExperience?: number;
-  location?: {
-    lat: number;
-    lng: number;
-    city: string;
-    state: string;
-    zipCode: string;
-    radius?: number;
-  };
+// Import the unified User model
+import { User } from '@/models/user';
+
+// Re-export User for backward compatibility
+export type Specialist = User;
+
+// Legacy location type for reference
+interface SpecialistLocation {
+  lat: number;
+  lng: number;
+  city: string;
+  state: string;
+  zipCode: string;
+  radius?: number;
+}
+
+// Legacy specialist preferences types for reference
+interface SpecialistPreferences {
   ratePreferences?: {
     min: number;
     max: number;
