@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, validateBody, getNumericQueryParam, getQueryParam } from '../utils';
-import { applicationService } from '@/services/api';
+import { applicationService, applicationPrismaService } from '@/services/api';
 import { z } from 'zod';
 
 // Schema for creating a new application
@@ -21,12 +21,17 @@ export const GET = createApiHandler(async (req) => {
   const pageSize = getNumericQueryParam(req, 'pageSize', 10);
   const pageNumber = getNumericQueryParam(req, 'pageNumber', 1);
   
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   if (listingId) {
     // Get applications for a specific listing (for listing owners)
-    return await applicationService.getApplicationsForListing(listingId);
+    return await applicationPrismaService.getApplicationsForListing(listingId, userId);
   } else {
     // Get the current user's applications
-    return await applicationService.getMyApplications();
+    return await applicationPrismaService.getMyApplications(userId);
   }
 });
 
@@ -34,10 +39,21 @@ export const GET = createApiHandler(async (req) => {
 export const POST = createApiHandler(async (req) => {
   const data = await validateBody(req, createApplicationSchema);
   
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   // Create the application with the validated data
-  // Type assertion to match the expected parameter type
-  const typedData = data as Parameters<typeof applicationService.createApplication>[0];
-  const application = await applicationService.createApplication(typedData);
+  const application = await applicationPrismaService.createApplication({
+    jobId: data.listing_id,
+    specialistId: userId,
+    coverLetter: data.cover_letter,
+    proposedRate: data.proposed_rate,
+    proposedTimeline: data.proposed_timeline,
+    additionalInfo: data.additional_info,
+    attachments: data.attachments?.map(path => ({ path }))
+  });
   
   return application;
 });

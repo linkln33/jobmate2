@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, getNumericQueryParam } from '../../../utils';
-import { messageService } from '@/services/api';
+import { messageService, messagePrismaService } from '@/services/api';
 
 /**
  * GET /api/messages/conversations/[id] - Get conversation details and messages
@@ -15,14 +15,19 @@ export const GET = createApiHandler(async (req, context) => {
   const id = pathSegments[pathSegments.length - 1];
   const limit = getNumericQueryParam(req, 'limit', 50);
   
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   // Get conversation details
-  const conversation = await messageService.getConversationById(id);
+  const conversation = await messagePrismaService.getConversationById(id, userId);
   
   // Get messages for the conversation
-  const messages = await messageService.getMessages(id, limit);
+  const messages = await messagePrismaService.getMessages(id, limit);
   
   // Mark conversation as read
-  await messageService.markConversationAsRead(id);
+  await messagePrismaService.markConversationAsRead(id, userId);
   
   return {
     conversation,
@@ -42,7 +47,13 @@ export const DELETE = createApiHandler(async (req, context) => {
   const pathSegments = url.pathname.split('/');
   const id = pathSegments[pathSegments.length - 1];
   
-  // For now, just return success
-  // In a real implementation, you would delete or archive the conversation
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
+  // Delete or archive the conversation
+  await messagePrismaService.deleteConversation(id, userId);
+  
   return { success: true };
 });

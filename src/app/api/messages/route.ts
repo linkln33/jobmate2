@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, validateBody, getNumericQueryParam } from '../utils';
-import { messageService } from '@/services/api';
+import { messageService, messagePrismaService } from '@/services/api';
 import { z } from 'zod';
 
 // Schema for creating a new conversation
@@ -22,8 +22,13 @@ export const GET = createApiHandler(async (req) => {
   const limit = getNumericQueryParam(req, 'limit', 20);
   const offset = getNumericQueryParam(req, 'offset', 0);
   
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   // Get the current user's conversations
-  return await messageService.getMyConversations();
+  return await messagePrismaService.getMyConversations(userId, limit, offset);
 });
 
 // POST /api/messages - Create a new conversation or send a message
@@ -32,16 +37,26 @@ export const POST = createApiHandler(async (req) => {
   try {
     const conversationData = await validateBody(req, createConversationSchema);
     
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
     // Create a new conversation
-    const conversation = await messageService.createConversation(
-      conversationData.participant_ids,
-      conversationData.listing_id,
-      conversationData.application_id
-    );
+    const conversation = await messagePrismaService.createConversation({
+      creatorId: userId,
+      participantIds: conversationData.participant_ids,
+      jobId: conversationData.listing_id,
+      applicationId: conversationData.application_id
+    });
     
     // Send initial message if provided
     if (conversationData.initial_message) {
-      await messageService.sendMessage(conversation.id, conversationData.initial_message);
+      await messagePrismaService.sendMessage({
+        conversationId: conversation.id,
+        senderId: userId,
+        content: conversationData.initial_message
+      });
     }
     
     return conversation;
@@ -49,11 +64,17 @@ export const POST = createApiHandler(async (req) => {
     // If it's not a new conversation, try to parse as a new message
     const messageData = await validateBody(req, sendMessageSchema);
     
-    // Send a message to an existing conversation
-    const message = await messageService.sendMessage(
-      messageData.conversation_id,
-      messageData.content
-    );
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    
+    // Send the message
+    const message = await messagePrismaService.sendMessage({
+      conversationId: messageData.conversation_id,
+      senderId: userId,
+      content: messageData.content
+    });
     
     return message;
   }

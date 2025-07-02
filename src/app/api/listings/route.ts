@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, validateBody, getNumericQueryParam, getQueryParam } from '../utils';
-import { listingService } from '@/services/api';
+import { listingPrismaService } from '@/services/api/listing.prisma.service';
 import { z } from 'zod';
 
 // Schema for creating a new listing
@@ -47,21 +47,18 @@ export const GET = createApiHandler(async (req) => {
   const userLocation = userLat && userLng ? { lat: userLat, lng: userLng } : undefined;
   
   // Search listings with parameters
-  return await listingService.searchListings({
-    searchTerm: searchTerm || undefined,
-    categoryId: categoryId || undefined,
-    minBudget: minBudget || undefined,
-    maxBudget: maxBudget || undefined,
+  return await listingPrismaService.searchListings({
+    query: searchTerm,
+    categoryId,
+    minBudget,
+    maxBudget,
     location,
-    maxDistance: maxDistance || undefined,
-    userLocation,
-    status,
+    isRemote: undefined, // Add if needed
+    status: status[0], // Prisma service expects a single status
     tags,
     sortBy,
-    sortDirection: sortDirection as 'asc' | 'desc',
-    pageSize,
-    pageNumber
-  });
+    sortOrder: sortDirection
+  }, pageNumber, pageSize);
 }, { requireAuth: false });
 
 // POST /api/listings - Create a new listing
@@ -69,15 +66,29 @@ export const POST = createApiHandler(async (req) => {
   const data = await validateBody(req, createListingSchema);
   
   // Create the listing with all data
-  const listing = await listingService.createListing(data as any);
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
   
-  // Add tags if provided (handled by the service)
+  const listing = await listingPrismaService.createListing(userId, {
+    title: data.title,
+    description: data.description,
+    categoryId: data.category_id,
+    budgetMin: data.budget_min,
+    budgetMax: data.budget_max,
+    location: data.location,
+    latitude: data.location_lat,
+    longitude: data.location_lng,
+    // Convert tags to attachments if needed
+    attachments: [] // Add attachments handling if needed
+  });
   
   return listing;
 });
 
 async function getListingByIdHelper(id: string) {
-  return await listingService.getListingById(id);
+  return await listingPrismaService.getListingById(id);
 }
 
 async function updateListingHelper(id: string, data: any) {
@@ -85,11 +96,11 @@ async function updateListingHelper(id: string, data: any) {
   const validatedData = updateListingSchema.parse(data);
   
   // Update the listing
-  const updatedListing = await listingService.updateListing(id, validatedData);
+  const updatedListing = await listingPrismaService.updateListing(id, validatedData);
   
   return updatedListing;
 }
 
-async function deleteListingHelper(id: string) {
-  return await listingService.deleteListing(id);
+async function deleteListingHelper(id: string, userId: string) {
+  return await listingPrismaService.deleteListing(id, userId);
 }

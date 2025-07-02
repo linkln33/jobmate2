@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createApiHandler, validateBody } from '../../utils';
-import { listingService } from '@/services/api';
+import { listingPrismaService } from '@/services/api/listing.prisma.service';
 import { z } from 'zod';
 
 // Schema for updating a listing
@@ -31,7 +31,7 @@ export const GET = createApiHandler(async (req) => {
   const id = pathSegments[pathSegments.length - 1];
   
   // Get the listing with extended details
-  const listing = await listingService.getListingById(id);
+  const listing = await listingPrismaService.getListingById(id);
   
   // No need to increment view count here as it might be a private method
   // We'll let the service handle view tracking internally
@@ -48,9 +48,19 @@ export const PATCH = createApiHandler(async (req) => {
   const data = await validateBody(req, updateListingSchema);
   
   // Update the listing with the validated data
-  // Type assertion to match the expected parameter type
-  const typedData = data as Parameters<typeof listingService.updateListing>[1];
-  const listing = await listingService.updateListing(id, typedData);
+  // Get the user ID from the request
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
+  // First check if the listing belongs to the user (the service will do this too, but we check early)
+  const existingListing = await listingPrismaService.getListingById(id);
+  if (existingListing.customerId !== userId) {
+    throw new Error('You do not have permission to update this listing');
+  }
+  
+  const listing = await listingPrismaService.updateListing(id, data);
   
   return listing;
 });
@@ -62,8 +72,14 @@ export const DELETE = createApiHandler(async (req) => {
   const pathSegments = url.pathname.split('/');
   const id = pathSegments[pathSegments.length - 1];
   
+  // Get the user ID from the request
+  const userId = req.user?.id;
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  
   // Delete the listing
-  await listingService.deleteListing(id);
+  await listingPrismaService.deleteListing(id, userId);
   
   return { success: true };
 });
