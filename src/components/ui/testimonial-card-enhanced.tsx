@@ -57,7 +57,7 @@ export function TestimonialCard({
       whileHover={{ y: -5, boxShadow: '0 12px 32px 0 rgba(31, 38, 135, 0.2)' }}
     >
       {/* Quote marks */}
-      <div className="text-4xl text-blue-500/20 dark:text-blue-400/20 font-serif mb-2">
+      <div className="text-4xl text-blue-500/30 dark:text-blue-400/30 font-serif mb-2">
         "
       </div>
       
@@ -68,7 +68,7 @@ export function TestimonialCard({
       
       {/* User info */}
       <div className="flex items-center">
-        <Avatar className="h-10 w-10 mr-3 border-2 border-blue-500/20">
+        <Avatar className="h-12 w-12 mr-3 border-2 border-blue-500/20 ring-2 ring-white/50 shadow-md">
           {avatarUrl ? (
             <AvatarImage src={avatarUrl} alt={name} />
           ) : (
@@ -81,6 +81,13 @@ export function TestimonialCard({
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">{name}</div>
           <div className="text-sm text-gray-500 dark:text-gray-400">{role}</div>
+          
+          {/* Star rating */}
+          <div className="flex items-center mt-1">
+            {[...Array(5)].map((_, i) => (
+              <span key={i} className={`text-sm ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}>⭐️</span>
+            ))}
+          </div>
         </div>
       </div>
       
@@ -88,7 +95,7 @@ export function TestimonialCard({
       {badges.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {badges.map((badge, index) => (
-            <Badge key={index} variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+            <Badge key={index} variant="outline" className="bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800 rounded-full px-3">
               {badge}
             </Badge>
           ))}

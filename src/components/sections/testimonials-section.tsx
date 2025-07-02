@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TestimonialCard } from '@/components/ui/testimonial-card';
+import { TestimonialCard } from '@/components/ui/testimonial-card-enhanced';
 
 export function TestimonialsSection() {
   const testimonials = [
@@ -50,11 +50,16 @@ export function TestimonialsSection() {
     }
   ];
 
+  // Container style without background
+  const containerStyle = {
+    borderRadius: '24px',
+    padding: '40px 20px',
+    overflow: 'hidden'
+  };
+
   return (
-    <section id="testimonials" className="py-24 relative overflow-hidden bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-      {/* Background elements */}
-      <div className="absolute top-20 right-20 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl" />
-      <div className="absolute bottom-20 left-20 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl" />
+    <section id="testimonials" className="py-24 relative overflow-hidden">
+      {/* Background elements removed */}
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
@@ -74,25 +79,36 @@ export function TestimonialsSection() {
           </p>
         </motion.div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <TestimonialCard
-                quote={testimonial.quote}
-                name={testimonial.name}
-                role={testimonial.role}
-                badges={testimonial.badges}
-                variant={index === 1 ? 'highlight' : 'default'}
-              />
-            </motion.div>
-          ))}
-        </div>
+        <motion.div
+          style={containerStyle}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+          className="mb-12"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 p-4">
+            {testimonials.map((testimonial, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <TestimonialCard
+                  quote={testimonial.quote}
+                  name={testimonial.name}
+                  role={testimonial.role}
+                  avatarUrl={testimonial.avatarUrl}
+                  badges={testimonial.badges}
+                  rating={4 + Math.floor(Math.random() * 2)}
+                  variant={index === 1 ? 'highlight' : 'default'}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );

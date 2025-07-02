@@ -103,7 +103,7 @@ export function MarketplacePreviewCard({
     background: 'linear-gradient(135deg, rgba(173, 216, 230, 0.65) 0%, rgba(173, 216, 230, 0.45) 100%)',
     backdropFilter: 'blur(18px)',
     border: '1px solid rgba(173, 216, 230, 0.4)',
-    boxShadow: '0 10px 25px 0 rgba(31, 38, 135, 0.2), 0 5px 10px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0 6px 15px 0 rgba(31, 38, 135, 0.15), 0 3px 6px rgba(0, 0, 0, 0.05)',
     transition: 'all 0.3s ease-in-out'
   };
 
@@ -149,11 +149,11 @@ export function MarketplacePreviewCard({
   return (
     <motion.div
       className={cn(
-        "relative overflow-hidden rounded-xl glassmorphism-container h-[480px] flex flex-col",
+        "relative overflow-hidden rounded-xl glassmorphism-container h-[400px] flex flex-col",
         className
       )}
       style={glassmorphismStyle}
-      whileHover={{ y: -10, boxShadow: '0 20px 40px 0 rgba(31, 38, 135, 0.3), 0 8px 15px rgba(0, 0, 0, 0.1)' }}
+      whileHover={{ y: -5, boxShadow: '0 12px 20px 0 rgba(31, 38, 135, 0.2), 0 5px 8px rgba(0, 0, 0, 0.06)' }}
       whileTap={{ scale: 0.98 }}
       onClick={onClick}
     >
