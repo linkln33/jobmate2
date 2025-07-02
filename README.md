@@ -36,29 +36,31 @@ Our platform connects customers with skilled local specialists through:
 
 ## 🧩 Platform Roles
 
-### 👤 Customers
-- Post jobs
-- Upload media (photo/video)
-- Describe issue by voice or text
-- Auto-detect issue via AI
-- Schedule appointments
-- Pay via wallet/Stripe
-- Track status, rate pros
+### 👤 Users (Unified Role System)
+JobMate uses a unified role system where all users can act as both customers and specialists, with seamless switching between roles:
 
-### 🧑‍🔧 Specialists
-- Register with verified ID/license
-- Define services, radius, price range
-- Toggle "On Duty" to receive jobs (Uber-style)
-- Browse/map view of jobs
-- Accept/decline, negotiate via chat
-- Sync Google Calendar
-- Withdraw earnings via wallet
+**As Customers:**
+- Post jobs with rich media (photos, videos, voice descriptions)
+- Receive AI-powered issue diagnosis and cost estimates
+- Schedule appointments with smart calendar integration
+- Track job status in real-time with notifications
+- Pay via integrated wallet, Stripe, or milestone payments
+- Rate and review completed services
 
-### 🛠️ Admin
-- Manage disputes
-- Verify specialists
-- Monitor platform health and reports
-- Create guilds, regions, reward campaigns
+**As Specialists:**
+- Create verified profiles with ID/license verification
+- Define service areas, specialties, and pricing models
+- Toggle availability status ("On Duty"/"Off Duty")
+- Browse jobs via map or list view with compatibility scores
+- Accept, decline, or negotiate terms through built-in chat
+- Manage appointments with calendar synchronization
+- Receive secure payments with flexible payout options
+
+### 🔧️ Admin
+- Manage disputes and platform governance
+- Verify specialist credentials and maintain trust standards
+- Monitor platform health metrics and generate reports
+- Create and manage community features (guilds, regions, rewards)
 
 ## 🏗️ Tech Stack
 
