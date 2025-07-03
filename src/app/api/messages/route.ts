@@ -33,11 +33,11 @@ export const POST = createApiHandler(async (req) => {
     const conversationData = await validateBody(req, createConversationSchema);
     
     // Create a new conversation
-    const conversation = await messageService.createConversation(
-      conversationData.participant_ids,
-      conversationData.listing_id,
-      conversationData.application_id
-    );
+    const conversation = await messageService.createConversation({
+      participantIds: conversationData.participant_ids,
+      listingId: conversationData.listing_id,
+      applicationId: conversationData.application_id
+    });
     
     // Send initial message if provided
     if (conversationData.initial_message) {

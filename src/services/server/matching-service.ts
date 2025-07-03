@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { JsonObject, JsonValue } from '@/lib/types';
 import { calculateDistance } from '@/utils/geo-utils';
 
 // Types for matching service

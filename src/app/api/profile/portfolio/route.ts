@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/profile/portfolio
@@ -17,33 +17,46 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    // Get portfolio items with related category data
-    const portfolioItems = await prisma.portfolioItem.findMany({
-      where: {
-        userId: user.id
-      },
-      include: {
-        serviceCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            iconUrl: true,
-            emoji: true,
-            color: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    return NextResponse.json(portfolioItems);
+    // Get portfolio items with related category data
+    const { data: portfolioItems, error } = await supabase
+      .from('portfolioItems')
+      .select(`
+        id,
+        userId,
+        title,
+        description,
+        url,
+        imageUrl,
+        categoryId,
+        displayOrder,
+        isVisible,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .eq('userId', user.id)
+      .order('displayOrder', { ascending: true });
+    
+    if (error) {
+      console.error('Error fetching portfolio items:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch portfolio items' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ portfolioItems: portfolioItems || [] });
   } catch (error) {
-    console.error('Error fetching portfolio items:', error);
+    console.error('Error in GET /api/profile/portfolio:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch portfolio items' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -64,72 +77,82 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    const data = await req.json();
-    const { 
-      title, 
-      description, 
-      imageUrl, 
-      projectUrl, 
-      categoryId,
-      completionDate,
-      displayOrder,
-      isPublic
-    } = data;
+    const body = await req.json();
+    const { title, description, url, imageUrl, categoryId } = body;
     
     // Validate required fields
-    if (!title || !imageUrl) {
+    if (!title || !description) {
       return NextResponse.json(
-        { message: 'Title and image URL are required' },
+        { message: 'Title and description are required' },
         { status: 400 }
       );
     }
     
-    // Validate category if provided
-    if (categoryId) {
-      const category = await prisma.serviceCategory.findUnique({
-        where: { id: categoryId }
-      });
-      
-      if (!category) {
-        return NextResponse.json(
-          { message: 'Category not found' },
-          { status: 404 }
-        );
-      }
+    const supabase = getSupabaseServiceClient();
+    
+    // Get current highest display order
+    const { data: maxOrderItem, error: orderError } = await supabase
+      .from('portfolioItems')
+      .select('displayOrder')
+      .eq('userId', user.id)
+      .order('displayOrder', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    
+    if (orderError) {
+      console.error('Error getting max display order:', orderError);
+      // Continue despite error
     }
     
-    // Create the portfolio item
-    const portfolioItem = await prisma.portfolioItem.create({
-      data: {
+    const nextDisplayOrder = maxOrderItem ? (maxOrderItem.displayOrder + 1) : 1;
+    
+    // Create portfolio item
+    const { data: portfolioItem, error: createError } = await supabase
+      .from('portfolioItems')
+      .insert({
         userId: user.id,
         title,
         description,
-        mediaUrls: imageUrl ? [imageUrl] : [],
-        serviceCategoryId: categoryId,
-        isPublic: isPublic !== undefined ? isPublic : true
-      },
-      include: {
-        serviceCategory: {
-          select: {
-            id: true,
-            name: true,
-            slug: true,
-            iconUrl: true,
-            emoji: true,
-            color: true
-          }
-        }
-      }
-    });
+        url: url || null,
+        imageUrl: imageUrl || null,
+        categoryId: categoryId || null,
+        displayOrder: nextDisplayOrder,
+        isVisible: true
+      })
+      .select(`
+        id,
+        userId,
+        title,
+        description,
+        url,
+        imageUrl,
+        categoryId,
+        displayOrder,
+        isVisible,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .single();
     
-    return NextResponse.json(
-      { message: 'Portfolio item created successfully', portfolioItem },
-      { status: 201 }
-    );
+    if (createError || !portfolioItem) {
+      console.error('Error creating portfolio item:', createError);
+      return NextResponse.json(
+        { message: 'Failed to create portfolio item' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ portfolioItem }, { status: 201 });
   } catch (error) {
-    console.error('Error creating portfolio item:', error);
+    console.error('Error in POST /api/profile/portfolio:', error);
     return NextResponse.json(
-      { message: 'Failed to create portfolio item' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -150,67 +173,108 @@ export async function PUT(req: NextRequest) {
       );
     }
     
-    const { portfolioItems } = await req.json();
+    const body = await req.json();
+    const { portfolioItems } = body;
     
-    if (!Array.isArray(portfolioItems) || portfolioItems.length === 0) {
+    if (!Array.isArray(portfolioItems)) {
       return NextResponse.json(
-        { message: 'No portfolio items provided' },
+        { message: 'Invalid request format' },
         { status: 400 }
       );
     }
     
-    // Update portfolio items in a transaction
-    const updatedItems = await prisma.$transaction(async (tx) => {
-      const results = [];
+    const supabase = getSupabaseServiceClient();
+    const updatedItems = [];
+    
+    // Process each portfolio item update
+    for (const item of portfolioItems) {
+      const { id, title, description, url, imageUrl, categoryId, displayOrder, isVisible } = item;
       
-      for (const item of portfolioItems) {
-        // Verify ownership
-        const existingItem = await tx.portfolioItem.findUnique({
-          where: { id: item.id }
-        });
-        
-        if (!existingItem || existingItem.userId !== user.id) {
-          throw new Error(`Unauthorized access to portfolio item ${item.id}`);
-        }
-        
-        // Update the item
-        const updatedItem = await tx.portfolioItem.update({
-          where: { id: item.id },
-          data: {
-            title: item.title,
-            description: item.description,
-            mediaUrls: item.imageUrl ? [item.imageUrl] : [],
-            serviceCategoryId: item.categoryId,
-            isPublic: item.isPublic
-          },
-          include: {
-            serviceCategory: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                iconUrl: true,
-                emoji: true,
-                color: true
-              }
-            }
-          }
-        });
-        
-        results.push(updatedItem);
+      if (!id) {
+        continue; // Skip items without ID
       }
       
-      return results;
-    });
+      // Verify the item belongs to the user
+      const { data: existingItem, error: checkError } = await supabase
+        .from('portfolioItems')
+        .select('id')
+        .eq('id', id)
+        .eq('userId', user.id)
+        .maybeSingle();
+      
+      if (checkError || !existingItem) {
+        console.error(`Error verifying portfolio item ${id}:`, checkError);
+        continue; // Skip this item
+      }
+      
+      // Update the item
+      const updateData: any = {};
+      
+      if (title !== undefined) updateData.title = title;
+      if (description !== undefined) updateData.description = description;
+      if (url !== undefined) updateData.url = url;
+      if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+      if (categoryId !== undefined) updateData.categoryId = categoryId;
+      if (displayOrder !== undefined) updateData.displayOrder = displayOrder;
+      if (isVisible !== undefined) updateData.isVisible = isVisible;
+      updateData.updatedAt = new Date().toISOString();
+      
+      const { data: updatedItem, error: updateError } = await supabase
+        .from('portfolioItems')
+        .update(updateData)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (updateError || !updatedItem) {
+        console.error(`Error updating portfolio item ${id}:`, updateError);
+        continue; // Skip this item
+      }
+      
+      updatedItems.push(updatedItem);
+    }
+    
+    // Get all portfolio items after updates
+    const { data: allItems, error: fetchError } = await supabase
+      .from('portfolioItems')
+      .select(`
+        id,
+        userId,
+        title,
+        description,
+        url,
+        imageUrl,
+        categoryId,
+        displayOrder,
+        isVisible,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .eq('userId', user.id)
+      .order('displayOrder', { ascending: true });
+    
+    if (fetchError) {
+      console.error('Error fetching updated portfolio items:', fetchError);
+      return NextResponse.json({
+        message: 'Items updated but failed to fetch all items',
+        updatedCount: updatedItems.length
+      }, { status: 207 });
+    }
     
     return NextResponse.json({
-      message: 'Portfolio items updated successfully',
-      portfolioItems: updatedItems
+      portfolioItems: allItems || [],
+      updatedCount: updatedItems.length
     });
   } catch (error) {
-    console.error('Error updating portfolio items:', error);
+    console.error('Error in PUT /api/profile/portfolio:', error);
     return NextResponse.json(
-      { message: 'Failed to update portfolio items' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -232,46 +296,84 @@ export async function DELETE(req: NextRequest) {
     }
     
     const { searchParams } = new URL(req.url);
-    const portfolioItemId = searchParams.get('id');
+    const itemId = searchParams.get('id');
     
-    if (!portfolioItemId) {
+    if (!itemId) {
       return NextResponse.json(
         { message: 'Portfolio item ID is required' },
         { status: 400 }
       );
     }
     
-    // Verify ownership
-    const portfolioItem = await prisma.portfolioItem.findUnique({
-      where: { id: portfolioItemId }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    if (!portfolioItem) {
+    // Verify the item belongs to the user
+    const { data: existingItem, error: checkError } = await supabase
+      .from('portfolioItems')
+      .select('id, displayOrder')
+      .eq('id', itemId)
+      .eq('userId', user.id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error verifying portfolio item:', checkError);
       return NextResponse.json(
-        { message: 'Portfolio item not found' },
+        { message: 'Failed to verify portfolio item' },
+        { status: 500 }
+      );
+    }
+    
+    if (!existingItem) {
+      return NextResponse.json(
+        { message: 'Portfolio item not found or does not belong to user' },
         { status: 404 }
       );
     }
     
-    if (portfolioItem.userId !== user.id) {
+    // Delete the item
+    const { error: deleteError } = await supabase
+      .from('portfolioItems')
+      .delete()
+      .eq('id', itemId);
+    
+    if (deleteError) {
+      console.error('Error deleting portfolio item:', deleteError);
       return NextResponse.json(
-        { message: 'You do not have permission to delete this portfolio item' },
-        { status: 403 }
+        { message: 'Failed to delete portfolio item' },
+        { status: 500 }
       );
     }
     
-    // Delete the portfolio item
-    await prisma.portfolioItem.delete({
-      where: { id: portfolioItemId }
-    });
+    // Reorder remaining items to close the gap
+    const { data: remainingItems, error: fetchError } = await supabase
+      .from('portfolioItems')
+      .select('id, displayOrder')
+      .eq('userId', user.id)
+      .order('displayOrder', { ascending: true });
+    
+    if (!fetchError && remainingItems) {
+      // Update display orders to be sequential
+      for (let i = 0; i < remainingItems.length; i++) {
+        const { error: updateError } = await supabase
+          .from('portfolioItems')
+          .update({ displayOrder: i + 1 })
+          .eq('id', remainingItems[i].id);
+        
+        if (updateError) {
+          console.error(`Error updating order for item ${remainingItems[i].id}:`, updateError);
+          // Continue despite error
+        }
+      }
+    }
     
     return NextResponse.json({
-      message: 'Portfolio item deleted successfully'
+      message: 'Portfolio item deleted successfully',
+      deletedId: itemId
     });
   } catch (error) {
-    console.error('Error deleting portfolio item:', error);
+    console.error('Error in DELETE /api/profile/portfolio:', error);
     return NextResponse.json(
-      { message: 'Failed to delete portfolio item' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

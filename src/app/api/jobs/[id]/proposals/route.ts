@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '../../../../../lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/jobs/[id]/proposals - Get all proposals for a job
 export async function GET(
@@ -21,12 +19,16 @@ export async function GET(
 
     const jobId = params.id;
 
+    const supabase = getSupabaseServiceClient();
+    
     // Get the job
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-    });
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, customerId, status')
+      .eq('id', jobId)
+      .single();
 
-    if (!job) {
+    if (jobError || !job) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
@@ -40,22 +42,15 @@ export async function GET(
     // Only the job owner (customer) or admin can see all proposals
     if (!isCustomer && !isAdmin) {
       // Specialists can only see their own proposals
-      const ownProposal = await prisma.jobProposal.findFirst({
-        where: {
-          jobId,
-          specialistId: user.id,
-        },
-        include: {
-          specialist: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImageUrl: true,
-            },
-          },
-        },
-      });
+      const { data: ownProposal, error: proposalError } = await supabase
+        .from('jobProposals')
+        .select(`
+          *,
+          specialist:specialistId(*)
+        `)
+        .eq('jobId', jobId)
+        .eq('specialistId', user.id)
+        .single();
 
       return NextResponse.json(
         ownProposal ? [ownProposal] : []
@@ -63,29 +58,23 @@ export async function GET(
     }
 
     // Get all proposals for the job
-    const proposals = await prisma.jobProposal.findMany({
-      where: { jobId },
-      include: {
-        specialist: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-            bio: true,
-            specialistProfile: {
-              select: {
-                averageRating: true,
-                totalJobsCompleted: true,
-              },
-            },
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    const { data: proposals, error: proposalsError } = await supabase
+      .from('jobProposals')
+      .select(`
+        *,
+        specialist:specialistId(id, firstName, lastName, profileImageUrl, bio, 
+          specialistProfile:id(averageRating, totalJobsCompleted))
+      `)
+      .eq('jobId', jobId)
+      .order('createdAt', { ascending: false });
+      
+    if (proposalsError) {
+      console.error('Error fetching proposals:', proposalsError);
+      return NextResponse.json(
+        { message: 'Failed to fetch proposals' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(proposals);
   } catch (error) {
@@ -132,12 +121,16 @@ export async function POST(
       );
     }
 
+    const supabase = getSupabaseServiceClient();
+    
     // Get the job
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-    });
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, status, customerId, title')
+      .eq('id', jobId)
+      .single();
 
-    if (!job) {
+    if (jobError || !job) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
@@ -153,12 +146,12 @@ export async function POST(
     }
 
     // Check if specialist has already submitted a proposal for this job
-    const existingProposal = await prisma.jobProposal.findFirst({
-      where: {
-        jobId,
-        specialistId: user.id,
-      },
-    });
+    const { data: existingProposal, error: proposalError } = await supabase
+      .from('jobProposals')
+      .select('id')
+      .eq('jobId', jobId)
+      .eq('specialistId', user.id)
+      .maybeSingle();
 
     if (existingProposal) {
       return NextResponse.json(
@@ -168,47 +161,61 @@ export async function POST(
     }
 
     // Create the proposal
-    const proposal = await prisma.jobProposal.create({
-      data: {
+    const { data: proposal, error: createError } = await supabase
+      .from('jobProposals')
+      .insert({
         price: parseFloat(price),
         message: description,
         estimatedDuration: estimatedDuration ? parseInt(estimatedDuration) : null,
+        estimatedDurationUnit: estimatedDurationUnit || null,
         status: 'PENDING',
-        job: {
-          connect: { id: jobId },
-        },
-        specialist: {
-          connect: { id: user.id },
-        },
-      },
-      include: {
-        specialist: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        },
-      },
-    });
+        jobId: jobId,
+        specialistId: user.id,
+        createdAt: new Date()
+      })
+      .select(`
+        *,
+        specialist:specialistId(id, firstName, lastName, profileImageUrl)
+      `)
+      .single();
+      
+    if (createError) {
+      console.error('Error creating proposal:', createError);
+      return NextResponse.json(
+        { message: 'Failed to create proposal' },
+        { status: 500 }
+      );
+    }
 
+    // Get job title for notification
+    const { data: jobDetails } = await supabase
+      .from('jobs')
+      .select('title, customerId')
+      .eq('id', jobId)
+      .single();
+      
     // Create a notification for the job owner
-    await prisma.notification.create({
-      data: {
-        userId: job.customerId,
+    const { error: notificationError } = await supabase
+      .from('notifications')
+      .insert({
+        userId: jobDetails?.customerId,
         type: 'NEW_PROPOSAL',
         title: 'New Proposal Received',
-        message: `You have received a new proposal for your job: ${job.title}`,
+        message: `You have received a new proposal for your job: ${jobDetails?.title}`,
         isRead: false,
         data: {
-          jobId: job.id,
+          jobId: jobId,
           proposalId: proposal.id,
           specialistId: user.id,
           specialistName: `${user.firstName} ${user.lastName}`,
         },
-      },
-    });
+        createdAt: new Date()
+      });
+      
+    if (notificationError) {
+      console.error('Error creating notification:', notificationError);
+      // Continue anyway since the proposal was created
+    }
 
     return NextResponse.json(
       { message: 'Proposal submitted successfully', proposal },

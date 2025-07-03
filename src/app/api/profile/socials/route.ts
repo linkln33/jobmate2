@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/profile/socials
@@ -17,11 +17,22 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const socialLinks = await prisma.userSocialLink.findMany({
-      where: { userId: user.id }
-    });
+    const supabase = getSupabaseServiceClient();
+    
+    const { data: socialLinks, error } = await supabase
+      .from('userSocialLinks')
+      .select('*')
+      .eq('userId', user.id);
 
-    return NextResponse.json({ socialLinks }, { status: 200 });
+    if (error) {
+      console.error('Error fetching social links:', error);
+      return NextResponse.json(
+        { message: 'Failed to get social links' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ socialLinks: socialLinks || [] }, { status: 200 });
   } catch (error) {
     console.error('Get social links error:', error);
     return NextResponse.json(
@@ -46,10 +57,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await req.json();
-    const { platform, url, username, isPublic } = data;
+    const body = await req.json();
+    const { platform, url } = body;
 
-    // Validate required fields
     if (!platform || !url) {
       return NextResponse.json(
         { message: 'Platform and URL are required' },
@@ -57,40 +67,55 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if this platform already exists for the user
-    const existingSocialLink = await prisma.userSocialLink.findFirst({
-      where: {
-        userId: user.id,
-        platform
-      }
-    });
-
-    if (existingSocialLink) {
+    const supabase = getSupabaseServiceClient();
+    
+    // Check if user already has a link for this platform
+    const { data: existingLink, error: checkError } = await supabase
+      .from('userSocialLinks')
+      .select('id')
+      .eq('userId', user.id)
+      .eq('platform', platform)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking existing social link:', checkError);
       return NextResponse.json(
-        { message: `A ${platform} link already exists for this user` },
-        { status: 409 }
+        { message: 'Failed to check existing social link' },
+        { status: 500 }
+      );
+    }
+    
+    if (existingLink) {
+      return NextResponse.json(
+        { message: `You already have a ${platform} link` },
+        { status: 400 }
       );
     }
 
-    // Create the new social link
-    const socialLink = await prisma.userSocialLink.create({
-      data: {
+    // Create new social link
+    const { data: socialLink, error: createError } = await supabase
+      .from('userSocialLinks')
+      .insert({
         userId: user.id,
         platform,
-        url,
-        username,
-        isPublic: isPublic !== undefined ? isPublic : true
-      }
-    });
+        url
+      })
+      .select()
+      .single();
+    
+    if (createError || !socialLink) {
+      console.error('Error creating social link:', createError);
+      return NextResponse.json(
+        { message: 'Failed to create social link' },
+        { status: 500 }
+      );
+    }
 
-    return NextResponse.json({
-      message: 'Social link added successfully',
-      socialLink
-    }, { status: 201 });
+    return NextResponse.json({ socialLink }, { status: 201 });
   } catch (error) {
-    console.error('Add social link error:', error);
+    console.error('Create social link error:', error);
     return NextResponse.json(
-      { message: 'Failed to add social link' },
+      { message: 'Failed to create social link' },
       { status: 500 }
     );
   }
@@ -111,96 +136,135 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const data = await req.json();
-    const { socialLinks } = data;
+    const body = await req.json();
+    const { socialLinks } = body;
 
     if (!Array.isArray(socialLinks)) {
       return NextResponse.json(
-        { message: 'socialLinks must be an array' },
+        { message: 'Invalid request format' },
         { status: 400 }
       );
     }
 
-    // Process each social link in the array
-    const results = await Promise.all(
-      socialLinks.map(async (link) => {
-        const { id, platform, url, username, isPublic } = link;
-
-        if (id) {
-          // Update existing link
-          const existingLink = await prisma.userSocialLink.findFirst({
-            where: {
-              id,
-              userId: user.id // Ensure the link belongs to the user
-            }
-          });
-
-          if (!existingLink) {
-            return { 
-              success: false, 
-              message: `Social link with ID ${id} not found or doesn't belong to this user` 
-            };
-          }
-
-          const updatedLink = await prisma.userSocialLink.update({
-            where: { id },
-            data: {
-              platform,
+    const supabase = getSupabaseServiceClient();
+    const updatedLinks = [];
+    const createdLinks = [];
+    
+    // Process each social link
+    for (const link of socialLinks) {
+      const { id, platform, url } = link;
+      
+      if (!platform || !url) {
+        continue; // Skip invalid links
+      }
+      
+      if (id) {
+        // Update existing link
+        // Verify the link belongs to the user
+        const { data: existingLink, error: checkError } = await supabase
+          .from('userSocialLinks')
+          .select('id')
+          .eq('id', id)
+          .eq('userId', user.id)
+          .maybeSingle();
+        
+        if (checkError || !existingLink) {
+          console.error(`Error verifying social link ${id}:`, checkError);
+          continue; // Skip this link
+        }
+        
+        // Update the link
+        const { data: updatedLink, error: updateError } = await supabase
+          .from('userSocialLinks')
+          .update({
+            platform,
+            url,
+            updatedAt: new Date().toISOString()
+          })
+          .eq('id', id)
+          .select()
+          .single();
+        
+        if (updateError || !updatedLink) {
+          console.error(`Error updating social link ${id}:`, updateError);
+          continue; // Skip this link
+        }
+        
+        updatedLinks.push(updatedLink);
+      } else {
+        // Create new link
+        // Check if user already has a link for this platform
+        const { data: existingPlatformLink, error: checkPlatformError } = await supabase
+          .from('userSocialLinks')
+          .select('id')
+          .eq('userId', user.id)
+          .eq('platform', platform)
+          .maybeSingle();
+        
+        if (checkPlatformError) {
+          console.error(`Error checking existing ${platform} link:`, checkPlatformError);
+          continue; // Skip this link
+        }
+        
+        if (existingPlatformLink) {
+          // Update existing platform link instead of creating a new one
+          const { data: updatedPlatformLink, error: updatePlatformError } = await supabase
+            .from('userSocialLinks')
+            .update({
               url,
-              username,
-              isPublic
-            }
-          });
-
-          return { success: true, socialLink: updatedLink };
+              updatedAt: new Date().toISOString()
+            })
+            .eq('id', existingPlatformLink.id)
+            .select()
+            .single();
+          
+          if (updatePlatformError || !updatedPlatformLink) {
+            console.error(`Error updating existing ${platform} link:`, updatePlatformError);
+            continue; // Skip this link
+          }
+          
+          updatedLinks.push(updatedPlatformLink);
         } else {
           // Create new link
-          if (!platform || !url) {
-            return { 
-              success: false, 
-              message: 'Platform and URL are required for new social links' 
-            };
-          }
-
-          // Check if this platform already exists for the user
-          const existingLink = await prisma.userSocialLink.findFirst({
-            where: {
-              userId: user.id,
-              platform
-            }
-          });
-
-          if (existingLink) {
-            return { 
-              success: false, 
-              message: `A ${platform} link already exists for this user` 
-            };
-          }
-
-          const newLink = await prisma.userSocialLink.create({
-            data: {
+          const { data: newLink, error: createError } = await supabase
+            .from('userSocialLinks')
+            .insert({
               userId: user.id,
               platform,
-              url,
-              username,
-              isPublic: isPublic !== undefined ? isPublic : true
-            }
-          });
-
-          return { success: true, socialLink: newLink };
+              url
+            })
+            .select()
+            .single();
+          
+          if (createError || !newLink) {
+            console.error(`Error creating ${platform} link:`, createError);
+            continue; // Skip this link
+          }
+          
+          createdLinks.push(newLink);
         }
-      })
-    );
-
-    // Get all updated social links
-    const updatedSocialLinks = await prisma.userSocialLink.findMany({
-      where: { userId: user.id }
-    });
-
+      }
+    }
+    
+    // Get all user social links after updates
+    const { data: allSocialLinks, error: fetchError } = await supabase
+      .from('userSocialLinks')
+      .select('*')
+      .eq('userId', user.id);
+    
+    if (fetchError) {
+      console.error('Error fetching updated social links:', fetchError);
+      return NextResponse.json({
+        message: 'Some links updated but failed to fetch all links',
+        updated: updatedLinks.length,
+        created: createdLinks.length
+      }, { status: 207 });
+    }
+    
     return NextResponse.json({
-      message: 'Social links updated',
-      results,
-      socialLinks: updatedSocialLinks
+      socialLinks: allSocialLinks || [],
+      updated: updatedLinks.length,
+      created: createdLinks.length
     }, { status: 200 });
   } catch (error) {
     console.error('Update social links error:', error);

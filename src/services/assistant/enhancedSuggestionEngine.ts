@@ -3,7 +3,7 @@
  * Integrates rule-based logic with ML capabilities for more intelligent suggestions
  */
 
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import { AssistantMode, AssistantSuggestion } from '@/contexts/AssistantContext/types';
 import mlIntegration from './mlIntegration';
 import aiAssistantService from './aiAssistantService';
@@ -34,18 +34,37 @@ export const enhancedSuggestionEngine = {
   ): Promise<Partial<AssistantSuggestion>[]> {
     try {
       // Get basic user data
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          skills: {
-            include: {
-              skill: true
-            }
-          }
-        }
-      });
+      const supabase = getSupabaseServiceClient();
+      
+      // Get user data
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select('id, name, email, role')
+        .eq('id', userId)
+        .single();
+        
+      if (userError) {
+        console.error('Error fetching user:', userError);
+        throw new Error('Error fetching user data');
+      }
+      
+      // Get user skills
+      const { data: userSkills, error: skillsError } = await supabase
+        .from('userSkills')
+        .select('*, skill(*)')
+        .eq('userId', userId);
+        
+      if (skillsError) {
+        console.error('Error fetching user skills:', skillsError);
+      }
+      
+      // Combine user with skills
+      const userWithSkills = {
+        ...user,
+        skills: userSkills || []
+      };
 
-      if (!user) {
+      if (!userWithSkills) {
         throw new Error('User not found');
       }
 

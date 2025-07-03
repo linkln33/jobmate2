@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/jobs - Get all jobs with filtering options
 export async function GET(req: NextRequest) {
@@ -44,38 +42,84 @@ export async function GET(req: NextRequest) {
       where.customerId = user.id;
     }
 
-    // Get jobs with pagination
-    const [jobs, totalCount] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        include: {
-          serviceCategory: true,
-          customer: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImageUrl: true,
-            },
-          },
-          media: true,
-        },
-        skip,
-        take: limit,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      }),
-      prisma.job.count({ where }),
-    ]);
+    const supabase = getSupabaseServiceClient();
+    
+    // Build query
+    let query = supabase
+      .from('jobs')
+      .select(`
+        *,
+        serviceCategory:categoryId(*),
+        customer:customerId(*),
+        specialist:specialistId(*),
+        media:id(*),
+        proposals:id(count)
+      `)
+      .order('createdAt', { ascending: false })
+      .range(skip, skip + limit - 1);
+    
+    // Apply filters
+    if (category) {
+      query = query.eq('categoryId', category);
+    }
+    
+    if (status) {
+      query = query.eq('status', status);
+    }
+    
+    // Apply user role-based filters
+    if (user.role === 'SPECIALIST') {
+      query = query.eq('status', 'OPEN');
+    } else if (user.role === 'CUSTOMER') {
+      query = query.eq('customerId', user.id);
+    }
+    
+    // Execute query
+    const { data: jobs, error } = await query;
+    
+    if (error) {
+      console.error('Error fetching jobs:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch jobs' },
+        { status: 500 }
+      );
+    }
+    
+    // Get total count
+    let countQuery = supabase
+      .from('jobs')
+      .select('id', { count: 'exact', head: true });
+      
+    // Apply the same filters to count query
+    if (category) {
+      countQuery = countQuery.eq('categoryId', category);
+    }
+    
+    if (status) {
+      countQuery = countQuery.eq('status', status);
+    }
+    
+    if (user.role === 'SPECIALIST') {
+      countQuery = countQuery.eq('status', 'OPEN');
+    } else if (user.role === 'CUSTOMER') {
+      countQuery = countQuery.eq('customerId', user.id);
+    }
+    
+    const { count: totalCount, error: countError } = await countQuery;
+    
+    if (countError) {
+      console.error('Error counting jobs:', countError);
+    }
 
+    const total = totalCount || 0;
+    
     return NextResponse.json({
       jobs,
       pagination: {
-        total: totalCount,
+        total,
         page,
         limit,
-        pages: Math.ceil(totalCount / limit),
+        pages: Math.ceil(total / limit),
       },
     });
   } catch (error) {
@@ -130,9 +174,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const supabase = getSupabaseServiceClient();
+    
     // Create the job
-    const job = await prisma.job.create({
-      data: {
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .insert({
         title,
         description,
         status: 'OPEN',
@@ -146,14 +193,20 @@ export async function POST(req: NextRequest) {
         longitude: longitude ? parseFloat(longitude) : 0,
         scheduledStartTime: startDate ? new Date(startDate) : null,
         scheduledEndTime: endDate ? new Date(endDate) : null,
-        serviceCategory: {
-          connect: { id: categoryId },
-        },
-        customer: {
-          connect: { id: user.id },
-        },
-      },
-    });
+        categoryId: categoryId,
+        customerId: user.id,
+        createdAt: new Date()
+      })
+      .select()
+      .single();
+      
+    if (jobError) {
+      console.error('Error creating job:', jobError);
+      return NextResponse.json(
+        { message: 'Failed to create job' },
+        { status: 500 }
+      );
+    }
 
     // Add job media if provided
     if (mediaUrls && mediaUrls.length > 0) {
@@ -163,22 +216,38 @@ export async function POST(req: NextRequest) {
         type: url.match(/\.(jpg|jpeg|png|gif)$/i) ? 'IMAGE' : 'OTHER',
       }));
 
-      await prisma.jobMedia.createMany({
-        data: mediaItems,
-      });
+      const { error: mediaError } = await supabase
+        .from('jobMedia')
+        .insert(mediaItems);
+        
+      if (mediaError) {
+        console.error('Error adding job media:', mediaError);
+        // Continue anyway since the job was created
+      }
     }
 
     // Get the created job with related data
-    const createdJob = await prisma.job.findUnique({
-      where: { id: job.id },
-      include: {
-        serviceCategory: true,
-        customer: true,
-        specialist: true,
-        media: true,
-        proposals: true
-      },
-    });
+    const { data: createdJob, error: fetchError } = await supabase
+      .from('jobs')
+      .select(`
+        *,
+        serviceCategory:categoryId(*),
+        customer:customerId(*),
+        specialist:specialistId(*),
+        media:id(*),
+        proposals:id(*)
+      `)
+      .eq('id', job.id)
+      .single();
+      
+    if (fetchError) {
+      console.error('Error fetching created job:', fetchError);
+      // Return the basic job data anyway
+      return NextResponse.json(
+        { message: 'Job created successfully', job },
+        { status: 201 }
+      );
+    }
 
     return NextResponse.json(
       { message: 'Job created successfully', job: createdJob },

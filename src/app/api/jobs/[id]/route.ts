@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/jobs/[id] - Get a specific job by ID
 export async function GET(
@@ -21,62 +19,23 @@ export async function GET(
 
     const jobId = params.id;
 
+    const supabase = getSupabaseServiceClient();
+    
     // Get the job with related data
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-      include: {
-        serviceCategory: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-            email: user.role === 'ADMIN' ? true : false, // Only admins can see email
-          },
-        },
-        media: true,
-        proposals: user.role === 'CUSTOMER' || user.role === 'ADMIN' ? {
-          include: {
-            specialist: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true,
-              },
-            },
-          },
-        } : {
-          where: { specialistId: user.id }, // Specialists can only see their own proposals
-          include: {
-            specialist: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true,
-              },
-            },
-          },
-        },
-        milestones: true,
-        reviews: {
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    if (!job) {
+    let jobQuery = supabase
+      .from('jobs')
+      .select(`
+        *,
+        serviceCategory:categoryId(*),
+        customer:customerId(id, firstName, lastName, profileImageUrl${user.role === 'ADMIN' ? ', email' : ''}),
+        media:id(*)
+      `)
+      .eq('id', jobId)
+      .single();
+      
+    const { data: job, error: jobError } = await jobQuery;
+    
+    if (jobError || !job) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
@@ -124,12 +83,16 @@ export async function PATCH(
     const jobId = params.id;
     const body = await req.json();
 
+    const supabase = getSupabaseServiceClient();
+    
     // Get the job
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-    });
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, customerId, status')
+      .eq('id', jobId)
+      .single();
 
-    if (!job) {
+    if (jobError || !job) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
@@ -185,37 +148,33 @@ export async function PATCH(
     }
 
     // Update the job
-    const updatedJob = await prisma.job.update({
-      where: { id: jobId },
-      data: updateData,
-      include: {
-        serviceCategory: true,
-        customer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        },
-        specialist: body.specialistId ? {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true,
-          },
-        } : undefined,
-        media: true,
-      },
-    });
-
+    const { data: updatedJob, error: updateError } = await supabase
+      .from('jobs')
+      .update(updateData)
+      .eq('id', jobId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      console.error('Error updating job:', updateError);
+      return NextResponse.json(
+        { message: 'Failed to update job' },
+        { status: 500 }
+      );
+    }
+    
     // Handle media updates if provided
     if (body.mediaUrls && Array.isArray(body.mediaUrls)) {
       // Delete existing media
-      await prisma.jobMedia.deleteMany({
-        where: { jobId },
-      });
+      const { error: deleteMediaError } = await supabase
+        .from('jobMedia')
+        .delete()
+        .eq('jobId', jobId);
+        
+      if (deleteMediaError) {
+        console.error('Error deleting job media:', deleteMediaError);
+        // Continue anyway since the job was updated
+      }
 
       // Add new media
       const mediaItems = body.mediaUrls.map((url: string) => ({
@@ -225,15 +184,25 @@ export async function PATCH(
       }));
 
       if (mediaItems.length > 0) {
-        await prisma.jobMedia.createMany({
-          data: mediaItems,
-        });
+        const { error: insertMediaError } = await supabase
+          .from('jobMedia')
+          .insert(mediaItems);
+          
+        if (insertMediaError) {
+          console.error('Error inserting job media:', insertMediaError);
+          // Continue anyway since the job was updated
+        }
       }
 
       // Refresh job with updated media
-      updatedJob.media = await prisma.jobMedia.findMany({
-        where: { jobId },
-      });
+      const { data: updatedMedia } = await supabase
+        .from('jobMedia')
+        .select('*')
+        .eq('jobId', jobId);
+        
+      if (updatedMedia) {
+        updatedJob.media = updatedMedia;
+      }
     }
 
     return NextResponse.json({
@@ -266,12 +235,16 @@ export async function DELETE(
 
     const jobId = params.id;
 
+    const supabase = getSupabaseServiceClient();
+    
     // Get the job
-    const job = await prisma.job.findUnique({
-      where: { id: jobId },
-    });
+    const { data: job, error: jobError } = await supabase
+      .from('jobs')
+      .select('id, customerId, status')
+      .eq('id', jobId)
+      .single();
 
-    if (!job) {
+    if (jobError || !job) {
       return NextResponse.json(
         { message: 'Job not found' },
         { status: 404 }
@@ -297,12 +270,49 @@ export async function DELETE(
       );
     }
 
-    // Delete related records first
-    await prisma.$transaction([
-      prisma.jobMedia.deleteMany({ where: { jobId } }),
-      prisma.jobProposal.deleteMany({ where: { jobId } }),
-      prisma.job.delete({ where: { id: jobId } }),
-    ]);
+    // Delete related records first - in Supabase we need to do this sequentially
+    
+    // 1. Delete job media
+    const { error: mediaDeleteError } = await supabase
+      .from('jobMedia')
+      .delete()
+      .eq('jobId', jobId);
+      
+    if (mediaDeleteError) {
+      console.error('Error deleting job media:', mediaDeleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete job media' },
+        { status: 500 }
+      );
+    }
+    
+    // 2. Delete job proposals
+    const { error: proposalsDeleteError } = await supabase
+      .from('jobProposals')
+      .delete()
+      .eq('jobId', jobId);
+      
+    if (proposalsDeleteError) {
+      console.error('Error deleting job proposals:', proposalsDeleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete job proposals' },
+        { status: 500 }
+      );
+    }
+    
+    // 3. Delete the job itself
+    const { error: jobDeleteError } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', jobId);
+      
+    if (jobDeleteError) {
+      console.error('Error deleting job:', jobDeleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete job' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Job deleted successfully',

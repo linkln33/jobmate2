@@ -1,8 +1,8 @@
-import { prisma } from '@/lib/prisma';
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 import { matchingService } from '@/services/server/matching-service';
 import { AssistantMode, AssistantSuggestion } from '@/contexts/AssistantContext/types';
 import descriptionGenerator from './descriptionGenerator';
-import { Prisma, User } from '@prisma/client';
+import { JsonObject, JsonValue, User } from '@/lib/types';
 
 /**
  * Rule-based suggestion engine for the Unified Adaptive AI Assistant
@@ -22,50 +22,59 @@ export const suggestionEngine = {
     context?: string
   ): Promise<Partial<AssistantSuggestion>[]> {
     try {
-      // Get user data
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          skills: {
-            include: {
-              skill: true
-            }
-          }
-          // Note: jobsPosted and jobsAppliedTo are handled via type casting below
-        }
-      }) as any; // Cast to any to avoid TypeScript errors with custom fields
+      const supabase = getSupabaseServiceClient();
       
-      // Fetch jobs posted by user separately to avoid Prisma schema type issues
-      const jobsPosted = await prisma.job.findMany({
-        where: { 
-          customerId: userId,
-          status: 'OPEN'
-        },
-        take: 5,
-        orderBy: { createdAt: 'desc' }
-      });
+      // Get user data
+      const { data: user, error: userError } = await supabase
+        .from('users')
+        .select(`
+          *,
+          userSkills!userId(*, skills!skillId(*))
+        `)
+        .eq('id', userId)
+        .single();
+        
+      if (userError || !user) {
+        throw new Error('User not found: ' + (userError?.message || ''));
+      }
+      
+      // Fetch jobs posted by user
+      const { data: jobsPosted, error: jobsError } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('customerId', userId)
+        .eq('status', 'OPEN')
+        .order('createdAt', { ascending: false })
+        .limit(5);
+        
+      if (jobsError) {
+        console.error('Error fetching jobs posted:', jobsError);
+      }
       
       // Fetch jobs applied to by user
-      const jobsAppliedTo = await (prisma as any).application?.findMany({
-        where: { applicantId: userId },
-        take: 5,
-        orderBy: { createdAt: 'desc' }
-      });
-      
-      // Attach to user object
-      user.jobsPosted = jobsPosted;
-      user.jobsAppliedTo = jobsAppliedTo;
-
-      if (!user) {
-        throw new Error('User not found');
+      const { data: jobsAppliedTo, error: applicationsError } = await supabase
+        .from('applications')
+        .select('*')
+        .eq('applicantId', userId)
+        .order('createdAt', { ascending: false })
+        .limit(5);
+        
+      if (applicationsError) {
+        console.error('Error fetching applications:', applicationsError);
       }
+      
+      // Attach to user object (cast to any to avoid TypeScript errors)
+      (user as any).jobsPosted = jobsPosted || [];
+      (user as any).jobsAppliedTo = jobsAppliedTo || [];
 
-      // Get user preferences - use try/catch since this model might not exist yet
+      // Get user preferences
       let preferences = null;
       try {
-        preferences = await (prisma as any).assistantPreference.findUnique({
-          where: { userId }
-        });
+        const { data: prefsData } = await supabase
+          .from('assistantPreferences')
+          .select('*')
+          .eq('userId', userId)
+          .maybeSingle();
       } catch (error) {
         console.warn('Assistant preferences not available:', error);
       }
@@ -346,9 +355,13 @@ export const suggestionEngine = {
       // Check if payment method is set up
       let hasPaymentMethod = null;
       try {
-        hasPaymentMethod = await (prisma as any).paymentMethod.findFirst({
-          where: { userId }
-        });
+        const { data: paymentMethod } = await supabase
+          .from('paymentMethods')
+          .select('*')
+          .eq('userId', userId)
+          .maybeSingle();
+          
+        hasPaymentMethod = paymentMethod;
       } catch (error) {
         console.warn('Payment method check failed:', error);
       }
@@ -369,12 +382,14 @@ export const suggestionEngine = {
       // Check for pending payments
       let pendingPayments = [];
       try {
-        pendingPayments = await (prisma as any).payment.findMany({
-          where: {
-            userId,
-            status: 'PENDING'
-          }
-        });
+        const { data: pendingPaymentsData } = await supabase
+          .from('payments')
+          .select('*')
+          .eq('userId', userId)
+          .eq('status', 'PENDING')
+          .order('createdAt', { ascending: false });
+          
+        pendingPayments = pendingPaymentsData || [];
       } catch (error) {
         console.warn('Pending payments check failed:', error);
       }

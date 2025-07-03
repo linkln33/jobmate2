@@ -6,7 +6,7 @@
  */
 
 import { AssistantMode } from '@/contexts/AssistantContext/types';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // Job categories with base rates (hourly)
 export interface JobCategory {
@@ -396,23 +396,33 @@ export const getPriceEstimateFromQuery = (
  */
 export const getUserPriceCalculatorHistory = async (userId: string) => {
   try {
+    const supabase = getSupabaseServiceClient();
+    
     // Get all memory logs related to price calculator
-    const memoryLogs = await prisma.assistantMemoryLog.findMany({
-      where: {
-        userId,
-        interactionType: 'price_calculator',
-        context: {
-          path: ['$'],
-          not: null
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 10 // Get the 10 most recent interactions
-    });
-
-    if (memoryLogs.length === 0) {
+    const { data: memoryLogs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .eq('interactionType', 'price_calculator')
+      .not('context', 'is', null)
+      .order('createdAt', { ascending: false })
+      .limit(10); // Get the 10 most recent interactions
+      
+    if (error) {
+      console.error('Error fetching price calculator history:', error);
+      return {
+        mostFrequentCategory: null,
+        mostFrequentComplexity: null,
+        mostFrequentExperience: null,
+        mostFrequentRegion: null,
+        mostFrequentDuration: null,
+        averageHours: 0
+      };
+    }
+    
+    const safeMemoryLogs = memoryLogs || [];
+    
+    if (safeMemoryLogs.length === 0) {
       return undefined;
     }
 
@@ -425,31 +435,41 @@ export const getUserPriceCalculatorHistory = async (userId: string) => {
     let totalHours = 0;
     let hoursCount = 0;
 
-    memoryLogs.forEach(log => {
-      const context = log.context as any;
-      
-      if (context.jobCategory) {
-        categoryFrequency[context.jobCategory] = (categoryFrequency[context.jobCategory] || 0) + 1;
+    const calculatorData = safeMemoryLogs.map(log => {
+      try {
+        const context = typeof log.context === 'string' 
+          ? JSON.parse(log.context)
+          : log.context;
+          
+        return context.calculatorData || null;
+      } catch (e) {
+        return null;
+      }
+    }).filter(Boolean);
+
+    calculatorData.forEach(data => {
+      if (data.jobCategory) {
+        categoryFrequency[data.jobCategory] = (categoryFrequency[data.jobCategory] || 0) + 1;
       }
       
-      if (context.complexity) {
-        complexityFrequency[context.complexity] = (complexityFrequency[context.complexity] || 0) + 1;
+      if (data.complexity) {
+        complexityFrequency[data.complexity] = (complexityFrequency[data.complexity] || 0) + 1;
       }
       
-      if (context.experience) {
-        experienceFrequency[context.experience] = (experienceFrequency[context.experience] || 0) + 1;
+      if (data.experience) {
+        experienceFrequency[data.experience] = (experienceFrequency[data.experience] || 0) + 1;
       }
       
-      if (context.region) {
-        regionFrequency[context.region] = (regionFrequency[context.region] || 0) + 1;
+      if (data.region) {
+        regionFrequency[data.region] = (regionFrequency[data.region] || 0) + 1;
       }
       
-      if (context.duration) {
-        durationFrequency[context.duration] = (durationFrequency[context.duration] || 0) + 1;
+      if (data.duration) {
+        durationFrequency[data.duration] = (durationFrequency[data.duration] || 0) + 1;
       }
       
-      if (context.hours) {
-        totalHours += context.hours;
+      if (data.hours) {
+        totalHours += data.hours;
         hoursCount++;
       }
     });
@@ -501,15 +521,21 @@ export const logPriceCalculatorUsage = async (
   }
 ) => {
   try {
-    await prisma.assistantMemoryLog.create({
-      data: {
+    const supabase = getSupabaseServiceClient();
+    
+    const { error } = await supabase
+      .from('assistantMemoryLogs')
+      .insert({
         userId,
         mode: 'PROJECT_SETUP',
         interactionType: 'price_calculator',
-        context: calculatorData as any,
+        context: calculatorData,
         routePath: '/project/price-calculator'
-      }
-    });
+      });
+      
+    if (error) {
+      console.error('Error inserting price calculator log:', error);
+    }
   } catch (error) {
     console.error('Error logging price calculator usage:', error);
   }

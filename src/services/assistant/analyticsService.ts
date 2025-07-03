@@ -4,7 +4,7 @@
  * Provides data aggregation and analysis for the assistant usage
  */
 
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import { AssistantMode } from '@/contexts/AssistantContext/types';
 
 /**
@@ -14,15 +14,31 @@ import { AssistantMode } from '@/contexts/AssistantContext/types';
  */
 export const getAssistantUsageByMode = async (userId: string) => {
   try {
-    const modeStats = await prisma.assistantMemoryLog.groupBy({
-      by: ['mode'],
-      where: {
-        userId
-      },
-      _count: {
-        id: true
-      }
+    const supabase = getSupabaseServiceClient();
+    
+    // Supabase doesn't have direct groupBy functionality like Prisma
+    // We need to fetch all logs and then group them in JavaScript
+    const { data: logs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('mode')
+      .eq('userId', userId);
+      
+    if (error) {
+      console.error('Error fetching assistant logs:', error);
+      return [];
+    }
+    
+    // Group by mode and count
+    const modeMap = new Map();
+    logs?.forEach(log => {
+      const mode = log.mode;
+      modeMap.set(mode, (modeMap.get(mode) || 0) + 1);
     });
+    
+    const modeStats = Array.from(modeMap.entries()).map(([mode, count]) => ({
+      mode,
+      _count: { id: count }
+    }));
 
     return modeStats.map(stat => ({
       mode: stat.mode,
@@ -41,15 +57,30 @@ export const getAssistantUsageByMode = async (userId: string) => {
  */
 export const getAssistantUsageByInteractionType = async (userId: string) => {
   try {
-    const interactionStats = await prisma.assistantMemoryLog.groupBy({
-      by: ['interactionType'],
-      where: {
-        userId
-      },
-      _count: {
-        id: true
-      }
+    const supabase = getSupabaseServiceClient();
+    
+    // Fetch all logs and group them in JavaScript
+    const { data: logs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('interactionType')
+      .eq('userId', userId);
+      
+    if (error) {
+      console.error('Error fetching assistant logs:', error);
+      return [];
+    }
+    
+    // Group by interaction type and count
+    const interactionMap = new Map();
+    logs?.forEach(log => {
+      const interactionType = log.interactionType;
+      interactionMap.set(interactionType, (interactionMap.get(interactionType) || 0) + 1);
     });
+    
+    const interactionStats = Array.from(interactionMap.entries()).map(([interactionType, count]) => ({
+      interactionType,
+      _count: { id: count }
+    }));
 
     return interactionStats.map(stat => ({
       interactionType: stat.interactionType,
@@ -72,20 +103,23 @@ export const getAssistantUsageOverTime = async (userId: string, days: number = 3
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
     
-    const usageLogs = await prisma.assistantMemoryLog.findMany({
-      where: {
-        userId,
-        createdAt: {
-          gte: startDate
-        }
-      },
-      select: {
-        createdAt: true
-      },
-      orderBy: {
-        createdAt: 'asc'
-      }
-    });
+    const supabase = getSupabaseServiceClient();
+    
+    const { data: usageLogs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('createdAt')
+      .eq('userId', userId)
+      .gte('createdAt', startDate.toISOString());
+      
+    if (error) {
+      console.error('Error fetching assistant usage logs:', error);
+      return [];
+    }
+    
+    // Sort logs by creation date
+    const sortedLogs = usageLogs?.sort((a, b) => 
+      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    ) || [];
 
     // Group by day
     const dailyUsage: Record<string, number> = {};
@@ -123,32 +157,51 @@ export const getAssistantUsageOverTime = async (userId: string, days: number = 3
  */
 export const getSuggestionEngagementMetrics = async (userId: string) => {
   try {
-    const totalSuggestions = await prisma.assistantSuggestion.count({
-      where: {
-        userId
-      }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    const clickedSuggestions = await prisma.assistantSuggestion.count({
-      where: {
-        userId,
-        status: 'clicked'
-      }
-    });
+    // Get total suggestions count
+    const { count: totalSuggestions, error: totalError } = await supabase
+      .from('assistantSuggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', userId);
+      
+    if (totalError) {
+      console.error('Error counting total suggestions:', totalError);
+      return { totalSuggestions: 0, clickRate: 0, dismissRate: 0, pendingRate: 0 };
+    }
     
-    const dismissedSuggestions = await prisma.assistantSuggestion.count({
-      where: {
-        userId,
-        status: 'dismissed'
-      }
-    });
+    // Get clicked suggestions count
+    const { count: clickedSuggestions, error: clickedError } = await supabase
+      .from('assistantSuggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', userId)
+      .eq('status', 'clicked');
+      
+    if (clickedError) {
+      console.error('Error counting clicked suggestions:', clickedError);
+    }
     
-    const pendingSuggestions = await prisma.assistantSuggestion.count({
-      where: {
-        userId,
-        status: 'pending'
-      }
-    });
+    // Get dismissed suggestions count
+    const { count: dismissedSuggestions, error: dismissedError } = await supabase
+      .from('assistantSuggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', userId)
+      .eq('status', 'dismissed');
+      
+    if (dismissedError) {
+      console.error('Error counting dismissed suggestions:', dismissedError);
+    }
+    
+    // Get pending suggestions count
+    const { count: pendingSuggestions, error: pendingError } = await supabase
+      .from('assistantSuggestions')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', userId)
+      .eq('status', 'pending');
+      
+    if (pendingError) {
+      console.error('Error counting pending suggestions:', pendingError);
+    }
     
     return {
       total: totalSuggestions,
@@ -176,24 +229,38 @@ export const getSuggestionEngagementMetrics = async (userId: string) => {
  */
 export const getMostUsedFeatures = async (userId: string) => {
   try {
-    const featureStats = await prisma.assistantMemoryLog.groupBy({
-      by: ['interactionType'],
-      where: {
-        userId
-      },
-      _count: {
-        id: true
-      },
-      orderBy: {
-        _count: {
-          id: 'desc'
-        }
-      },
-      take: 5
+    const supabase = getSupabaseServiceClient();
+    
+    // Fetch all logs with features
+    const { data: logs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('feature')
+      .eq('userId', userId)
+      .not('feature', 'is', null);
+      
+    if (error) {
+      console.error('Error fetching feature logs:', error);
+      return [];
+    }
+    
+    // Group by feature and count
+    const featureMap = new Map();
+    logs?.forEach(log => {
+      const feature = log.feature;
+      featureMap.set(feature, (featureMap.get(feature) || 0) + 1);
     });
+    
+    // Sort by count and take top 5
+    const featureStats = Array.from(featureMap.entries())
+      .map(([feature, count]) => ({
+        feature,
+        _count: { id: count }
+      }))
+      .sort((a, b) => b._count.id - a._count.id)
+      .slice(0, 5);
 
     return featureStats.map(stat => ({
-      feature: stat.interactionType,
+      feature: stat.feature,
       count: stat._count.id
     }));
   } catch (error) {

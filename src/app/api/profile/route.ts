@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/profile
@@ -17,56 +17,103 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Get the user with related profile data based on their role
-    const userWithProfile = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: {
-        customerProfile: user.role === 'CUSTOMER',
-        specialistProfile: user.role === 'SPECIALIST',
-        skills: {
-          include: {
-            skill: true,
-            endorsements: {
-              include: {
-                endorser: {
-                  select: {
-                    id: true,
-                    firstName: true,
-                    lastName: true,
-                    profileImageUrl: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        socialLinks: true,
-        portfolioItems: true,
-        reviews: {
-          where: { isPublic: true },
-          include: {
-            reviewer: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true
-              }
-            },
-            reviewMedia: true
-          },
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        },
-        badges: {
-          include: {
-            badge: true
-          }
-        }
+    const supabase = getSupabaseServiceClient();
+    
+    // Get the user with basic information
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+      
+    if (userError || !userData) {
+      console.error('Error fetching user data:', userError);
+      return NextResponse.json(
+        { message: 'Failed to fetch profile' },
+        { status: 500 }
+      );
+    }
+    
+    // Get profile data based on user role
+    let profileData = null;
+    if (user.role === 'CUSTOMER') {
+      const { data: customerProfile, error: customerError } = await supabase
+        .from('customerProfiles')
+        .select('*')
+        .eq('userId', user.id)
+        .single();
+        
+      if (!customerError) {
+        profileData = customerProfile;
       }
-    });
+    } else if (user.role === 'SPECIALIST') {
+      const { data: specialistProfile, error: specialistError } = await supabase
+        .from('specialistProfiles')
+        .select('*')
+        .eq('userId', user.id)
+        .single();
+        
+      if (!specialistError) {
+        profileData = specialistProfile;
+      }
+    }
+    
+    // Get user skills with endorsements
+    const { data: userSkills, error: skillsError } = await supabase
+      .from('userSkills')
+      .select(`
+        *,
+        skill:skillId(*),
+        endorsements:id(*, endorser:endorserId(id, firstName, lastName, profileImageUrl))
+      `)
+      .eq('userId', user.id);
+      
+    // Get social links
+    const { data: socialLinks, error: socialsError } = await supabase
+      .from('socialLinks')
+      .select('*')
+      .eq('userId', user.id);
+      
+    // Get portfolio items
+    const { data: portfolioItems, error: portfolioError } = await supabase
+      .from('portfolioItems')
+      .select('*')
+      .eq('userId', user.id);
+      
+    // Get reviews
+    const { data: reviews, error: reviewsError } = await supabase
+      .from('reviews')
+      .select(`
+        *,
+        reviewer:reviewerId(id, firstName, lastName, profileImageUrl),
+        reviewMedia:reviewId(*)
+      `)
+      .eq('revieweeId', user.id)
+      .eq('isPublic', true)
+      .order('createdAt', { ascending: false })
+      .limit(10);
+    // Get user badges
+    const { data: userBadges, error: badgesError } = await supabase
+      .from('userBadges')
+      .select(`
+        *,
+        badge:badgeId(*)
+      `)
+      .eq('userId', user.id);
+      
+    // Combine all data into a single profile object
+    const userWithProfile = {
+      ...userData,
+      customerProfile: user.role === 'CUSTOMER' ? profileData : null,
+      specialistProfile: user.role === 'SPECIALIST' ? profileData : null,
+      skills: userSkills || [],
+      socialLinks: socialLinks || [],
+      portfolioItems: portfolioItems || [],
+      reviews: reviews || [],
+      badges: userBadges || []
+    };
 
-    if (!userWithProfile) {
+    if (!userData) {
       return NextResponse.json(
         { message: 'User profile not found' },
         { status: 404 }
@@ -121,158 +168,299 @@ export async function PUT(req: NextRequest) {
       skills
     } = data;
 
-    // Start a transaction to update all related data
-    const updatedUser = await prisma.$transaction(async (tx) => {
-      // Update basic user information
-      const updatedUser = await tx.user.update({
-        where: { id: user.id },
-        data: {
-          firstName,
-          lastName,
-          bio,
-          phone
-        }
-      });
-
-      // Update location-related information
-      if (location) {
+    const supabase = getSupabaseServiceClient();
+    
+    // Update basic user information
+    const { data: updatedUser, error: userUpdateError } = await supabase
+      .from('users')
+      .update({
+        firstName,
+        lastName,
+        bio,
+        phone
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+      
+    if (userUpdateError) {
+      console.error('Error updating user:', userUpdateError);
+      return NextResponse.json(
+        { message: 'Failed to update profile' },
+        { status: 500 }
+      );
+    }
+      
+    // Update location-related information
+    if (location) {
         const { address, city, state, zipCode, country, latitude, longitude } = location;
         
+        const locationData = {
+          address,
+          city,
+          state,
+          zipCode,
+          country,
+          latitude,
+          longitude
+        };
+        
         if (user.role === 'CUSTOMER') {
-          await tx.customerProfile.upsert({
-            where: { userId: user.id },
-            update: {
-              address,
-              city,
-              state,
-              zipCode,
-              country,
-              latitude,
-              longitude
-            },
-            create: {
-              userId: user.id,
-              address,
-              city,
-              state,
-              zipCode,
-              country,
-              latitude,
-              longitude
+          // Check if customer profile exists
+          const { data: existingProfile } = await supabase
+            .from('customerProfiles')
+            .select('userId')
+            .eq('userId', user.id)
+            .maybeSingle();
+            
+          if (existingProfile) {
+            // Update existing profile
+            const { error: updateError } = await supabase
+              .from('customerProfiles')
+              .update(locationData)
+              .eq('userId', user.id);
+              
+            if (updateError) {
+              console.error('Error updating customer profile:', updateError);
+              return NextResponse.json(
+                { message: 'Failed to update location information' },
+                { status: 500 }
+              );
             }
-          });
+          } else {
+            // Create new profile
+            const { error: createError } = await supabase
+              .from('customerProfiles')
+              .insert({
+                userId: user.id,
+                ...locationData
+              });
+              
+            if (createError) {
+              console.error('Error creating customer profile:', createError);
+              return NextResponse.json(
+                { message: 'Failed to create location information' },
+                { status: 500 }
+              );
+            }
+          }
         } else if (user.role === 'SPECIALIST') {
-          await tx.specialistProfile.upsert({
-            where: { userId: user.id },
-            update: {
-              address,
-              city,
-              state,
-              zipCode,
-              country,
-              latitude,
-              longitude
-            },
-            create: {
-              userId: user.id,
-              address,
-              city,
-              state,
-              zipCode,
-              country,
-              latitude,
-              longitude
+          // Check if specialist profile exists
+          const { data: existingProfile } = await supabase
+            .from('specialistProfiles')
+            .select('userId')
+            .eq('userId', user.id)
+            .maybeSingle();
+            
+          if (existingProfile) {
+            // Update existing profile
+            const { error: updateError } = await supabase
+              .from('specialistProfiles')
+              .update(locationData)
+              .eq('userId', user.id);
+              
+            if (updateError) {
+              console.error('Error updating specialist profile:', updateError);
+              return NextResponse.json(
+                { message: 'Failed to update location information' },
+                { status: 500 }
+              );
             }
-          });
+          } else {
+            // Create new profile
+            const { error: createError } = await supabase
+              .from('specialistProfiles')
+              .insert({
+                userId: user.id,
+                ...locationData
+              });
+              
+            if (createError) {
+              console.error('Error creating specialist profile:', createError);
+              return NextResponse.json(
+                { message: 'Failed to create location information' },
+                { status: 500 }
+              );
+            }
+          }
         }
       }
 
       // Update role-specific profile information
       if (user.role === 'CUSTOMER' && customerProfile) {
-        await tx.customerProfile.upsert({
-          where: { userId: user.id },
-          update: customerProfile,
-          create: {
-            userId: user.id,
-            ...customerProfile
+        // Check if customer profile exists
+        const { data: existingCustomerProfile } = await supabase
+          .from('customerProfiles')
+          .select('userId')
+          .eq('userId', user.id)
+          .maybeSingle();
+          
+        if (existingCustomerProfile) {
+          // Update existing profile
+          const { error: updateError } = await supabase
+            .from('customerProfiles')
+            .update(customerProfile)
+            .eq('userId', user.id);
+            
+          if (updateError) {
+            console.error('Error updating customer profile:', updateError);
+            return NextResponse.json(
+              { message: 'Failed to update customer profile' },
+              { status: 500 }
+            );
           }
-        });
+        } else {
+          // Create new profile
+          const { error: createError } = await supabase
+            .from('customerProfiles')
+            .insert({
+              userId: user.id,
+              ...customerProfile
+            });
+            
+          if (createError) {
+            console.error('Error creating customer profile:', createError);
+            return NextResponse.json(
+              { message: 'Failed to create customer profile' },
+              { status: 500 }
+            );
+          }
+        }
       } else if (user.role === 'SPECIALIST' && specialistProfile) {
-        await tx.specialistProfile.upsert({
-          where: { userId: user.id },
-          update: specialistProfile,
-          create: {
-            userId: user.id,
-            ...specialistProfile
+        // Check if specialist profile exists
+        const { data: existingSpecialistProfile } = await supabase
+          .from('specialistProfiles')
+          .select('userId')
+          .eq('userId', user.id)
+          .maybeSingle();
+          
+        if (existingSpecialistProfile) {
+          // Update existing profile
+          const { error: updateError } = await supabase
+            .from('specialistProfiles')
+            .update(specialistProfile)
+            .eq('userId', user.id);
+            
+          if (updateError) {
+            console.error('Error updating specialist profile:', updateError);
+            return NextResponse.json(
+              { message: 'Failed to update specialist profile' },
+              { status: 500 }
+            );
           }
-        });
+        } else {
+          // Create new profile
+          const { error: createError } = await supabase
+            .from('specialistProfiles')
+            .insert({
+              userId: user.id,
+              ...specialistProfile
+            });
+            
+          if (createError) {
+            console.error('Error creating specialist profile:', createError);
+            return NextResponse.json(
+              { message: 'Failed to create specialist profile' },
+              { status: 500 }
+            );
+          }
+        }
       }
 
       // Update skills if provided
       if (skills && skills.length > 0) {
         // First, get existing skills for the user
-        const existingSkills = await tx.userSkill.findMany({
-          where: { userId: user.id },
-          select: { skillId: true }
-        });
+        const { data: existingSkills, error: skillsError } = await supabase
+          .from('userSkills')
+          .select('skillId')
+          .eq('userId', user.id);
+          
+        if (skillsError) {
+          console.error('Error fetching existing skills:', skillsError);
+          return NextResponse.json(
+            { message: 'Failed to update skills' },
+            { status: 500 }
+          );
+        }
         
-        const existingSkillIds = existingSkills.map(skill => skill.skillId);
+        const existingSkillIds = existingSkills.map((skill: { skillId: string }) => skill.skillId);
         
         // Find skills to add (in skills but not in existingSkillIds)
-        const skillsToAdd = skills.filter((skill: { id: string; proficiencyLevel?: number }) => !existingSkillIds.includes(skill.id));
+        const skillsToAdd = skills.filter((skill: { id: string; proficiencyLevel?: number }) => 
+          !existingSkillIds.includes(skill.id));
         
         // Add new skills
-        for (const skill of skillsToAdd) {
-          await tx.userSkill.create({
-            data: {
-              userId: user.id,
-              skillId: skill.id,
-              proficiencyLevel: skill.proficiencyLevel || 1
-            }
-          });
+        if (skillsToAdd.length > 0) {
+          const skillsToInsert = skillsToAdd.map((skill: { id: string; proficiencyLevel?: number }) => ({
+            userId: user.id,
+            skillId: skill.id,
+            proficiencyLevel: skill.proficiencyLevel || 1
+          }));
+          
+          const { error: insertError } = await supabase
+            .from('userSkills')
+            .insert(skillsToInsert);
+            
+          if (insertError) {
+            console.error('Error adding new skills:', insertError);
+            return NextResponse.json(
+              { message: 'Failed to add new skills' },
+              { status: 500 }
+            );
+          }
         }
         
         // Find skills to remove (in existingSkillIds but not in skills)
         const skillIdsToKeep = skills.map((skill: { id: string }) => skill.id);
-        const skillsToRemove = existingSkillIds.filter(id => !skillIdsToKeep.includes(id));
+        const skillsToRemove = existingSkillIds.filter((id: string) => !skillIdsToKeep.includes(id));
         
         // Remove skills that are no longer in the list
         if (skillsToRemove.length > 0) {
-          await tx.userSkill.deleteMany({
-            where: {
-              userId: user.id,
-              skillId: { in: skillsToRemove }
-            }
-          });
+          const { error: deleteError } = await supabase
+            .from('userSkills')
+            .delete()
+            .eq('userId', user.id)
+            .in('skillId', skillsToRemove);
+            
+          if (deleteError) {
+            console.error('Error removing skills:', deleteError);
+            return NextResponse.json(
+              { message: 'Failed to remove skills' },
+              { status: 500 }
+            );
+          }
         }
       }
 
-      return updatedUser;
-    });
-
-    // Get the updated user with all related data
-    const updatedUserWithProfile = await prisma.user.findUnique({
-      where: { id: user.id },
-      include: {
-        customerProfile: user.role === 'CUSTOMER',
-        specialistProfile: user.role === 'SPECIALIST',
-        skills: {
-          include: {
-            skill: true
-          }
-        },
-        socialLinks: true,
-        portfolioItems: true
+      // Get the updated user with all related data
+      const { data: updatedUserWithProfile, error: profileError } = await supabase
+        .from('users')
+        .select(`
+          *,
+          customerProfiles!userId(*),
+          specialistProfiles!userId(*),
+          userSkills!userId(*, skills!skillId(*)),
+          socialLinks!userId(*),
+          portfolioItems!userId(*)
+        `)
+        .eq('id', user.id)
+        .single();
+        
+      if (profileError) {
+        console.error('Error fetching updated profile:', profileError);
+        return NextResponse.json(
+          { message: 'Failed to fetch updated profile' },
+          { status: 500 }
+        );
       }
-    });
 
-    // The user object already doesn't contain passwordHash due to our select options
-    const userWithoutPassword = updatedUserWithProfile;
+      // The user object already doesn't contain passwordHash due to our select options
+      const userWithoutPassword = updatedUserWithProfile;
 
-    return NextResponse.json({
-      profile: userWithoutPassword,
-      message: 'Profile updated successfully'
-    }, { status: 200 });
+      return NextResponse.json({
+        profile: userWithoutPassword,
+        message: 'Profile updated successfully'
+      }, { status: 200 });
   } catch (error) {
     console.error('Update profile error:', error);
     return NextResponse.json(
@@ -286,9 +474,16 @@ export async function PUT(req: NextRequest) {
  * Helper function to calculate review statistics for a user
  */
 async function calculateReviewStatistics(userId: string) {
-  const reviews = await prisma.review.findMany({
-    where: { revieweeId: userId }
-  });
+  const supabase = getSupabaseServiceClient();
+  const { data: reviews, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('revieweeId', userId);
+    
+  if (error) {
+    console.error('Error fetching reviews for statistics:', error);
+    return null;
+  }
 
   if (reviews.length === 0) {
     return {
@@ -309,35 +504,45 @@ async function calculateReviewStatistics(userId: string) {
     };
   }
 
+  // Define review type for TypeScript
+  type Review = {
+    reviewType: 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE';
+    overallRating: number;
+    timingRating: number | null;
+    satisfactionRating: number | null;
+    costRating: number | null;
+    communicationRating: number | null;
+  };
+  
   // Calculate review type breakdown
-  const positive = reviews.filter(r => r.reviewType === 'POSITIVE').length;
-  const neutral = reviews.filter(r => r.reviewType === 'NEUTRAL').length;
-  const negative = reviews.filter(r => r.reviewType === 'NEGATIVE').length;
+  const positive = reviews.filter((r: any) => r.reviewType === 'POSITIVE').length;
+  const neutral = reviews.filter((r: any) => r.reviewType === 'NEUTRAL').length;
+  const negative = reviews.filter((r: any) => r.reviewType === 'NEGATIVE').length;
   
   // Calculate positive percentage
   const positivePercentage = reviews.length > 0 ? (positive / reviews.length) * 100 : 0;
   
   // Calculate overall average rating
   const averageRating = reviews.length > 0
-    ? reviews.reduce((sum: number, review) => sum + review.overallRating, 0) / reviews.length
+    ? reviews.reduce((sum: number, review: any) => sum + review.overallRating, 0) / reviews.length
     : 0;
   
   // Calculate criteria averages
   const timingRatings = reviews
-    .filter((r): r is typeof r & { timingRating: number } => r.timingRating !== null)
-    .map(r => r.timingRating);
+    .filter((r: any) => r.timingRating !== null)
+    .map((r: any) => r.timingRating);
   
   const satisfactionRatings = reviews
-    .filter((r): r is typeof r & { satisfactionRating: number } => r.satisfactionRating !== null)
-    .map(r => r.satisfactionRating);
+    .filter((r: any) => r.satisfactionRating !== null)
+    .map((r: any) => r.satisfactionRating);
   
   const costRatings = reviews
-    .filter((r): r is typeof r & { costRating: number } => r.costRating !== null)
-    .map(r => r.costRating);
+    .filter((r: any) => r.costRating !== null)
+    .map((r: any) => r.costRating);
   
   const communicationRatings = reviews
-    .filter((r): r is typeof r & { communicationRating: number } => r.communicationRating !== null)
-    .map(r => r.communicationRating);
+    .filter((r: any) => r.communicationRating !== null)
+    .map((r: any) => r.communicationRating);
   
   const avgTiming = timingRatings.length > 0 
     ? timingRatings.reduce((sum: number, rating: number) => sum + rating, 0) / timingRatings.length 

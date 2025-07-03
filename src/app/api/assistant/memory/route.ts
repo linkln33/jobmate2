@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { prisma } from "@/lib/prisma";
+import { getSupabaseClient, getSupabaseServiceClient } from "@/lib/supabase/client";
 import { z } from "zod";
 import { withAIRateLimit } from "../middleware";
 import { authOptions } from "@/lib/auth";
@@ -38,11 +38,15 @@ export const GET = withAIRateLimit(async function GET(request: NextRequest) {
     }
 
     // Get user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('Error fetching user:', userError);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
@@ -65,53 +69,78 @@ export const GET = withAIRateLimit(async function GET(request: NextRequest) {
       endDate,
     });
 
-    // Build where clause for filtering
-    const where: any = {
-      userId: user.id,
-    };
+    // Build query for filtering
+    let query = supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', user.id)
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (validatedQuery.mode) {
-      where.mode = validatedQuery.mode;
+      query = query.eq('mode', validatedQuery.mode);
     }
 
     if (validatedQuery.interactionType) {
-      where.interactionType = validatedQuery.interactionType;
+      query = query.eq('interactionType', validatedQuery.interactionType);
     }
 
-    if (validatedQuery.startDate || validatedQuery.endDate) {
-      where.createdAt = {};
-      
-      if (validatedQuery.startDate) {
-        where.createdAt.gte = new Date(validatedQuery.startDate);
-      }
-      
-      if (validatedQuery.endDate) {
-        where.createdAt.lte = new Date(validatedQuery.endDate);
-      }
+    if (validatedQuery.startDate) {
+      query = query.gte('createdAt', new Date(validatedQuery.startDate).toISOString());
     }
 
-    // Query memory logs with pagination and filtering
-    const memoryLogs = await prisma.assistantMemoryLog.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      take: validatedQuery.limit || 10,
-      skip: validatedQuery.offset || 0,
-    });
+    if (validatedQuery.endDate) {
+      query = query.lte('createdAt', new Date(validatedQuery.endDate).toISOString());
+    }
+
+    // Execute query
+    const { data: memoryLogs, error: logsError } = await query;
+
+    if (logsError) {
+      console.error('Error fetching memory logs:', logsError);
+      return NextResponse.json({ error: "Failed to fetch memory logs" }, { status: 500 });
+    }
 
     // Get total count for pagination
-    const totalCount = await prisma.assistantMemoryLog.count({ where });
+    let countQuery = supabase
+      .from('assistantMemoryLogs')
+      .select('*', { count: 'exact', head: true })
+      .eq('userId', user.id);
+
+    if (validatedQuery.mode) {
+      countQuery = countQuery.eq('mode', validatedQuery.mode);
+    }
+
+    if (validatedQuery.interactionType) {
+      countQuery = countQuery.eq('interactionType', validatedQuery.interactionType);
+    }
+
+    if (validatedQuery.startDate) {
+      countQuery = countQuery.gte('createdAt', new Date(validatedQuery.startDate).toISOString());
+    }
+
+    if (validatedQuery.endDate) {
+      countQuery = countQuery.lte('createdAt', new Date(validatedQuery.endDate).toISOString());
+    }
+
+    const { count: totalCount, error: countError } = await countQuery;
+
+    if (countError) {
+      console.error('Error counting memory logs:', countError);
+      return NextResponse.json({ error: "Failed to count memory logs" }, { status: 500 });
+    }
 
     return NextResponse.json({
-      data: memoryLogs,
+      data: memoryLogs || [],
       pagination: {
-        total: totalCount,
+        total: totalCount || 0,
         limit: validatedQuery.limit || 10,
         offset: validatedQuery.offset || 0,
       },
     });
   } catch (error) {
-    console.error("Error fetching memory logs:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    console.error("Error retrieving memory logs:", error);
+    return NextResponse.json({ error: "Failed to retrieve memory logs" }, { status: 500 });
   }
 });
 
@@ -128,67 +157,76 @@ export const POST = withAIRateLimit(async function POST(request: NextRequest) {
     }
 
     // Get user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('Error fetching user:', userError);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Parse and validate request body
+    // Parse request body
     const body = await request.json();
     const validatedData = memoryLogSchema.parse(body);
 
     // Create memory log
-    const memoryLog = await prisma.assistantMemoryLog.create({
-      data: {
+    const memoryLogData = {
+      userId: user.id,
+      mode: validatedData.mode,
+      interactionType: validatedData.action,
+      context: validatedData.context,
+      feedbackText: validatedData.feedbackText,
+      aiGenerated: validatedData.aiGenerated || false,
+      metadata: validatedData.metadata || {},
+    };
+
+    const { data: memoryLog, error: createError } = await supabase
+      .from('assistantMemoryLogs')
+      .insert(memoryLogData)
+      .select()
+      .single();
+
+    if (createError) {
+      console.error('Error creating memory log:', createError);
+      return NextResponse.json({ error: "Failed to create memory log" }, { status: 500 });
+    }
+
+    // Update analytics (upsert)
+    const { error: analyticsError } = await supabase
+      .from('assistantAnalytics')
+      .upsert({
         userId: user.id,
-        mode: validatedData.mode,
+        date: new Date().toISOString().split('T')[0], // Current date in YYYY-MM-DD format
         interactionType: validatedData.action,
-        context: {
-          ...validatedData.context || {},
-          feedbackText: validatedData.feedbackText,
-          aiGenerated: validatedData.aiGenerated || false
-        },
-        routePath: body.metadata?.path,
-      },
-    });
+        count: 1 // Will be incremented by Supabase trigger/function
+      }, {
+        onConflict: 'userId,date,interactionType'
+      });
 
-    // Update analytics
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    await prisma.assistantAnalytics.upsert({
-      where: {
-        userId_date: {
-          userId: user.id,
-          date: today,
-        },
-      },
-      update: {
-        totalInteractions: { increment: 1 },
-      },
-      create: {
-        userId: user.id,
-        date: today,
-        totalInteractions: 1,
-      },
-    });
+    if (analyticsError) {
+      console.error('Error updating analytics:', analyticsError);
+      // Continue despite analytics error
+    }
 
     return NextResponse.json({ data: memoryLog });
   } catch (error) {
     console.error("Error creating memory log:", error);
-    return NextResponse.json({ error: error instanceof Error ? error.message : 'Unknown error' }, { status: 500 });
+    return NextResponse.json({ error: "Failed to create memory log" }, { status: 500 });
   }
 });
 
 /**
- * PUT /api/assistant/memory/:id/feedback
- * Updates a memory log with user feedback
+ * PATCH /api/assistant/memory/:id
+ * Updates an existing memory log
  */
-// Fix PUT handler signature to match expected parameters
-export const PUT = withAIRateLimit(async function PUT(request: NextRequest) {
+export const PATCH = withAIRateLimit(async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     // Get the authenticated user session
     const session = await getServerSession();
@@ -197,53 +235,58 @@ export const PUT = withAIRateLimit(async function PUT(request: NextRequest) {
     }
 
     // Get user by email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, email')
+      .eq('email', session.user.email)
+      .single();
 
-    if (!user) {
+    if (userError || !user) {
+      console.error('Error fetching user:', userError);
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Parse request body and extract ID from URL
-    const body = await request.json();
-    const { feedbackText } = body;
-    
-    // Get ID from URL path
+    // Get memory log ID from URL
     const url = new URL(request.url);
     const pathParts = url.pathname.split('/');
-    const id = pathParts[pathParts.length - 2]; // Extract ID from path
+    const memoryLogId = pathParts[pathParts.length - 1];
 
-    // Find memory log
-    const memoryLog = await prisma.assistantMemoryLog.findUnique({
-      where: { id },
-    });
+    // Check if memory log exists and belongs to user
+    const { data: memoryLog, error: fetchError } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('id', memoryLogId)
+      .eq('userId', user.id)
+      .single();
 
-    if (!memoryLog) {
+    if (fetchError || !memoryLog) {
+      console.error('Error fetching memory log:', fetchError);
       return NextResponse.json({ error: "Memory log not found" }, { status: 404 });
     }
 
-    if (memoryLog.userId !== user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // Parse request body
+    const body = await request.json();
+    
+    // Update memory log
+    const { data: updatedMemoryLog, error: updateError } = await supabase
+      .from('assistantMemoryLogs')
+      .update({
+        ...body,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', memoryLogId)
+      .select()
+      .single();
 
-    // Update memory log with feedback by storing in context
-    const updatedMemoryLog = await prisma.assistantMemoryLog.update({
-      where: { id },
-      data: {
-        context: {
-          ...(memoryLog.context as object || {}),
-          feedbackText
-        }
-      },
-    });
+    if (updateError) {
+      console.error('Error updating memory log:', updateError);
+      return NextResponse.json({ error: "Failed to update memory log" }, { status: 500 });
+    }
 
     return NextResponse.json({ data: updatedMemoryLog });
   } catch (error) {
     console.error("Error updating memory log:", error);
-    return NextResponse.json(
-      { error: "Failed to update memory log" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update memory log" }, { status: 500 });
   }
 });

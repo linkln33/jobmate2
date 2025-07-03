@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { ReviewType } from '@prisma/client';
+
+import { ReviewType } from '@/lib/types';
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/users/[id]/reviews
@@ -35,61 +36,71 @@ export async function GET(
       query.reviewType = reviewType;
     }
     
-    // Get reviews with pagination
-    const reviews = await prisma.review.findMany({
-      where: query,
-      include: {
-        reviewer: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true
-          }
-        },
-        reviewee: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true
-          }
-        },
-        job: {
-          select: {
-            id: true,
-            title: true,
-            status: true,
-            completedAt: true
-          }
-        },
-        reviewMedia: true
-      },
-      orderBy: { createdAt: 'desc' },
-      skip: offset,
-      take: limit
-    });
+    // Get reviews with pagination using Supabase
+    const supabase = getSupabaseClient();
+    
+    let reviewsQuery = supabase
+      .from('reviews')
+      .select(`
+        *,
+        reviewer:reviewerId(*),
+        reviewee:revieweeId(*),
+        job:jobId(*),
+        reviewMedia:reviewId(*)
+      `)
+      .eq('isPublic', query.isPublic)
+      .order('createdAt', { ascending: false })
+      .range(offset, offset + limit - 1);
+    
+    if (asReviewer) {
+      reviewsQuery = reviewsQuery.eq('reviewerId', userId);
+    } else {
+      reviewsQuery = reviewsQuery.eq('revieweeId', userId);
+    }
+    
+    if (reviewType) {
+      reviewsQuery = reviewsQuery.eq('reviewType', reviewType);
+    }
+    
+    const { data: reviews, error } = await reviewsQuery;
+    
+    if (error) {
+      console.error('Error fetching reviews:', error);
+      return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
+    }
     
     // Get total count for pagination
-    const totalCount = await prisma.review.count({
-      where: query
-    });
+    let countQuery = supabase
+      .from('reviews')
+      .select('*', { count: 'exact', head: true })
+      .eq('isPublic', query.isPublic);
+    
+    if (asReviewer) {
+      countQuery = countQuery.eq('reviewerId', userId);
+    } else {
+      countQuery = countQuery.eq('revieweeId', userId);
+    }
+    
+    if (reviewType) {
+      countQuery = countQuery.eq('reviewType', reviewType);
+    }
+    
+    const { count: totalCount } = await countQuery;
     
     // Calculate review statistics if user is being reviewed
     let reviewStats = null;
     if (!asReviewer) {
       reviewStats = await calculateReviewStatistics(userId);
     }
-    
+
     return NextResponse.json({
       reviews,
-      totalCount,
-      reviewStats,
       pagination: {
+        total: totalCount || 0,
         limit,
-        offset,
-        hasMore: offset + reviews.length < totalCount
-      }
+        offset
+      },
+      reviewStats
     }, { status: 200 });
   } catch (error) {
     console.error('Get user reviews error:', error);
@@ -104,11 +115,21 @@ export async function GET(
  * Helper function to calculate review statistics for a user
  */
 async function calculateReviewStatistics(userId: string) {
-  const reviews = await prisma.review.findMany({
-    where: { revieweeId: userId }
-  });
+  const supabase = getSupabaseClient();
+  
+  // Get all reviews for this user
+  const { data: reviews, error } = await supabase
+    .from('reviews')
+    .select('*')
+    .eq('revieweeId', userId)
+    .eq('isPublic', true);
 
-  if (reviews.length === 0) {
+  if (error) {
+    console.error('Error fetching reviews for statistics:', error);
+    return null;
+  }
+
+  if (!reviews || reviews.length === 0) {
     return {
       totalReviews: 0,
       averageRating: 0,
@@ -117,63 +138,43 @@ async function calculateReviewStatistics(userId: string) {
         positive: 0,
         neutral: 0,
         negative: 0
-      },
-      criteriaAverages: {
-        timing: 0,
-        satisfaction: 0,
-        cost: 0,
-        communication: 0
       }
     };
   }
 
   // Calculate review type breakdown
-  const positive = reviews.filter(r => r.reviewType === 'POSITIVE').length;
-  const neutral = reviews.filter(r => r.reviewType === 'NEUTRAL').length;
-  const negative = reviews.filter(r => r.reviewType === 'NEGATIVE').length;
+  const positive = reviews.filter((r: any) => r.reviewType === 'POSITIVE').length;
+  const neutral = reviews.filter((r: any) => r.reviewType === 'NEUTRAL').length;
+  const negative = reviews.filter((r: any) => r.reviewType === 'NEGATIVE').length;
   
   // Calculate positive percentage
   const positivePercentage = (positive / reviews.length) * 100;
   
-  // Calculate overall average rating
-  const averageRating = reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length;
+  // Calculate average rating
+  const overallRatings = reviews.map((r: any) => r.overallRating).filter(Boolean);
+  const communicationRatings = reviews.map((r: any) => r.communicationRating).filter(Boolean);
+  const qualityRatings = reviews.map((r: any) => r.qualityRating).filter(Boolean);
+  const valueRatings = reviews.map((r: any) => r.valueRating).filter(Boolean);
   
-  // Calculate criteria averages
-  const timingRatings = reviews
-    .filter((r): r is typeof r & { timingRating: number } => r.timingRating !== null)
-    .map(r => r.timingRating);
-  
-  const satisfactionRatings = reviews
-    .filter((r): r is typeof r & { satisfactionRating: number } => r.satisfactionRating !== null)
-    .map(r => r.satisfactionRating);
-  
-  const costRatings = reviews
-    .filter((r): r is typeof r & { costRating: number } => r.costRating !== null)
-    .map(r => r.costRating);
-  
-  const communicationRatings = reviews
-    .filter((r): r is typeof r & { communicationRating: number } => r.communicationRating !== null)
-    .map(r => r.communicationRating);
-  
-  const avgTiming = timingRatings.length > 0 
-    ? timingRatings.reduce((sum: number, rating: number) => sum + rating, 0) / timingRatings.length 
+  const avgOverall = overallRatings.length > 0
+    ? overallRatings.reduce((sum: number, review: number) => sum + review, 0) / overallRatings.length
     : 0;
-  
-  const avgSatisfaction = satisfactionRatings.length > 0 
-    ? satisfactionRatings.reduce((sum, rating) => sum + rating, 0) / satisfactionRatings.length 
+    
+  const avgCommunication = communicationRatings.length > 0
+    ? communicationRatings.reduce((sum: number, rating: number) => sum + rating, 0) / communicationRatings.length
     : 0;
-  
-  const avgCost = costRatings.length > 0 
-    ? costRatings.reduce((sum, rating) => sum + rating, 0) / costRatings.length 
+    
+  const avgQuality = qualityRatings.length > 0
+    ? qualityRatings.reduce((sum: number, rating: number) => sum + rating, 0) / qualityRatings.length
     : 0;
-  
-  const avgCommunication = communicationRatings.length > 0 
-    ? communicationRatings.reduce((sum, rating) => sum + rating, 0) / communicationRatings.length 
+    
+  const avgValue = valueRatings.length > 0
+    ? valueRatings.reduce((sum: number, rating: number) => sum + rating, 0) / valueRatings.length
     : 0;
 
   return {
     totalReviews: reviews.length,
-    averageRating,
+    averageRating: avgOverall,
     positivePercentage,
     reviewBreakdown: {
       positive,
@@ -181,9 +182,8 @@ async function calculateReviewStatistics(userId: string) {
       negative
     },
     criteriaAverages: {
-      timing: avgTiming,
-      satisfaction: avgSatisfaction,
-      cost: avgCost,
+      quality: avgQuality,
+      value: avgValue,
       communication: avgCommunication
     }
   };

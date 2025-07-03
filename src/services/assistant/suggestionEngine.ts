@@ -1,10 +1,10 @@
-import { prisma } from '@/lib/prisma';
 import { matchingService } from '@/services/server/matching-service';
 import { AssistantMode, AssistantSuggestion, AssistantContextState } from '@/contexts/AssistantContext/types';
 import descriptionGenerator from './descriptionGenerator';
 import priceCalculator, { getPersonalizedPriceEstimates } from './priceCalculator';
-import { Prisma, User } from '@prisma/client';
+import { Prisma, User } from '@/lib/types';
 import { scoreSuggestions } from './mlIntegration';
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * Rule-based suggestion engine for the Unified Adaptive AI Assistant

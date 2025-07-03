@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
 import { matchingService } from '@/services/server/matching-service';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
-// Mock database for preferences (in production this would use Prisma)
+// Mock database for preferences (in production this would use Supabase)
 const preferenceDb = new Map<string, any>();
-
-const prisma = new PrismaClient();
 
 // POST /api/matches - Get job matches for a specialist with scoring
 export async function POST(req: NextRequest) {
@@ -30,125 +28,134 @@ export async function POST(req: NextRequest) {
       pagination = { page: 1, limit: 10 }
     } = body;
 
-    // Validate request
-    if (!specialistId) {
+    // Validate specialist ID
+    const targetSpecialistId = specialistId || user.id;
+    
+    // Check if the user is authorized to view matches for this specialist
+    if (targetSpecialistId !== user.id && user.role !== 'ADMIN') {
       return NextResponse.json(
-        { message: 'specialistId is required' },
-        { status: 400 }
-      );
-    }
-
-    // Ensure the user has access to this specialist profile
-    if (user.role === 'SPECIALIST' && user.id !== specialistId) {
-      return NextResponse.json(
-        { message: 'You can only request matches for your own profile' },
+        { message: 'Unauthorized to view matches for this specialist' },
         { status: 403 }
       );
     }
 
-    // Set up pagination
-    const page = pagination.page || 1;
-    const limit = pagination.limit || 10;
-    const skip = (page - 1) * limit;
-
-    // Get the specialist profile
-    // Using type assertion as specialist model might not be directly accessible in Prisma Client
-    const specialist = await (prisma as any).specialist.findUnique({
-      where: { id: specialistId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true
-          }
-        },
-        skills: true,
-        location: true,
-        availability: true,
-        ratePreferences: true,
-        premium: true
-      }
-    });
-
-    if (!specialist) {
+    const supabase = getSupabaseServiceClient();
+    
+    // Get specialist profile with skills
+    const { data: specialist, error: specialistError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        firstName,
+        lastName,
+        email,
+        role,
+        specialistProfiles (
+          id,
+          hourlyRate,
+          availability,
+          yearsOfExperience,
+          education,
+          languages,
+          location
+        ),
+        userSkills (
+          id,
+          proficiency,
+          yearsOfExperience,
+          skills:skillId (
+            id,
+            name,
+            category
+          )
+        )
+      `)
+      .eq('id', targetSpecialistId)
+      .eq('role', 'SPECIALIST')
+      .single();
+    
+    if (specialistError || !specialist) {
+      console.error('Error fetching specialist:', specialistError);
       return NextResponse.json(
         { message: 'Specialist not found' },
         { status: 404 }
       );
     }
 
-    // Build the query for jobs
-    const where: any = {
-      status: 'OPEN', // Only match open jobs
-    };
-
-    // Apply filters
-    if (filters.categories && filters.categories.length > 0) {
-      where.categoryId = { in: filters.categories };
+    // Get active job listings
+    const { data: jobListings, error: jobsError } = await supabase
+      .from('jobListings')
+      .select(`
+        id,
+        title,
+        description,
+        budget,
+        location,
+        remote,
+        skills,
+        categoryId,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug
+        ),
+        createdAt,
+        deadline,
+        status,
+        users:userId (
+          id,
+          firstName,
+          lastName,
+          profileImageUrl
+        )
+      `)
+      .eq('status', 'ACTIVE')
+      .order('createdAt', { ascending: false });
+    
+    if (jobsError) {
+      console.error('Error fetching job listings:', jobsError);
+      return NextResponse.json(
+        { message: 'Failed to fetch job listings' },
+        { status: 500 }
+      );
     }
 
-    if (filters.minBudget) {
-      where.budgetMax = { gte: filters.minBudget };
+    // Store or retrieve user preferences
+    if (Object.keys(preferences).length > 0) {
+      preferenceDb.set(targetSpecialistId, preferences);
     }
-
-    if (filters.maxBudget) {
-      where.budgetMin = { lte: filters.maxBudget };
-    }
-
-    if (filters.urgencyLevel && filters.urgencyLevel.length > 0) {
-      where.urgencyLevel = { in: filters.urgencyLevel };
-    }
-
-    if (filters.showVerifiedOnly) {
-      where.isVerifiedPayment = true;
-    }
-
-    if (filters.showNeighborsOnly) {
-      where.isNeighborPosted = true;
-    }
-
-    // Get jobs with pagination
-    // Using type assertion for the entire query to bypass TypeScript errors
-    const jobs = await (prisma as any).job.findMany({
-      where,
-      include: {
-        category: true,
-        customer: true,
-        location: true
-      },
-      skip,
-      take: limit
-    });
-
-    // Count total jobs matching the criteria
-    const totalJobs = await prisma.job.count({ where });
-    const totalPages = Math.ceil(totalJobs / limit);
-
-    // Calculate match scores for each job
-    // Use type assertion to make the jobs compatible with the matching service
-    const matches = await matchingService.calculateMatchesForSpecialist(
+    
+    const userPreferences = preferenceDb.get(targetSpecialistId) || {};
+    
+    // Calculate matches with scores
+    const matches = matchingService.calculateJobMatches(
       specialist,
-      jobs as any, // Type assertion to bypass type checking for now
-      preferences
+      jobListings || [],
+      userPreferences,
+      filters
     );
-
-    // Sort matches by score (highest first)
-    matches.sort((a, b) => b.matchResult.score - a.matchResult.score);
-
+    
+    // Apply pagination
+    const page = pagination.page || 1;
+    const limit = pagination.limit || 10;
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+    
+    const paginatedMatches = matches.slice(startIndex, endIndex);
+    
     return NextResponse.json({
-      matches,
+      matches: paginatedMatches,
       pagination: {
-        totalMatches: totalJobs,
-        currentPage: page,
-        totalPages
+        page,
+        limit,
+        total: matches.length,
+        pages: Math.ceil(matches.length / limit)
       }
     });
   } catch (error) {
-    console.error('Error in matches API:', error);
+    console.error('Error in job matching:', error);
     return NextResponse.json(
-      { message: 'Internal server error' },
+      { message: 'Failed to process job matches' },
       { status: 500 }
     );
   }

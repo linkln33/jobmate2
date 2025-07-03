@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * POST /api/profile/image
@@ -62,12 +62,24 @@ export async function POST(req: NextRequest) {
     const imageUrl = `/uploads/profiles/${filename}`;
     
     // Update the user's profile image URL in the database
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        profileImageUrl: imageUrl
-      }
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: updatedUser, error } = await supabase
+      .from('users')
+      .update({
+        profileImageUrl: imageUrl,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', user.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error updating user profile image:', error);
+      return NextResponse.json(
+        { message: 'Failed to update profile image in database' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Profile image updated successfully',

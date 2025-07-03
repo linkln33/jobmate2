@@ -6,7 +6,7 @@
  */
 
 import { AssistantMode, AssistantContextState } from '@/contexts/AssistantContext/types';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import aiAssistantService from './aiAssistantService';
 
 /**
@@ -22,11 +22,18 @@ export const predictRelevantMode = async (
   
   try {
     // Get user's recent memory logs
-    const recentLogs = await (prisma as any).assistantMemoryLog?.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 10
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: recentLogs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false })
+      .limit(10);
+      
+    if (error) {
+      console.error('Error fetching recent memory logs:', error);
+      return 'JOB_SEARCH'; // Default mode on error
+    }
     
     // Path-based mode mapping (simple rules)
     if (currentPath.includes('/jobs')) {
@@ -85,24 +92,40 @@ export const predictRelevantMode = async (
  */
 export const calculateEngagementScore = async (userId: string): Promise<number> => {
   try {
+    const supabase = getSupabaseServiceClient();
+    
     // Get user's recent activity logs
-    const logs = await (prisma as any).assistantMemoryLog?.findMany({
-      where: { userId }
-    }) || [];
+    const { data: logs, error: logsError } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId);
+      
+    if (logsError) {
+      console.error('Error fetching memory logs:', logsError);
+    }
     
     // Get user's chat history
-    const chatHistory = await (prisma as any).assistantChat?.findMany({
-      where: { userId }
-    }) || [];
+    const { data: chatHistory, error: chatError } = await supabase
+      .from('assistantChats')
+      .select('*')
+      .eq('userId', userId);
+      
+    if (chatError) {
+      console.error('Error fetching chat history:', chatError);
+    }
+    
+    // Use empty arrays if data is null
+    const safeLogsData = logs || [];
+    const safeChatData = chatHistory || [];
     
     // Calculate basic engagement metrics
-    const totalInteractions = logs.length;
+    const totalInteractions = safeLogsData.length;
     // Use context data for sentiment analysis instead of helpful flag
-    const helpfulInteractions = logs.filter((log: any) => {
+    const helpfulInteractions = safeLogsData.filter((log: any) => {
       const context = log.context as any;
       return context?.sentiment === 'positive';
     }).length;
-    const totalChats = chatHistory.length;
+    const totalChats = safeChatData.length;
     
     // Simple scoring formula (would be replaced by ML model)
     const baseScore = Math.min(totalInteractions * 5, 50);
@@ -127,43 +150,90 @@ export const predictRelevantSuggestions = async (
   context: AssistantContextState
 ): Promise<string[]> => {
   try {
+    const supabase = getSupabaseServiceClient();
+    
     // Get user profile data
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        skills: true,
-        specialistProfile: true
-      }
-    }) as any; // Cast to any to handle custom fields
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .eq('id', userId)
+      .single();
+      
+    if (userError) {
+      console.error('Error fetching user:', userError);
+      return [];
+    }
     
-    // Fetch jobs posted by user separately
-    const jobsPosted = await prisma.job.findMany({
-      where: { customerId: userId },
-      take: 5
-    });
+    // Get user skills
+    const { data: skills, error: skillsError } = await supabase
+      .from('userSkills')
+      .select('*, skill(*)')
+      .eq('userId', userId);
+      
+    if (skillsError) {
+      console.error('Error fetching user skills:', skillsError);
+    }
     
-    // Attach to user object
-    user.jobsPosted = jobsPosted;
+    // Get specialist profile if exists
+    const { data: specialistProfile, error: specialistError } = await supabase
+      .from('specialistProfiles')
+      .select('*')
+      .eq('userId', userId)
+      .maybeSingle();
+      
+    if (specialistError) {
+      console.error('Error fetching specialist profile:', specialistError);
+    }
     
-    if (!user) {
+    // Combine user data
+    const userData = {
+      ...user,
+      skills: skills || [],
+      specialistProfile: specialistProfile || null
+    };
+    
+    if (!userData) return [];
+    
+    // Get jobs posted by user
+    const { data: jobsPosted, error: jobsError } = await supabase
+      .from('jobs')
+      .select('*')
+      .eq('userId', userId)
+      .neq('status', 'DELETED')
+      .order('createdAt', { ascending: false })
+      .limit(5);
+      
+    if (jobsError) {
+      console.error('Error fetching jobs posted:', jobsError);
+    }
+    
+    const safeJobsPosted = jobsPosted || [];
+    
+    userData.jobsPosted = safeJobsPosted;
+    
+    if (!userData) {
       throw new Error('User not found');
     }
     
     // Get user's memory logs to analyze patterns
-    const recentActivity = await (prisma as any).assistantMemoryLog?.findMany({
-      where: { 
-        userId,
-        // Use interactionType instead of helpful flag
-        interactionType: 'suggestion_accepted'
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 20
-    }) || [];
+    const { data: recentActivity, error: activityError } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .eq('interactionType', 'suggestion_accepted')
+      .order('createdAt', { ascending: false })
+      .limit(20);
+      
+    if (activityError) {
+      console.error('Error fetching recent activity:', activityError);
+    }
+    
+    const safeRecentActivity = recentActivity || [];
     
     // Extract relevant information from user data
-    const userSkills = user?.skills?.map((s: any) => s.skill?.name) || [];
-    const jobCategories = user?.jobsPosted?.map((j: any) => j.serviceCategoryId) || [];
-    const interactionContexts = recentActivity?.map((log: any) => log.context) || [];
+    const userSkills = userData?.skills?.map((s: any) => s.skill?.name) || [];
+    const jobCategories = userData?.jobsPosted?.map((j: any) => j.serviceCategoryId) || [];
+    const interactionContexts = safeRecentActivity?.map((log: any) => log.context) || [];
     
     // In a real implementation, this would use a trained model
     // For now, use the AI service as a placeholder for ML capabilities
@@ -197,27 +267,49 @@ export const analyzeFeedback = async (userId: string): Promise<{
   overallSentiment: 'positive' | 'neutral' | 'negative';
 }> => {
   try {
+    const supabase = getSupabaseServiceClient();
+    
     // Get user feedback logs with text content
-    const feedbackLogs = await (prisma as any).assistantMemoryLog?.findMany({
-      where: {
-        userId,
-        interactionType: 'feedback' // Use interactionType instead of feedbackText
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    });
+    const { data: feedbackLogs, error: feedbackError } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .eq('interactionType', 'feedback')
+      .order('createdAt', { ascending: false })
+      .limit(50);
+      
+    if (feedbackError) {
+      console.error('Error fetching feedback logs:', feedbackError);
+      return {
+        positiveTopics: [],
+        negativeTopics: [],
+        overallSentiment: 'neutral'
+      };
+    }
+    
+    const safeFeedbackLogs = feedbackLogs || [];
     
     // Count positive and negative feedback based on context data
-    const positiveCount = feedbackLogs.filter((log: any) => {
+    const positiveCount = safeFeedbackLogs.filter((log: any) => {
       const context = log.context as any;
       return context?.sentiment === 'positive';
     }).length;
     
-    const negativeCount = feedbackLogs.filter((log: any) => {
+    const negativeCount = safeFeedbackLogs.filter((log: any) => {
       const context = log.context as any;
       return context?.sentiment === 'negative';
     }).length;
     
+    // Analyze recent activity to find patterns
+    const acceptedSuggestionTypes = safeRecentActivity.map((log: any) => {
+      try {
+        const context = log.context ? JSON.parse(log.context) : {};
+        return context.suggestionType || '';
+      } catch (e) {
+        return '';
+      }
+    }).filter(Boolean);
+
     // Simple sentiment analysis (would be replaced by ML model)
     let overallSentiment: 'positive' | 'neutral' | 'negative' = 'neutral';
     
@@ -254,26 +346,59 @@ export const scoreSuggestions = async (
   context: AssistantContextState
 ): Promise<Array<any>> => {
   try {
-    // Get user's recent activity and preferences
-    const recentLogs = await (prisma as any).assistantMemoryLog?.findMany({
-      where: { userId },
-      orderBy: { createdAt: 'desc' },
-      take: 50
-    }) || [];
+    const supabase = getSupabaseServiceClient();
+    
+    // Get user's recent activity logs
+    const { data: recentLogs, error: logsError } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .order('createdAt', { ascending: false })
+      .limit(50);
+      
+    if (logsError) {
+      console.error('Error fetching recent logs:', logsError);
+    }
+    
+    const safeRecentLogs = recentLogs || [];
     
     // Get user preferences
-    const preferences = await (prisma as any).assistantPreference?.findUnique({
-      where: { userId }
-    }) || {};
+    const { data: preferences, error: prefsError } = await supabase
+      .from('assistantPreferences')
+      .select('*')
+      .eq('userId', userId)
+      .maybeSingle();
+      
+    if (prefsError) {
+      console.error('Error fetching preferences:', prefsError);
+    }
     
-    // Get user profile data for context
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        skills: true,
-        specialistProfile: true
-      }
-    });
+    // Get user data
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .eq('id', userId)
+      .single();
+      
+    if (userError) {
+      console.error('Error fetching user:', userError);
+    }
+    
+    // Get user skills
+    const { data: skills, error: skillsError } = await supabase
+      .from('userSkills')
+      .select('*, skill(*)')
+      .eq('userId', userId);
+      
+    if (skillsError) {
+      console.error('Error fetching user skills:', skillsError);
+    }
+    
+    // Combine user with skills
+    const userData = user ? {
+      ...user,
+      skills: skills || []
+    } : null;
     
     // Calculate base scores for each suggestion
     return suggestions.map(suggestion => {

@@ -1,24 +1,20 @@
 import { scoreSuggestions } from '../mlIntegration';
 import { AssistantContextState } from '@/contexts/AssistantContext/types';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
-// Mock Prisma client
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn()
-    }
-  }
+// Mock Supabase client
+jest.mock('@/lib/supabase/client', () => ({
+  getSupabaseServiceClient: jest.fn(() => ({
+    from: jest.fn().mockReturnThis(),
+    select: jest.fn().mockReturnThis(),
+    eq: jest.fn().mockReturnThis(),
+    order: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    maybeSingle: jest.fn().mockReturnThis(),
+    single: jest.fn().mockReturnThis(),
+    then: jest.fn().mockImplementation(callback => Promise.resolve(callback({ data: null, error: null })))
+  }))
 }));
-
-// Mock assistantMemoryLog and assistantPreference
-(prisma as any).assistantMemoryLog = {
-  findMany: jest.fn()
-};
-
-(prisma as any).assistantPreference = {
-  findUnique: jest.fn()
-};
 
 describe('ML Integration - Suggestion Scoring', () => {
   beforeEach(() => {
@@ -35,18 +31,60 @@ describe('ML Integration - Suggestion Scoring', () => {
   };
 
   test('should score suggestions based on context match', async () => {
-    // Mock user data
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-      id: mockUserId,
-      skills: [{ skill: { name: 'JavaScript' } }, { skill: { name: 'React' } }]
-    });
-
-    // Mock memory logs (empty for this test)
-    (prisma as any).assistantMemoryLog.findMany.mockResolvedValue([]);
+    const mockSupabase = getSupabaseServiceClient() as jest.Mocked<any>;
     
-    // Mock preferences
-    (prisma as any).assistantPreference.findUnique.mockResolvedValue({
-      proactivityLevel: 2
+    // Mock user data
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'users') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: {
+              id: mockUserId,
+              name: 'Test User',
+              email: 'test@example.com',
+              role: 'user'
+            },
+            error: null
+          })
+        };
+      } else if (table === 'userSkills') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({
+            data: [
+              { skill: { name: 'JavaScript' } },
+              { skill: { name: 'React' } }
+            ],
+            error: null
+          })
+        };
+      } else if (table === 'assistantMemoryLogs') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue({
+            data: [],
+            error: null
+          })
+        };
+      } else if (table === 'assistantPreferences') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { proactivityLevel: 2 },
+            error: null
+          })
+        };
+      }
+      return mockSupabase;
     });
 
     // Test suggestions
@@ -125,23 +163,75 @@ describe('ML Integration - Suggestion Scoring', () => {
     expect(result[0].relevanceScore).toBeGreaterThan(result[1].relevanceScore);
   });
 
-  test('should score suggestions based on skill relevance', async () => {
-    // Mock user data with skills
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-      id: mockUserId,
-      skills: [
-        { skill: { name: 'JavaScript' } },
-        { skill: { name: 'React' } },
-        { skill: { name: 'Node.js' } }
-      ]
-    });
-
-    // Mock memory logs (empty for this test)
-    (prisma as any).assistantMemoryLog.findMany.mockResolvedValue([]);
+  test('should boost scores for suggestions matching user skills', async () => {
+    const mockSupabase = getSupabaseServiceClient() as jest.Mocked<any>;
     
-    // Mock preferences
-    (prisma as any).assistantPreference.findUnique.mockResolvedValue({
-      proactivityLevel: 3
+    // Mock all Supabase responses
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'users') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: {
+              id: mockUserId,
+              name: 'Test User',
+              email: 'test@example.com',
+              role: 'user'
+            },
+            error: null
+          })
+        };
+      } else if (table === 'userSkills') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({
+            data: [
+              { skill: { name: 'JavaScript' } },
+              { skill: { name: 'React' } },
+              { skill: { name: 'Node.js' } }
+            ],
+            error: null
+          })
+        };
+      } else if (table === 'assistantMemoryLogs') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue({
+            data: [
+              {
+                context: JSON.stringify({
+                  topic: 'JavaScript',
+                  sentiment: 'positive'
+                })
+              },
+              {
+                context: JSON.stringify({
+                  topic: 'React',
+                  sentiment: 'positive'
+                })
+              }
+            ],
+            error: null
+          })
+        };
+      } else if (table === 'assistantPreferences') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { proactivityLevel: 3 },
+            error: null
+          })
+        };
+      }
+      return mockSupabase;
     });
 
     // Test suggestions with skills
@@ -170,8 +260,23 @@ describe('ML Integration - Suggestion Scoring', () => {
   });
 
   test('should handle errors gracefully', async () => {
-    // Force an error by making the Prisma call reject
-    (prisma.user.findUnique as jest.Mock).mockRejectedValue(new Error('Database error'));
+    const mockSupabase = getSupabaseServiceClient() as jest.Mocked<any>;
+    
+    // Mock database error
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'users') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: null,
+            error: new Error('Database error')
+          })
+        };
+      }
+      return mockSupabase;
+    });
 
     const suggestions = [
       {
@@ -190,25 +295,65 @@ describe('ML Integration - Suggestion Scoring', () => {
   });
 
   test('should apply recency penalty for recently seen suggestions', async () => {
-    // Mock user data
-    (prisma.user.findUnique as jest.Mock).mockResolvedValue({
-      id: mockUserId,
-      skills: []
-    });
-
-    // Mock memory logs with recent suggestion
-    (prisma as any).assistantMemoryLog.findMany.mockResolvedValue([
-      {
-        title: 'Recent suggestion',
-        context: 'test',
-        interactionType: 'suggestion_shown',
-        createdAt: new Date()
-      }
-    ]);
+    const mockSupabase = getSupabaseServiceClient() as jest.Mocked<any>;
     
-    // Mock preferences
-    (prisma as any).assistantPreference.findUnique.mockResolvedValue({
-      proactivityLevel: 2
+    // Mock all Supabase responses
+    mockSupabase.from.mockImplementation((table) => {
+      if (table === 'users') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          single: jest.fn().mockResolvedValue({
+            data: {
+              id: mockUserId,
+              name: 'Test User',
+              email: 'test@example.com',
+              role: 'user'
+            },
+            error: null
+          })
+        };
+      } else if (table === 'userSkills') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockResolvedValue({
+            data: [],
+            error: null
+          })
+        };
+      } else if (table === 'assistantMemoryLogs') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          order: jest.fn().mockReturnThis(),
+          limit: jest.fn().mockResolvedValue({
+            data: [
+              {
+                interactionType: 'suggestion_shown',
+                context: JSON.stringify({
+                  suggestionId: 'suggestion-1'
+                }),
+                createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000) // 1 day ago
+              }
+            ],
+            error: null
+          })
+        };
+      } else if (table === 'assistantPreferences') {
+        return {
+          ...mockSupabase,
+          select: jest.fn().mockReturnThis(),
+          eq: jest.fn().mockReturnThis(),
+          maybeSingle: jest.fn().mockResolvedValue({
+            data: { proactivityLevel: 2 },
+            error: null
+          })
+        };
+      }
+      return mockSupabase;
     });
 
     // Test suggestions

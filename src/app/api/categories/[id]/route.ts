@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/categories/[id] - Get a specific category by ID
 export async function GET(
@@ -12,40 +10,69 @@ export async function GET(
   try {
     const categoryId = params.id;
 
-    // Get the category with related jobs
-    const category = await prisma.serviceCategory.findUnique({
-      where: { id: categoryId },
-      include: {
-        jobs: {
-          where: { status: 'OPEN' },
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            customer: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true,
-              },
-            },
-            media: {
-              take: 1,
-            },
-            _count: {
-              select: {
-                proposals: true,
-              },
-            },
-          },
-        },
-        _count: {
-          select: {
-            jobs: true,
-          },
-        },
-      },
-    });
+    const supabase = getSupabaseServiceClient();
+    
+    // Get the category
+    const { data: category, error: categoryError } = await supabase
+      .from('serviceCategories')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
+      
+    if (categoryError) {
+      console.error('Error fetching category:', categoryError);
+      return NextResponse.json(
+        { message: 'Failed to fetch category' },
+        { status: 500 }
+      );
+    }
+    
+    // Get related jobs
+    const { data: jobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select(`
+        *,
+        customer:customerId(*),
+        media:id(url, type)
+      `)
+      .eq('categoryId', categoryId)
+      .eq('status', 'OPEN')
+      .order('createdAt', { ascending: false })
+      .limit(10);
+      
+    if (jobsError) {
+      console.error('Error fetching jobs:', jobsError);
+    }
+    
+    // Get proposal counts for each job
+    const jobIds = jobs ? jobs.map((job: any) => job.id) : [];
+    let proposalCounts: any[] = [];
+    
+    if (jobIds.length > 0) {
+      const { data: counts, error: proposalError } = await supabase
+        .rpc('get_proposal_counts_by_job_ids', { job_ids: jobIds });
+        
+      if (!proposalError && counts) {
+        proposalCounts = counts;
+      } else if (proposalError) {
+        console.error('Error fetching proposal counts:', proposalError);
+      }
+    }
+      
+    // Get total job count for this category
+    const { count: jobCount, error: countError } = await supabase
+      .from('jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoryId', categoryId);
+      
+    // Combine the data
+    const categoryWithJobs = {
+      ...category,
+      jobs: jobs || [],
+      _count: {
+        jobs: jobCount || 0
+      }
+    };
 
     if (!category) {
       return NextResponse.json(
@@ -53,8 +80,28 @@ export async function GET(
         { status: 404 }
       );
     }
+    
+    // Enhance jobs with proposal counts
+    const enhancedJobs = jobs ? jobs.map((job: any) => {
+      const proposalCount = proposalCounts?.find((p: any) => p.job_id === job.id);
+      return {
+        ...job,
+        _count: {
+          proposals: proposalCount?.count || 0
+        }
+      };
+    }) : [];
+    
+    // Create the final response object
+    const response = {
+      ...category,
+      jobs: enhancedJobs,
+      _count: {
+        jobs: jobCount || 0
+      }
+    };
 
-    return NextResponse.json(category);
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error fetching category:', error);
     return NextResponse.json(
@@ -91,12 +138,16 @@ export async function PATCH(
     const body = await req.json();
     const { name, description, iconUrl } = body;
 
+    const supabase = getSupabaseServiceClient();
+    
     // Check if category exists
-    const existingCategory = await prisma.serviceCategory.findUnique({
-      where: { id: categoryId },
-    });
+    const { data: existingCategory, error: categoryError } = await supabase
+      .from('serviceCategories')
+      .select('*')
+      .eq('id', categoryId)
+      .single();
 
-    if (!existingCategory) {
+    if (categoryError || !existingCategory) {
       return NextResponse.json(
         { message: 'Category not found' },
         { status: 404 }
@@ -105,19 +156,21 @@ export async function PATCH(
 
     // Check if name is being changed and if it conflicts with another category
     if (name && name !== existingCategory.name) {
-      const nameConflict = await prisma.serviceCategory.findFirst({
-        where: {
-          name: {
-            equals: name,
-            mode: 'insensitive', // Case-insensitive search
-          },
-          id: {
-            not: categoryId,
-          },
-        },
-      });
+      const { data: nameConflicts, error: nameError } = await supabase
+        .from('serviceCategories')
+        .select('id')
+        .ilike('name', name)
+        .neq('id', categoryId);
 
-      if (nameConflict) {
+      if (nameError) {
+        console.error('Error checking for name conflicts:', nameError);
+        return NextResponse.json(
+          { message: 'Failed to check name availability' },
+          { status: 500 }
+        );
+      }
+
+      if (nameConflicts && nameConflicts.length > 0) {
         return NextResponse.json(
           { message: 'A category with this name already exists' },
           { status: 409 }
@@ -132,10 +185,20 @@ export async function PATCH(
     if (iconUrl !== undefined) updateData.iconUrl = iconUrl;
 
     // Update the category
-    const updatedCategory = await prisma.serviceCategory.update({
-      where: { id: categoryId },
-      data: updateData,
-    });
+    const { data: updatedCategory, error: updateError } = await supabase
+      .from('serviceCategories')
+      .update(updateData)
+      .eq('id', categoryId)
+      .select()
+      .single();
+      
+    if (updateError) {
+      console.error('Error updating category:', updateError);
+      return NextResponse.json(
+        { message: 'Failed to update category' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Category updated successfully',
@@ -175,19 +238,16 @@ export async function DELETE(
 
     const categoryId = params.id;
 
+    const supabase = getSupabaseServiceClient();
+    
     // Check if category exists
-    const existingCategory = await prisma.serviceCategory.findUnique({
-      where: { id: categoryId },
-      include: {
-        _count: {
-          select: {
-            jobs: true,
-          },
-        },
-      },
-    });
+    const { data: existingCategory, error: categoryError } = await supabase
+      .from('serviceCategories')
+      .select('id')
+      .eq('id', categoryId)
+      .single();
 
-    if (!existingCategory) {
+    if (categoryError || !existingCategory) {
       return NextResponse.json(
         { message: 'Category not found' },
         { status: 404 }
@@ -195,7 +255,20 @@ export async function DELETE(
     }
 
     // Check if category has associated jobs
-    if (existingCategory._count.jobs > 0) {
+    const { count: jobCount, error: countError } = await supabase
+      .from('jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('categoryId', categoryId);
+      
+    if (countError) {
+      console.error('Error checking for associated jobs:', countError);
+      return NextResponse.json(
+        { message: 'Failed to check for associated jobs' },
+        { status: 500 }
+      );
+    }
+
+    if (jobCount && jobCount > 0) {
       return NextResponse.json(
         { message: 'Cannot delete category with associated jobs' },
         { status: 400 }
@@ -203,9 +276,18 @@ export async function DELETE(
     }
 
     // Delete the category
-    await prisma.serviceCategory.delete({
-      where: { id: categoryId },
-    });
+    const { error: deleteError } = await supabase
+      .from('serviceCategories')
+      .delete()
+      .eq('id', categoryId);
+      
+    if (deleteError) {
+      console.error('Error deleting category:', deleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete category' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Category deleted successfully',

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/profile/skills
@@ -17,30 +17,42 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const userSkills = await prisma.userSkill.findMany({
-      where: { userId: user.id },
-      include: {
-        skill: true,
-        endorsements: {
-          include: {
-            endorser: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const supabase = getSupabaseServiceClient();
+    
+    // Get user skills with their related skill data and endorsements
+    const { data: userSkills, error } = await supabase
+      .from('userSkills')
+      .select(`
+        id,
+        userId,
+        skillId,
+        proficiency,
+        yearsOfExperience,
+        isHighlighted,
+        createdAt,
+        updatedAt,
+        skills:skillId (id, name, category),
+        endorsements:skillEndorsements (
+          id,
+          endorserId,
+          endorser:endorserId (id, firstName, lastName, profileImage)
+        )
+      `)
+      .eq('userId', user.id);
 
-    return NextResponse.json({ userSkills }, { status: 200 });
+    if (error) {
+      console.error('Error fetching user skills:', error);
+      return NextResponse.json(
+        { message: 'Failed to fetch skills' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ skills: userSkills || [] });
   } catch (error) {
-    console.error('Get skills error:', error);
+    console.error('Error in GET /api/profile/skills:', error);
     return NextResponse.json(
-      { message: 'Failed to get skills' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -61,65 +73,111 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await req.json();
-    const { skillId, proficiencyLevel, yearsExperience } = data;
+    const body = await req.json();
+    const { skillId, skillName, proficiency, yearsOfExperience, isHighlighted } = body;
 
-    // Validate required fields
-    if (!skillId) {
+    const supabase = getSupabaseServiceClient();
+    
+    // Check if skill exists or create it
+    let finalSkillId = skillId;
+    
+    if (!skillId && skillName) {
+      // Check if skill with this name already exists
+      const { data: existingSkill, error: skillCheckError } = await supabase
+        .from('skills')
+        .select('id')
+        .ilike('name', skillName)
+        .maybeSingle();
+      
+      if (skillCheckError) {
+        console.error('Error checking existing skill:', skillCheckError);
+        return NextResponse.json(
+          { message: 'Failed to check existing skill' },
+          { status: 500 }
+        );
+      }
+      
+      if (existingSkill) {
+        finalSkillId = existingSkill.id;
+      } else {
+        // Create new skill
+        const { data: newSkill, error: createSkillError } = await supabase
+          .from('skills')
+          .insert({ name: skillName })
+          .select('id')
+          .single();
+        
+        if (createSkillError || !newSkill) {
+          console.error('Error creating skill:', createSkillError);
+          return NextResponse.json(
+            { message: 'Failed to create skill' },
+            { status: 500 }
+          );
+        }
+        
+        finalSkillId = newSkill.id;
+      }
+    }
+    
+    // Check if user already has this skill
+    const { data: existingUserSkill, error: checkUserSkillError } = await supabase
+      .from('userSkills')
+      .select('id')
+      .eq('userId', user.id)
+      .eq('skillId', finalSkillId)
+      .maybeSingle();
+    
+    if (checkUserSkillError) {
+      console.error('Error checking existing user skill:', checkUserSkillError);
       return NextResponse.json(
-        { message: 'Skill ID is required' },
+        { message: 'Failed to check existing user skill' },
+        { status: 500 }
+      );
+    }
+    
+    if (existingUserSkill) {
+      return NextResponse.json(
+        { message: 'You already have this skill' },
         { status: 400 }
       );
     }
-
-    // Check if the skill exists
-    const skill = await prisma.skill.findUnique({
-      where: { id: skillId }
-    });
-
-    if (!skill) {
-      return NextResponse.json(
-        { message: 'Skill not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if the user already has this skill
-    const existingUserSkill = await prisma.userSkill.findFirst({
-      where: {
+    
+    // Add skill to user
+    const { data: userSkill, error: createUserSkillError } = await supabase
+      .from('userSkills')
+      .insert({
         userId: user.id,
-        skillId
-      }
-    });
-
-    if (existingUserSkill) {
-      return NextResponse.json(
-        { message: 'User already has this skill' },
-        { status: 409 }
-      );
-    }
-
-    // Add the skill to the user
-    const userSkill = await prisma.userSkill.create({
-      data: {
-        userId: user.id,
+        skillId: finalSkillId,
+        proficiency: proficiency || 1,
+        yearsOfExperience: yearsOfExperience || 0,
+        isHighlighted: isHighlighted || false
+      })
+      .select(`
+        id,
+        userId,
         skillId,
-        proficiencyLevel: proficiencyLevel || 1,
-        yearsExperience: yearsExperience ? parseFloat(yearsExperience) : null
-      },
-      include: {
-        skill: true
-      }
-    });
-
-    return NextResponse.json({
-      message: 'Skill added successfully',
-      userSkill
-    }, { status: 201 });
+        proficiency,
+        yearsOfExperience,
+        isHighlighted,
+        createdAt,
+        updatedAt,
+        skills:skillId (id, name, category)
+      `)
+      .single();
+    
+    if (createUserSkillError || !userSkill) {
+      console.error('Error adding user skill:', createUserSkillError);
+      return NextResponse.json(
+        { message: 'Failed to add skill' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ skill: userSkill });
   } catch (error) {
-    console.error('Add skill error:', error);
+    console.error('Error in POST /api/profile/skills:', error);
     return NextResponse.json(
-      { message: 'Failed to add skill' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -140,118 +198,106 @@ export async function PUT(req: NextRequest) {
       );
     }
 
-    const data = await req.json();
-    const { skills } = data;
+    const body = await req.json();
+    const { skills } = body;
 
     if (!Array.isArray(skills)) {
       return NextResponse.json(
-        { message: 'Skills must be an array' },
+        { message: 'Invalid request format' },
         { status: 400 }
       );
     }
 
-    // Process each skill in the array
-    const results = await Promise.all(
-      skills.map(async (skill) => {
-        const { id, skillId, proficiencyLevel, yearsExperience } = skill;
-
-        if (id) {
-          // Update existing user skill
-          const existingUserSkill = await prisma.userSkill.findFirst({
-            where: {
-              id,
-              userId: user.id // Ensure the skill belongs to the user
-            }
-          });
-
-          if (!existingUserSkill) {
-            return { 
-              success: false, 
-              message: `User skill with ID ${id} not found or doesn't belong to this user` 
-            };
-          }
-
-          const updatedUserSkill = await prisma.userSkill.update({
-            where: { id },
-            data: {
-              proficiencyLevel,
-              yearsExperience: yearsExperience ? parseFloat(yearsExperience) : null
-            },
-            include: {
-              skill: true
-            }
-          });
-
-          return { success: true, userSkill: updatedUserSkill };
-        } else if (skillId) {
-          // Add new skill
-          // Check if the skill exists
-          const skillExists = await prisma.skill.findUnique({
-            where: { id: skillId }
-          });
-
-          if (!skillExists) {
-            return { 
-              success: false, 
-              message: `Skill with ID ${skillId} not found` 
-            };
-          }
-
-          // Check if the user already has this skill
-          const existingUserSkill = await prisma.userSkill.findFirst({
-            where: {
-              userId: user.id,
-              skillId
-            }
-          });
-
-          if (existingUserSkill) {
-            return { 
-              success: false, 
-              message: 'User already has this skill' 
-            };
-          }
-
-          // Add the skill to the user
-          const newUserSkill = await prisma.userSkill.create({
-            data: {
-              userId: user.id,
-              skillId,
-              proficiencyLevel: proficiencyLevel || 1,
-              yearsExperience: yearsExperience ? parseFloat(yearsExperience) : null
-            },
-            include: {
-              skill: true
-            }
-          });
-
-          return { success: true, userSkill: newUserSkill };
-        } else {
-          return { 
-            success: false, 
-            message: 'Either skill ID or user skill ID is required' 
-          };
-        }
-      })
-    );
-
-    // Get all updated user skills
-    const updatedUserSkills = await prisma.userSkill.findMany({
-      where: { userId: user.id },
-      include: {
-        skill: true
+    const supabase = getSupabaseServiceClient();
+    const updatedSkills = [];
+    
+    // Process each skill update
+    for (const skill of skills) {
+      const { id, proficiency, yearsOfExperience, isHighlighted } = skill;
+      
+      // Verify the skill belongs to the user
+      const { data: userSkill, error: checkError } = await supabase
+        .from('userSkills')
+        .select('id')
+        .eq('id', id)
+        .eq('userId', user.id)
+        .maybeSingle();
+      
+      if (checkError || !userSkill) {
+        console.error(`Error verifying skill ${id}:`, checkError);
+        continue; // Skip this skill
       }
+      
+      // Update the skill
+      const updateData: any = {};
+      
+      if (proficiency !== undefined) updateData.proficiency = proficiency;
+      if (yearsOfExperience !== undefined) updateData.yearsOfExperience = yearsOfExperience;
+      if (isHighlighted !== undefined) updateData.isHighlighted = isHighlighted;
+      updateData.updatedAt = new Date().toISOString();
+      
+      const { data: updatedSkill, error: updateError } = await supabase
+        .from('userSkills')
+        .update(updateData)
+        .eq('id', id)
+        .select(`
+          id,
+          userId,
+          skillId,
+          proficiency,
+          yearsOfExperience,
+          isHighlighted,
+          createdAt,
+          updatedAt,
+          skills:skillId (id, name, category)
+        `)
+        .single();
+      
+      if (updateError || !updatedSkill) {
+        console.error(`Error updating skill ${id}:`, updateError);
+        continue; // Skip this skill
+      }
+      
+      updatedSkills.push(updatedSkill);
+    }
+    
+    // Get all user skills after updates
+    const { data: allUserSkills, error: fetchError } = await supabase
+      .from('userSkills')
+      .select(`
+        id,
+        userId,
+        skillId,
+        proficiency,
+        yearsOfExperience,
+        isHighlighted,
+        createdAt,
+        updatedAt,
+        skills:skillId (id, name, category),
+        endorsements:skillEndorsements (
+          id,
+          endorserId,
+          endorser:endorserId (id, firstName, lastName, profileImage)
+        )
+      `)
+      .eq('userId', user.id);
+    
+    if (fetchError) {
+      console.error('Error fetching updated skills:', fetchError);
+      return NextResponse.json(
+        { message: 'Skills updated but failed to fetch all skills' },
+        { status: 207 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      updatedCount: updatedSkills.length,
+      skills: allUserSkills || [] 
     });
-
-    return NextResponse.json({
-      message: 'Skills updated',
-      results,
-      userSkills: updatedUserSkills
-    }, { status: 200 });
   } catch (error) {
-    console.error('Update skills error:', error);
+    console.error('Error in PUT /api/profile/skills:', error);
     return NextResponse.json(
-      { message: 'Failed to update skills' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -272,68 +318,75 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    // Get the skill ID from the URL search params
-    const { searchParams } = new URL(req.url);
-    const userSkillId = searchParams.get('id');
-    const skillId = searchParams.get('skillId');
+    // Get skill ID from URL
+    const url = new URL(req.url);
+    const skillId = url.searchParams.get('id');
 
-    if (!userSkillId && !skillId) {
+    if (!skillId) {
       return NextResponse.json(
-        { message: 'Either user skill ID or skill ID is required' },
+        { message: 'Skill ID is required' },
         { status: 400 }
       );
     }
 
-    let deleteResult;
-
-    if (userSkillId) {
-      // Delete by user skill ID
-      const userSkill = await prisma.userSkill.findFirst({
-        where: {
-          id: userSkillId,
-          userId: user.id // Ensure the skill belongs to the user
-        }
-      });
-
-      if (!userSkill) {
-        return NextResponse.json(
-          { message: `User skill with ID ${userSkillId} not found or doesn't belong to this user` },
-          { status: 404 }
-        );
-      }
-
-      deleteResult = await prisma.userSkill.delete({
-        where: { id: userSkillId }
-      });
-    } else {
-      // Delete by skill ID
-      const userSkill = await prisma.userSkill.findFirst({
-        where: {
-          skillId: skillId || '',
-          userId: user.id // Ensure the skill belongs to the user
-        }
-      });
-
-      if (!userSkill) {
-        return NextResponse.json(
-          { message: `User skill with skill ID ${skillId} not found or doesn't belong to this user` },
-          { status: 404 }
-        );
-      }
-
-      deleteResult = await prisma.userSkill.delete({
-        where: { id: userSkill.id }
-      });
+    const supabase = getSupabaseServiceClient();
+    
+    // Verify the skill belongs to the user
+    const { data: userSkill, error: checkError } = await supabase
+      .from('userSkills')
+      .select('id')
+      .eq('id', skillId)
+      .eq('userId', user.id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error verifying skill:', checkError);
+      return NextResponse.json(
+        { message: 'Failed to verify skill' },
+        { status: 500 }
+      );
     }
-
-    return NextResponse.json({
-      message: 'Skill removed successfully',
-      deletedSkill: deleteResult
-    }, { status: 200 });
+    
+    if (!userSkill) {
+      return NextResponse.json(
+        { message: 'Skill not found or does not belong to user' },
+        { status: 404 }
+      );
+    }
+    
+    // Delete related endorsements first
+    const { error: endorsementDeleteError } = await supabase
+      .from('skillEndorsements')
+      .delete()
+      .eq('userSkillId', skillId);
+    
+    if (endorsementDeleteError) {
+      console.error('Error deleting endorsements:', endorsementDeleteError);
+      // Continue despite error
+    }
+    
+    // Delete the skill
+    const { error: deleteError } = await supabase
+      .from('userSkills')
+      .delete()
+      .eq('id', skillId);
+    
+    if (deleteError) {
+      console.error('Error deleting skill:', deleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete skill' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      message: 'Skill deleted successfully',
+      deletedId: skillId
+    });
   } catch (error) {
-    console.error('Delete skill error:', error);
+    console.error('Error in DELETE /api/profile/skills:', error);
     return NextResponse.json(
-      { message: 'Failed to remove skill' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

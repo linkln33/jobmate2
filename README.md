@@ -206,9 +206,6 @@ npm install
 # Set up environment variables
 cp .env.example .env.local
 
-# Generate Prisma client
-npx prisma generate
-
 # Run the development server
 npm run dev
 ```
@@ -314,6 +311,15 @@ jobmate2/
 ## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🛠️ Supabase Architecture
+
+JobMate utilizes Supabase as its primary database and authentication provider. The Supabase architecture is designed to provide a scalable and secure foundation for the platform.
+
+- **Database**: Supabase provides a PostgreSQL database for storing user data, marketplace listings, and other platform information.
+- **Authentication**: Supabase Auth handles user authentication and authorization, providing features like email/password login, social login, and JWT token generation.
+- **Realtime**: Supabase Realtime enables real-time updates and notifications across the platform, allowing for features like live updates and instant messaging.
+- **Storage**: Supabase Storage provides a secure and scalable storage solution for user-uploaded files and media.
 
 ## 🙏 Acknowledgments
 

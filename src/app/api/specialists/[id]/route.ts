@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
 
 // GET /api/specialists/[id] - Get specialist profile by ID
 export async function GET(
@@ -11,84 +9,131 @@ export async function GET(
 ) {
   try {
     const specialistId = params.id;
+    const supabase = getSupabaseServiceClient();
 
     // Get the specialist profile with related information
-    const specialist = await prisma.user.findUnique({
-      where: { id: specialistId, role: 'SPECIALIST' },
-      include: {
-        specialistProfile: {
-          include: {
-            services: {
-              include: {
-                serviceCategory: true,
-              },
-            },
-            certifications: true,
-          },
-        },
-        reviewsGiven: {
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        },
-      },
-    });
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        email,
+        firstName,
+        lastName,
+        profileImageUrl,
+        bio,
+        title,
+        role,
+        createdAt,
+        updatedAt,
+        specialistProfiles!inner (
+          id,
+          hourlyRate,
+          availability,
+          yearsOfExperience,
+          education,
+          languages,
+          location,
+          isVerified,
+          rating,
+          completedJobs,
+          services:specialistServices (
+            id,
+            title,
+            description,
+            price,
+            duration,
+            categoryId,
+            serviceCategories:categoryId (
+              id,
+              name,
+              slug,
+              icon
+            )
+          ),
+          certifications:specialistCertifications (
+            id,
+            name,
+            issuer,
+            issueDate,
+            expirationDate,
+            credentialId,
+            credentialUrl
+          )
+        )
+      `)
+      .eq('id', specialistId)
+      .eq('role', 'SPECIALIST')
+      .single();
 
-    if (!specialist || !specialist.specialistProfile) {
+    if (userError || !user) {
+      console.error('Error fetching specialist:', userError);
       return NextResponse.json(
         { message: 'Specialist not found' },
         { status: 404 }
       );
     }
 
-    // Get completed jobs count and average rating
-    const completedJobs = await prisma.job.count({
-      where: {
-        specialistId: specialistId,
-        status: 'COMPLETED',
-      },
-    });
+    // Get reviews for the specialist
+    const { data: reviews, error: reviewsError } = await supabase
+      .from('reviews')
+      .select(`
+        id,
+        rating,
+        comment,
+        createdAt,
+        reviewer:reviewerId (
+          id,
+          firstName,
+          lastName,
+          profileImageUrl
+        )
+      `)
+      .eq('userId', specialistId)
+      .order('createdAt', { ascending: false })
+      .limit(5);
 
-    const reviews = await prisma.review.findMany({
-      where: {
-        revieweeId: specialistId,
-      },
-      select: {
-        overallRating: true,
-      },
-    });
+    if (reviewsError) {
+      console.error('Error fetching reviews:', reviewsError);
+      // Continue despite error
+    }
 
-    const averageRating = reviews.length > 0
-      ? reviews.reduce((sum, review) => sum + review.overallRating, 0) / reviews.length
-      : 0;
+    // Get skills for the specialist
+    const { data: skills, error: skillsError } = await supabase
+      .from('userSkills')
+      .select(`
+        id,
+        proficiency,
+        yearsOfExperience,
+        isHighlighted,
+        skills:skillId (
+          id,
+          name,
+          category
+        )
+      `)
+      .eq('userId', specialistId);
 
-    // Get recent completed jobs
-    const recentJobs = await prisma.job.findMany({
-      where: {
-        specialistId: specialistId,
-        status: 'COMPLETED',
+    if (skillsError) {
+      console.error('Error fetching skills:', skillsError);
+      // Continue despite error
+    }
+
+    // Format the response
+    const specialist = {
+      ...user,
+      specialistProfile: {
+        ...user.specialistProfiles,
+        services: user.specialistProfiles.services || [],
+        certifications: user.specialistProfiles.certifications || []
       },
-      take: 5,
-      orderBy: { completedAt: 'desc' },
-      include: {
-        serviceCategory: true,
-        reviews: {
-          where: {
-            revieweeId: specialistId,
-          },
-          take: 1,
-        },
-      },
-    });
+      skills: skills || [],
+      reviews: reviews || []
+    };
 
-    // Remove sensitive information
-    const { passwordHash, ...userWithoutPassword } = specialist;
+    // Remove the redundant nested specialistProfiles property
+    delete specialist.specialistProfiles;
 
-    return NextResponse.json({
-      ...userWithoutPassword,
-      completedJobsCount: completedJobs,
-      averageRating,
-      recentJobs,
-    });
+    return NextResponse.json({ specialist });
   } catch (error) {
     console.error('Error fetching specialist profile:', error);
     return NextResponse.json(
@@ -104,109 +149,142 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getUserFromRequest(req);
     const specialistId = params.id;
-    
-    if (!user) {
+    const currentUser = await getUserFromRequest(req);
+
+    if (!currentUser) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Only the specialist themselves or admins can update the profile
-    if (user.id !== specialistId && user.role !== 'ADMIN') {
+    // Verify the user is updating their own profile
+    if (currentUser.id !== specialistId) {
       return NextResponse.json(
         { message: 'You can only update your own profile' },
         { status: 403 }
       );
     }
 
+    // Verify the user is a specialist
+    if (currentUser.role !== 'SPECIALIST') {
+      return NextResponse.json(
+        { message: 'Only specialists can update specialist profiles' },
+        { status: 403 }
+      );
+    }
+
     const body = await req.json();
     const {
-      firstName,
-      lastName,
-      profileImageUrl,
       bio,
-      phone,
-      businessName,
-      businessDescription,
-      yearsOfExperience,
-      address,
-      city,
-      state,
-      zipCode,
-      country,
-      latitude,
-      longitude,
-      serviceRadius,
-      availabilityStatus,
+      title,
       hourlyRate,
-      services,
+      availability,
+      yearsOfExperience,
+      education,
+      languages,
+      location
     } = body;
 
-    // Update user information
-    const updatedUser = await prisma.user.update({
-      where: { id: specialistId },
-      data: {
+    const supabase = getSupabaseServiceClient();
+
+    // Update user fields (bio, title)
+    const userUpdateData: any = {};
+    if (bio !== undefined) userUpdateData.bio = bio;
+    if (title !== undefined) userUpdateData.title = title;
+
+    if (Object.keys(userUpdateData).length > 0) {
+      userUpdateData.updatedAt = new Date().toISOString();
+      
+      const { error: userUpdateError } = await supabase
+        .from('users')
+        .update(userUpdateData)
+        .eq('id', specialistId);
+
+      if (userUpdateError) {
+        console.error('Error updating user:', userUpdateError);
+        return NextResponse.json(
+          { message: 'Failed to update user profile' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Update specialist profile fields
+    const profileUpdateData: any = {};
+    if (hourlyRate !== undefined) profileUpdateData.hourlyRate = hourlyRate;
+    if (availability !== undefined) profileUpdateData.availability = availability;
+    if (yearsOfExperience !== undefined) profileUpdateData.yearsOfExperience = yearsOfExperience;
+    if (education !== undefined) profileUpdateData.education = education;
+    if (languages !== undefined) profileUpdateData.languages = languages;
+    if (location !== undefined) profileUpdateData.location = location;
+
+    if (Object.keys(profileUpdateData).length > 0) {
+      profileUpdateData.updatedAt = new Date().toISOString();
+      
+      const { error: profileUpdateError } = await supabase
+        .from('specialistProfiles')
+        .update(profileUpdateData)
+        .eq('userId', specialistId);
+
+      if (profileUpdateError) {
+        console.error('Error updating specialist profile:', profileUpdateError);
+        return NextResponse.json(
+          { message: 'Failed to update specialist profile' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // Get the updated specialist profile
+    const { data: updatedUser, error: fetchError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        email,
         firstName,
         lastName,
         profileImageUrl,
         bio,
-        phone,
-      },
-    });
+        title,
+        role,
+        createdAt,
+        updatedAt,
+        specialistProfiles (
+          id,
+          hourlyRate,
+          availability,
+          yearsOfExperience,
+          education,
+          languages,
+          location,
+          isVerified,
+          rating,
+          completedJobs
+        )
+      `)
+      .eq('id', specialistId)
+      .single();
 
-    // Update specialist profile
-    const updatedProfile = await prisma.specialistProfile.update({
-      where: { userId: specialistId },
-      data: {
-        businessName,
-        businessDescription,
-        yearsOfExperience,
-        address,
-        city,
-        state,
-        zipCode,
-        country,
-        latitude,
-        longitude,
-        serviceRadius,
-        availabilityStatus,
-        hourlyRate: hourlyRate ? parseFloat(hourlyRate) : undefined,
-      },
-    });
-
-    // Handle services if provided
-    if (services && Array.isArray(services)) {
-      // Delete existing services first
-      await prisma.specialistService.deleteMany({
-        where: { specialistId: updatedProfile.id },
-      });
-
-      // Create new services
-      for (const service of services) {
-        await prisma.specialistService.create({
-          data: {
-            specialistId: updatedProfile.id,
-            serviceCategoryId: service.categoryId,
-            priceType: service.priceType,
-            basePrice: service.basePrice ? parseFloat(service.basePrice) : null,
-            description: service.description,
-            isPrimary: service.isPrimary || false,
-          },
-        });
-      }
+    if (fetchError || !updatedUser) {
+      console.error('Error fetching updated specialist:', fetchError);
+      return NextResponse.json(
+        { message: 'Profile updated but failed to fetch updated data' },
+        { status: 207 }
+      );
     }
 
-    // Remove sensitive information
-    const { passwordHash, ...userWithoutPassword } = updatedUser;
+    // Format the response
+    const specialist = {
+      ...updatedUser,
+      specialistProfile: updatedUser.specialistProfiles
+    };
 
-    return NextResponse.json({
-      message: 'Profile updated successfully',
-      user: userWithoutPassword,
-      specialistProfile: updatedProfile,
-    });
+    // Remove the redundant nested specialistProfiles property
+    delete specialist.specialistProfiles;
+
+    return NextResponse.json({ specialist });
   } catch (error) {
     console.error('Error updating specialist profile:', error);
     return NextResponse.json(

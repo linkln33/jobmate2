@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { withStandardRateLimit } from '../middleware';
@@ -14,32 +14,51 @@ export const GET = withStandardRateLimit(async function GET(req: NextRequest) {
     }
     
     const userId = session.user.id;
+    const supabase = getSupabaseServiceClient();
     
-    // Get or create preferences
-    let preferences = await prisma.assistantPreference.findUnique({
-      where: { userId }
-    });
+    // Get preferences
+    const { data: preferences, error } = await supabase
+      .from('assistantPreferences')
+      .select('*')
+      .eq('userId', userId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error('Error fetching preferences:', error);
+      return NextResponse.json({ error: 'Failed to fetch preferences' }, { status: 500 });
+    }
     
     // If no preferences exist yet, create default ones
     if (!preferences) {
-      preferences = await prisma.assistantPreference.create({
-        data: {
-          userId,
-          isEnabled: true,
-          proactivityLevel: 2, // Default: balanced
-          preferredModes: ['MATCHING', 'PROJECT_SETUP'], // Default enabled modes
-          dismissedSuggestions: [],
-        }
-      });
+      const defaultPreferences = {
+        userId,
+        isEnabled: true,
+        proactivityLevel: 2, // Default: balanced
+        preferredModes: ['MATCHING', 'PROJECT_SETUP'], // Default enabled modes
+        disabledModes: [],
+        disabledUntil: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const { data: newPreferences, error: createError } = await supabase
+        .from('assistantPreferences')
+        .insert(defaultPreferences)
+        .select()
+        .single();
+      
+      if (createError) {
+        console.error('Error creating preferences:', createError);
+        return NextResponse.json({ error: 'Failed to create preferences' }, { status: 500 });
+      }
+      
+      return NextResponse.json({ data: newPreferences });
     }
     
-    return NextResponse.json(preferences);
+    return NextResponse.json({ data: preferences });
   } catch (error) {
-    console.error('Error fetching assistant preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch assistant preferences' },
-      { status: 500 }
-    );
+    console.error('Error in GET /api/assistant/preferences:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 });
 
@@ -53,93 +72,91 @@ export const PUT = withStandardRateLimit(async function PUT(req: NextRequest) {
     }
     
     const userId = session.user.id;
-    const data = await req.json();
+    const supabase = getSupabaseServiceClient();
     
-    // Validate input data
-    const { isEnabled, proactivityLevel, preferredModes, dismissedSuggestions } = data;
+    // Parse request body
+    const body = await req.json();
     
-    // Update or create preferences
-    const preferences = await prisma.assistantPreference.upsert({
-      where: { userId },
-      update: {
-        ...(isEnabled !== undefined && { isEnabled }),
-        ...(proactivityLevel !== undefined && { proactivityLevel }),
-        ...(preferredModes !== undefined && { preferredModes }),
-        ...(dismissedSuggestions !== undefined && { dismissedSuggestions }),
-      },
-      create: {
+    // Validate input
+    const validFields = [
+      'isEnabled',
+      'proactivityLevel',
+      'preferredModes',
+      'disabledModes',
+      'disabledUntil'
+    ];
+    
+    const updateData: Record<string, any> = {};
+    
+    // Only allow updating specific fields
+    for (const field of validFields) {
+      if (body[field] !== undefined) {
+        updateData[field] = body[field];
+      }
+    }
+    
+    // Add updatedAt timestamp
+    updateData.updatedAt = new Date().toISOString();
+    
+    // Check if preferences exist
+    const { data: existingPrefs, error: checkError } = await supabase
+      .from('assistantPreferences')
+      .select('id')
+      .eq('userId', userId)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking preferences:', checkError);
+      return NextResponse.json({ error: 'Failed to check preferences' }, { status: 500 });
+    }
+    
+    let result;
+    
+    if (!existingPrefs) {
+      // Create new preferences with defaults + updates
+      const newPreferences = {
         userId,
-        isEnabled: isEnabled ?? true,
-        proactivityLevel: proactivityLevel ?? 2,
-        preferredModes: preferredModes ?? ['MATCHING', 'PROJECT_SETUP'],
-        dismissedSuggestions: dismissedSuggestions ?? [],
+        isEnabled: updateData.isEnabled !== undefined ? updateData.isEnabled : true,
+        proactivityLevel: updateData.proactivityLevel !== undefined ? updateData.proactivityLevel : 2,
+        preferredModes: updateData.preferredModes !== undefined ? updateData.preferredModes : ['MATCHING', 'PROJECT_SETUP'],
+        disabledModes: updateData.disabledModes !== undefined ? updateData.disabledModes : [],
+        disabledUntil: updateData.disabledUntil !== undefined ? updateData.disabledUntil : null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      const { data, error } = await supabase
+        .from('assistantPreferences')
+        .insert(newPreferences)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating preferences:', error);
+        return NextResponse.json({ error: 'Failed to create preferences' }, { status: 500 });
       }
-    });
-    
-    return NextResponse.json(preferences);
-  } catch (error) {
-    console.error('Error updating assistant preferences:', error);
-    return NextResponse.json(
-      { error: 'Failed to update assistant preferences' },
-      { status: 500 }
-    );
-  }
-});
-
-// POST /api/assistant/preferences/dismiss - Dismiss a suggestion
-export const POST = withStandardRateLimit(async function POST(req: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    const userId = session.user.id;
-    const { suggestionId } = await req.json();
-    
-    if (!suggestionId) {
-      return NextResponse.json(
-        { error: 'Suggestion ID is required' },
-        { status: 400 }
-      );
-    }
-    
-    // Get current preferences
-    let preferences = await prisma.assistantPreference.findUnique({
-      where: { userId }
-    });
-    
-    // If no preferences exist, create them
-    if (!preferences) {
-      preferences = await prisma.assistantPreference.create({
-        data: {
-          userId,
-          isEnabled: true,
-          proactivityLevel: 2,
-          preferredModes: ['MATCHING', 'PROJECT_SETUP'],
-          dismissedSuggestions: [suggestionId],
-        }
-      });
+      
+      result = data;
     } else {
-      // Update dismissed suggestions
-      const dismissedIds = preferences.dismissedSuggestions || [];
-      if (!dismissedIds.includes(suggestionId)) {
-        preferences = await prisma.assistantPreference.update({
-          where: { userId },
-          data: {
-            dismissedSuggestions: [...dismissedIds, suggestionId],
-          }
-        });
+      // Update existing preferences
+      const { data, error } = await supabase
+        .from('assistantPreferences')
+        .update(updateData)
+        .eq('userId', userId)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating preferences:', error);
+        return NextResponse.json({ error: 'Failed to update preferences' }, { status: 500 });
       }
+      
+      result = data;
     }
     
-    return NextResponse.json(preferences);
+    return NextResponse.json({ data: result });
   } catch (error) {
-    console.error('Error dismissing suggestion:', error);
-    return NextResponse.json(
-      { error: 'Failed to dismiss suggestion' },
-      { status: 500 }
-    );
+    console.error('Error in PUT /api/assistant/preferences:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 });

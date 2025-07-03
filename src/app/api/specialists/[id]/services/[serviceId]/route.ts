@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/specialists/[id]/services/[serviceId] - Get a specific service offered by a specialist
 export async function GET(
@@ -11,16 +9,23 @@ export async function GET(
 ) {
   try {
     const { id: specialistId, serviceId } = params;
+    const supabase = getSupabaseServiceClient();
 
     // Check if the specialist exists
-    const specialist = await prisma.user.findUnique({
-      where: { id: specialistId, role: 'SPECIALIST' },
-      include: {
-        specialistProfile: true,
-      },
-    });
+    const { data: specialist, error: specialistError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        specialistProfiles!inner (
+          id
+        )
+      `)
+      .eq('id', specialistId)
+      .eq('role', 'SPECIALIST')
+      .single();
 
-    if (!specialist || !specialist.specialistProfile) {
+    if (specialistError || !specialist) {
+      console.error('Error fetching specialist:', specialistError);
       return NextResponse.json(
         { message: 'Specialist not found' },
         { status: 404 }
@@ -28,17 +33,30 @@ export async function GET(
     }
 
     // Get the specific service
-    const service = await prisma.specialistService.findUnique({
-      where: { 
-        id: serviceId,
-        specialistId: specialist.specialistProfile.id,
-      },
-      include: {
-        serviceCategory: true,
-      },
-    });
+    const { data: service, error: serviceError } = await supabase
+      .from('specialistServices')
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        duration,
+        categoryId,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .eq('id', serviceId)
+      .eq('specialistId', specialistId)
+      .single();
 
-    if (!service) {
+    if (serviceError || !service) {
+      console.error('Error fetching service:', serviceError);
       return NextResponse.json(
         { message: 'Service not found' },
         { status: 404 }
@@ -47,9 +65,9 @@ export async function GET(
 
     return NextResponse.json({ service });
   } catch (error) {
-    console.error('Error fetching specialist service:', error);
+    console.error('Error in GET /api/specialists/[id]/services/[serviceId]:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch specialist service' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -61,96 +79,117 @@ export async function PATCH(
   { params }: { params: { id: string; serviceId: string } }
 ) {
   try {
-    const user = await getUserFromRequest(req);
     const { id: specialistId, serviceId } = params;
-    
-    if (!user) {
+    const currentUser = await getUserFromRequest(req);
+
+    if (!currentUser) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Only the specialist themselves or admins can update services
-    if (user.id !== specialistId && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { message: 'You can only update your own services' },
-        { status: 403 }
-      );
-    }
+    const supabase = getSupabaseServiceClient();
 
-    // Get the specialist profile
-    const specialistProfile = await prisma.specialistProfile.findUnique({
-      where: { userId: specialistId },
-    });
+    // Check if the service exists and belongs to the specialist
+    const { data: service, error: serviceError } = await supabase
+      .from('specialistServices')
+      .select('id, specialistId')
+      .eq('id', serviceId)
+      .eq('specialistId', specialistId)
+      .single();
 
-    if (!specialistProfile) {
-      return NextResponse.json(
-        { message: 'Specialist profile not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if the service exists
-    const existingService = await prisma.specialistService.findUnique({
-      where: { 
-        id: serviceId,
-      },
-    });
-
-    if (!existingService || existingService.specialistId !== specialistProfile.id) {
+    if (serviceError || !service) {
+      console.error('Error fetching service:', serviceError);
       return NextResponse.json(
         { message: 'Service not found' },
         { status: 404 }
       );
     }
 
-    const body = await req.json();
-    const {
-      serviceCategoryId,
-      priceType,
-      basePrice,
-      description,
-      isPrimary,
-    } = body;
+    // Only the specialist themselves or an admin can update services
+    if (currentUser.id !== specialistId && currentUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { message: 'You can only update your own services' },
+        { status: 403 }
+      );
+    }
 
-    // If this is marked as primary, update other services to not be primary
-    if (isPrimary) {
-      await prisma.specialistService.updateMany({
-        where: {
-          specialistId: specialistProfile.id,
-          id: { not: serviceId },
-          isPrimary: true,
-        },
-        data: {
-          isPrimary: false,
-        },
-      });
+    // Parse request body
+    const body = await req.json();
+    const { title, description, price, duration, categoryId } = body;
+
+    // Build update data
+    const updateData: any = {};
+    if (title !== undefined) updateData.title = title;
+    if (description !== undefined) updateData.description = description;
+    if (price !== undefined) updateData.price = price;
+    if (duration !== undefined) updateData.duration = duration;
+    if (categoryId !== undefined) updateData.categoryId = categoryId;
+    
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json(
+        { message: 'No fields to update' },
+        { status: 400 }
+      );
+    }
+
+    // If categoryId is provided, check if it exists
+    if (categoryId !== undefined) {
+      const { data: category, error: categoryError } = await supabase
+        .from('serviceCategories')
+        .select('id')
+        .eq('id', categoryId)
+        .single();
+
+      if (categoryError || !category) {
+        console.error('Error fetching category:', categoryError);
+        return NextResponse.json(
+          { message: 'Invalid category ID' },
+          { status: 400 }
+        );
+      }
     }
 
     // Update the service
-    const updatedService = await prisma.specialistService.update({
-      where: { id: serviceId },
-      data: {
-        serviceCategoryId,
-        priceType,
-        basePrice: basePrice ? parseFloat(basePrice) : null,
+    updateData.updatedAt = new Date().toISOString();
+    
+    const { data: updatedService, error: updateError } = await supabase
+      .from('specialistServices')
+      .update(updateData)
+      .eq('id', serviceId)
+      .select(`
+        id,
+        title,
         description,
-        isPrimary: isPrimary || false,
-      },
-      include: {
-        serviceCategory: true,
-      },
-    });
+        price,
+        duration,
+        categoryId,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .single();
 
-    return NextResponse.json({
-      message: 'Service updated successfully',
-      service: updatedService,
-    });
+    if (updateError || !updatedService) {
+      console.error('Error updating service:', updateError);
+      return NextResponse.json(
+        { message: 'Failed to update service' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ service: updatedService });
   } catch (error) {
-    console.error('Error updating specialist service:', error);
+    console.error('Error in PATCH /api/specialists/[id]/services/[serviceId]:', error);
     return NextResponse.json(
-      { message: 'Failed to update specialist service' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -162,60 +201,64 @@ export async function DELETE(
   { params }: { params: { id: string; serviceId: string } }
 ) {
   try {
-    const user = await getUserFromRequest(req);
     const { id: specialistId, serviceId } = params;
-    
-    if (!user) {
+    const currentUser = await getUserFromRequest(req);
+
+    if (!currentUser) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Only the specialist themselves or admins can delete services
-    if (user.id !== specialistId && user.role !== 'ADMIN') {
-      return NextResponse.json(
-        { message: 'You can only delete your own services' },
-        { status: 403 }
-      );
-    }
+    const supabase = getSupabaseServiceClient();
 
-    // Get the specialist profile
-    const specialistProfile = await prisma.specialistProfile.findUnique({
-      where: { userId: specialistId },
-    });
+    // Check if the service exists and belongs to the specialist
+    const { data: service, error: serviceError } = await supabase
+      .from('specialistServices')
+      .select('id, specialistId')
+      .eq('id', serviceId)
+      .eq('specialistId', specialistId)
+      .single();
 
-    if (!specialistProfile) {
-      return NextResponse.json(
-        { message: 'Specialist profile not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if the service exists
-    const existingService = await prisma.specialistService.findUnique({
-      where: { id: serviceId },
-    });
-
-    if (!existingService || existingService.specialistId !== specialistProfile.id) {
+    if (serviceError || !service) {
+      console.error('Error fetching service:', serviceError);
       return NextResponse.json(
         { message: 'Service not found' },
         { status: 404 }
       );
     }
 
+    // Only the specialist themselves or an admin can delete services
+    if (currentUser.id !== specialistId && currentUser.role !== 'ADMIN') {
+      return NextResponse.json(
+        { message: 'You can only delete your own services' },
+        { status: 403 }
+      );
+    }
+
     // Delete the service
-    await prisma.specialistService.delete({
-      where: { id: serviceId },
-    });
+    const { error: deleteError } = await supabase
+      .from('specialistServices')
+      .delete()
+      .eq('id', serviceId);
+
+    if (deleteError) {
+      console.error('Error deleting service:', deleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete service' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       message: 'Service deleted successfully',
+      deletedId: serviceId
     });
   } catch (error) {
-    console.error('Error deleting specialist service:', error);
+    console.error('Error in DELETE /api/specialists/[id]/services/[serviceId]:', error);
     return NextResponse.json(
-      { message: 'Failed to delete specialist service' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

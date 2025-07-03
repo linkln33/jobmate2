@@ -4,7 +4,7 @@
  * Provides tone detection, selection, and adjustment capabilities for the assistant
  */
 
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 import { AssistantMode, ToneStyle, TonePreference } from '@/contexts/AssistantContext/types';
 
 /**
@@ -21,9 +21,17 @@ export interface TonePreferenceWithUser extends TonePreference {
  */
 export const getUserTonePreferences = async (userId: string): Promise<TonePreference | null> => {
   try {
-    const preferences = await prisma.assistantPreference.findUnique({
-      where: { userId }
-    });
+    const supabase = getSupabaseServiceClient();
+    const { data: preferences, error } = await supabase
+      .from('assistantPreferences')
+      .select('*')
+      .eq('userId', userId)
+      .maybeSingle();
+      
+    if (error) {
+      console.error('Error fetching tone preferences:', error);
+      return null;
+    }
 
     if (!preferences || !preferences.tonePreferences) {
       return null;
@@ -44,22 +52,46 @@ export const getUserTonePreferences = async (userId: string): Promise<TonePrefer
  */
 export const saveTonePreferences = async (userId: string, preferences: TonePreference): Promise<boolean> => {
   try {
-    await prisma.assistantPreference.upsert({
-      where: { userId },
-      update: {
-        // Cast to any to bypass TypeScript checking since we know the schema supports this
-        tonePreferences: preferences as any
-      },
-      create: {
-        userId,
-        isEnabled: true,
-        proactivityLevel: 2,
-        preferredModes: ['JOB_SEARCH', 'PROJECT_SETUP'],
-        dismissedSuggestions: [],
-        // Cast to any to bypass TypeScript checking
-        tonePreferences: preferences as any
+    const supabase = getSupabaseServiceClient();
+    
+    // Check if preference exists
+    const { data: existingPrefs } = await supabase
+      .from('assistantPreferences')
+      .select('id')
+      .eq('userId', userId)
+      .maybeSingle();
+      
+    if (existingPrefs) {
+      // Update existing preferences
+      const { error: updateError } = await supabase
+        .from('assistantPreferences')
+        .update({
+          tonePreferences: preferences
+        })
+        .eq('userId', userId);
+        
+      if (updateError) {
+        console.error('Error updating tone preferences:', updateError);
+        return false;
       }
-    });
+    } else {
+      // Create new preferences
+      const { error: insertError } = await supabase
+        .from('assistantPreferences')
+        .insert({
+          userId,
+          isEnabled: true,
+          proactivityLevel: 2,
+          preferredModes: ['JOB_SEARCH', 'PROJECT_SETUP'],
+          dismissedSuggestions: [],
+          tonePreferences: preferences
+        });
+        
+      if (insertError) {
+        console.error('Error creating tone preferences:', insertError);
+        return false;
+      }
+    }
     return true;
   } catch (error) {
     console.error('Error saving tone preferences:', error);
@@ -96,18 +128,23 @@ export const detectTone = async (
   
   // If no preferences, analyze recent interactions to determine preferred tone
   try {
-    const recentLogs = await prisma.assistantMemoryLog.findMany({
-      where: {
-        userId,
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // Last 30 days
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      },
-      take: 20
-    });
+    const supabase = getSupabaseServiceClient();
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    
+    const { data: recentLogs, error } = await supabase
+      .from('assistantMemoryLogs')
+      .select('*')
+      .eq('userId', userId)
+      .gte('createdAt', thirtyDaysAgo)
+      .order('createdAt', { ascending: false });
+      
+    if (error) {
+      console.error('Error fetching assistant memory logs:', error);
+      return 'PROFESSIONAL'; // Default to professional tone on error
+    }
+    
+    // Limit to 20 logs if needed
+    const limitedLogs = recentLogs ? recentLogs.slice(0, 20) : [];
     
     // Default tones by mode if no history or preferences
     const defaultTonesByMode: Record<AssistantMode, ToneStyle> = {

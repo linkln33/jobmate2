@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserFromRequest } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 /**
  * GET /api/profile/skills/endorsements
@@ -18,41 +18,54 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    // Get the user skill with endorsements
-    const userSkill = await prisma.userSkill.findUnique({
-      where: { id: userSkillId },
-      include: {
-        endorsements: {
-          include: {
-            endorser: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                profileImageUrl: true
-              }
-            }
-          },
-          orderBy: { createdAt: 'desc' }
-        }
-      }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    if (!userSkill) {
+    // Get the user skill with endorsements
+    const { data: userSkill, error: skillError } = await supabase
+      .from('userSkills')
+      .select('id, userId, skillId')
+      .eq('id', userSkillId)
+      .single();
+    
+    if (skillError || !userSkill) {
+      console.error('Error fetching user skill:', skillError);
       return NextResponse.json(
         { message: 'User skill not found' },
         { status: 404 }
       );
     }
     
-    return NextResponse.json({
-      endorsements: userSkill.endorsements,
-      count: userSkill.endorsements.length
-    });
+    // Get endorsements for this skill
+    const { data: endorsements, error: endorsementsError } = await supabase
+      .from('skillEndorsements')
+      .select(`
+        id,
+        userSkillId,
+        endorserId,
+        createdAt,
+        endorser:endorserId (
+          id,
+          firstName,
+          lastName,
+          profileImage,
+          title
+        )
+      `)
+      .eq('userSkillId', userSkillId);
+    
+    if (endorsementsError) {
+      console.error('Error fetching endorsements:', endorsementsError);
+      return NextResponse.json(
+        { message: 'Failed to fetch endorsements' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ endorsements: endorsements || [] });
   } catch (error) {
-    console.error('Error fetching skill endorsements:', error);
+    console.error('Error in GET /api/profile/skills/endorsements:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch skill endorsements' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -65,16 +78,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const user = await getUserFromRequest(req);
-    
+
     if (!user) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
-    
-    const data = await req.json();
-    const { userSkillId, comment } = data;
+
+    const body = await req.json();
+    const { userSkillId } = body;
     
     if (!userSkillId) {
       return NextResponse.json(
@@ -83,79 +96,89 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    // Get the user skill
-    const userSkill = await prisma.userSkill.findUnique({
-      where: { id: userSkillId },
-      include: { user: true }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    if (!userSkill) {
+    // Get the user skill
+    const { data: userSkill, error: skillError } = await supabase
+      .from('userSkills')
+      .select('id, userId, skillId')
+      .eq('id', userSkillId)
+      .single();
+    
+    if (skillError || !userSkill) {
+      console.error('Error fetching user skill:', skillError);
       return NextResponse.json(
         { message: 'User skill not found' },
         { status: 404 }
       );
     }
     
-    // Check if the user is trying to endorse their own skill
+    // Prevent self-endorsement
     if (userSkill.userId === user.id) {
       return NextResponse.json(
-        { message: 'You cannot endorse your own skill' },
+        { message: 'You cannot endorse your own skills' },
         { status: 400 }
       );
     }
     
-    // Check if the user has already endorsed this skill
-    const existingEndorsement = await prisma.skillEndorsement.findFirst({
-      where: {
-        userSkillId,
-        endorserId: user.id
-      }
-    });
+    // Check if user has already endorsed this skill
+    const { data: existingEndorsement, error: checkError } = await supabase
+      .from('skillEndorsements')
+      .select('id')
+      .eq('userSkillId', userSkillId)
+      .eq('endorserId', user.id)
+      .maybeSingle();
+    
+    if (checkError) {
+      console.error('Error checking existing endorsement:', checkError);
+      return NextResponse.json(
+        { message: 'Failed to check existing endorsement' },
+        { status: 500 }
+      );
+    }
     
     if (existingEndorsement) {
       return NextResponse.json(
         { message: 'You have already endorsed this skill' },
-        { status: 409 }
+        { status: 400 }
       );
     }
     
     // Create the endorsement
-    const endorsement = await prisma.skillEndorsement.create({
-      data: {
+    const { data: endorsement, error: createError } = await supabase
+      .from('skillEndorsements')
+      .insert({
         userSkillId,
-        endorserId: user.id,
-        comment
-      },
-      include: {
-        endorser: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImageUrl: true
-          }
-        }
-      }
-    });
+        endorserId: user.id
+      })
+      .select(`
+        id,
+        userSkillId,
+        endorserId,
+        createdAt,
+        endorser:endorserId (
+          id,
+          firstName,
+          lastName,
+          profileImage,
+          title
+        )
+      `)
+      .single();
     
-    // Update the endorsement count on the user skill
-    await prisma.userSkill.update({
-      where: { id: userSkillId },
-      data: {
-        endorsementCount: {
-          increment: 1
-        }
-      }
-    });
+    if (createError || !endorsement) {
+      console.error('Error creating endorsement:', createError);
+      return NextResponse.json(
+        { message: 'Failed to create endorsement' },
+        { status: 500 }
+      );
+    }
     
-    return NextResponse.json(
-      { message: 'Skill endorsed successfully', endorsement },
-      { status: 201 }
-    );
+    return NextResponse.json({ endorsement });
   } catch (error) {
-    console.error('Error endorsing skill:', error);
+    console.error('Error in POST /api/profile/skills/endorsements:', error);
     return NextResponse.json(
-      { message: 'Failed to endorse skill' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -168,14 +191,14 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const user = await getUserFromRequest(req);
-    
+
     if (!user) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
-    
+
     const { searchParams } = new URL(req.url);
     const endorsementId = searchParams.get('id');
     
@@ -186,19 +209,24 @@ export async function DELETE(req: NextRequest) {
       );
     }
     
-    // Get the endorsement
-    const endorsement = await prisma.skillEndorsement.findUnique({
-      where: { id: endorsementId }
-    });
+    const supabase = getSupabaseServiceClient();
     
-    if (!endorsement) {
+    // Get the endorsement
+    const { data: endorsement, error: fetchError } = await supabase
+      .from('skillEndorsements')
+      .select('id, endorserId, userSkillId')
+      .eq('id', endorsementId)
+      .single();
+    
+    if (fetchError || !endorsement) {
+      console.error('Error fetching endorsement:', fetchError);
       return NextResponse.json(
         { message: 'Endorsement not found' },
         { status: 404 }
       );
     }
     
-    // Check if the user is the endorser
+    // Verify the user is the endorser
     if (endorsement.endorserId !== user.id) {
       return NextResponse.json(
         { message: 'You can only remove your own endorsements' },
@@ -206,31 +234,28 @@ export async function DELETE(req: NextRequest) {
       );
     }
     
-    // Delete the endorsement in a transaction
-    await prisma.$transaction(async (tx) => {
-      // Delete the endorsement
-      await tx.skillEndorsement.delete({
-        where: { id: endorsementId }
-      });
-      
-      // Update the endorsement count on the user skill
-      await tx.userSkill.update({
-        where: { id: endorsement.userSkillId },
-        data: {
-          endorsementCount: {
-            decrement: 1
-          }
-        }
-      });
-    });
+    // Delete the endorsement
+    const { error: deleteError } = await supabase
+      .from('skillEndorsements')
+      .delete()
+      .eq('id', endorsementId);
     
-    return NextResponse.json({
-      message: 'Endorsement removed successfully'
+    if (deleteError) {
+      console.error('Error deleting endorsement:', deleteError);
+      return NextResponse.json(
+        { message: 'Failed to delete endorsement' },
+        { status: 500 }
+      );
+    }
+    
+    return NextResponse.json({ 
+      message: 'Endorsement removed successfully',
+      deletedId: endorsementId
     });
   } catch (error) {
-    console.error('Error removing endorsement:', error);
+    console.error('Error in DELETE /api/profile/skills/endorsements:', error);
     return NextResponse.json(
-      { message: 'Failed to remove endorsement' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }

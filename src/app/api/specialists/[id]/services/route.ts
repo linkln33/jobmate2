@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 import { getUserFromRequest } from '@/lib/auth';
-
-const prisma = new PrismaClient();
+import { getSupabaseServiceClient } from '@/lib/supabase/client';
 
 // GET /api/specialists/[id]/services - Get services offered by a specialist
 export async function GET(
@@ -11,16 +9,23 @@ export async function GET(
 ) {
   try {
     const specialistId = params.id;
+    const supabase = getSupabaseServiceClient();
 
     // Check if the specialist exists
-    const specialist = await prisma.user.findUnique({
-      where: { id: specialistId, role: 'SPECIALIST' },
-      include: {
-        specialistProfile: true,
-      },
-    });
+    const { data: specialist, error: specialistError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        specialistProfiles!inner (
+          id
+        )
+      `)
+      .eq('id', specialistId)
+      .eq('role', 'SPECIALIST')
+      .single();
 
-    if (!specialist || !specialist.specialistProfile) {
+    if (specialistError || !specialist) {
+      console.error('Error fetching specialist:', specialistError);
       return NextResponse.json(
         { message: 'Specialist not found' },
         { status: 404 }
@@ -28,19 +33,40 @@ export async function GET(
     }
 
     // Get all services offered by the specialist
-    const services = await prisma.specialistService.findMany({
-      where: { specialistId: specialist.specialistProfile.id },
-      include: {
-        serviceCategory: true,
-      },
-      orderBy: { isPrimary: 'desc' },
-    });
+    const { data: services, error: servicesError } = await supabase
+      .from('specialistServices')
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        duration,
+        categoryId,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .eq('specialistId', specialistId)
+      .order('title', { ascending: true });
 
-    return NextResponse.json({ services });
+    if (servicesError) {
+      console.error('Error fetching specialist services:', servicesError);
+      return NextResponse.json(
+        { message: 'Failed to fetch specialist services' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ services: services || [] });
   } catch (error) {
-    console.error('Error fetching specialist services:', error);
+    console.error('Error in GET /api/specialists/[id]/services:', error);
     return NextResponse.json(
-      { message: 'Failed to fetch specialist services' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
@@ -52,116 +78,116 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await getUserFromRequest(req);
     const specialistId = params.id;
-    
-    if (!user) {
+    const currentUser = await getUserFromRequest(req);
+
+    if (!currentUser) {
       return NextResponse.json(
         { message: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Only the specialist themselves or admins can add services
-    if (user.id !== specialistId && user.role !== 'ADMIN') {
+    // Only the specialist themselves or an admin can add services
+    if (currentUser.id !== specialistId && currentUser.role !== 'ADMIN') {
       return NextResponse.json(
         { message: 'You can only add services to your own profile' },
         { status: 403 }
       );
     }
 
-    // Get the specialist profile
-    const specialistProfile = await prisma.specialistProfile.findUnique({
-      where: { userId: specialistId },
-    });
+    const supabase = getSupabaseServiceClient();
 
-    if (!specialistProfile) {
+    // Check if the specialist exists
+    const { data: specialist, error: specialistError } = await supabase
+      .from('users')
+      .select(`
+        id,
+        specialistProfiles!inner (
+          id
+        )
+      `)
+      .eq('id', specialistId)
+      .eq('role', 'SPECIALIST')
+      .single();
+
+    if (specialistError || !specialist) {
+      console.error('Error fetching specialist:', specialistError);
       return NextResponse.json(
-        { message: 'Specialist profile not found' },
+        { message: 'Specialist not found' },
         { status: 404 }
       );
     }
 
+    // Parse request body
     const body = await req.json();
-    const {
-      serviceCategoryId,
-      priceType,
-      basePrice,
-      description,
-      isPrimary,
-    } = body;
+    const { title, description, price, duration, categoryId } = body;
 
     // Validate required fields
-    if (!serviceCategoryId || !priceType) {
+    if (!title || !description || !price || !categoryId) {
       return NextResponse.json(
-        { message: 'Service category and price type are required' },
+        { message: 'Missing required fields: title, description, price, and categoryId are required' },
         { status: 400 }
       );
     }
 
-    // Check if the service category exists
-    const category = await prisma.serviceCategory.findUnique({
-      where: { id: serviceCategoryId },
-    });
+    // Check if the category exists
+    const { data: category, error: categoryError } = await supabase
+      .from('serviceCategories')
+      .select('id')
+      .eq('id', categoryId)
+      .single();
 
-    if (!category) {
+    if (categoryError || !category) {
+      console.error('Error fetching category:', categoryError);
       return NextResponse.json(
-        { message: 'Service category not found' },
-        { status: 404 }
+        { message: 'Invalid category ID' },
+        { status: 400 }
       );
-    }
-
-    // Check if the specialist already offers this service
-    const existingService = await prisma.specialistService.findFirst({
-      where: {
-        specialistId: specialistProfile.id,
-        serviceCategoryId,
-      },
-    });
-
-    if (existingService) {
-      return NextResponse.json(
-        { message: 'You already offer this service' },
-        { status: 409 }
-      );
-    }
-
-    // If this is marked as primary, update other services to not be primary
-    if (isPrimary) {
-      await prisma.specialistService.updateMany({
-        where: {
-          specialistId: specialistProfile.id,
-          isPrimary: true,
-        },
-        data: {
-          isPrimary: false,
-        },
-      });
     }
 
     // Create the new service
-    const newService = await prisma.specialistService.create({
-      data: {
-        specialistId: specialistProfile.id,
-        serviceCategoryId,
-        priceType,
-        basePrice: basePrice ? parseFloat(basePrice) : null,
+    const { data: newService, error: createError } = await supabase
+      .from('specialistServices')
+      .insert({
+        specialistId,
+        title,
         description,
-        isPrimary: isPrimary || false,
-      },
-      include: {
-        serviceCategory: true,
-      },
-    });
+        price,
+        duration: duration || null,
+        categoryId
+      })
+      .select(`
+        id,
+        title,
+        description,
+        price,
+        duration,
+        categoryId,
+        createdAt,
+        updatedAt,
+        serviceCategories:categoryId (
+          id,
+          name,
+          slug,
+          icon
+        )
+      `)
+      .single();
 
-    return NextResponse.json({
-      message: 'Service added successfully',
-      service: newService,
-    });
+    if (createError || !newService) {
+      console.error('Error creating service:', createError);
+      return NextResponse.json(
+        { message: 'Failed to create service' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ service: newService }, { status: 201 });
   } catch (error) {
-    console.error('Error adding specialist service:', error);
+    console.error('Error in POST /api/specialists/[id]/services:', error);
     return NextResponse.json(
-      { message: 'Failed to add specialist service' },
+      { message: 'Internal server error' },
       { status: 500 }
     );
   }
