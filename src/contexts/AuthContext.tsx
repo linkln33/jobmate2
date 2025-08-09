@@ -37,11 +37,13 @@ export const useAuth = () => {
 
 interface AuthProviderProps {
   children: ReactNode;
+  initialUser?: User | null;
+  initialToken?: string | null;
 }
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+export const AuthProvider = ({ children, initialUser = null, initialToken = null }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [token, setToken] = useState<string | null>(initialToken);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [socialLoginLoading, setSocialLoginLoading] = useState<boolean>(false);
@@ -51,6 +53,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     const checkAuth = async () => {
       try {
+        // If SSR provided user+token, initialize from it and skip network
+        if (initialToken && initialUser) {
+          setUser(initialUser);
+          setToken(initialToken);
+          setIsAuthenticated(true);
+          // Ensure cookie is set for middleware/auth
+          document.cookie = `auth_token=${initialToken}; path=/; max-age=${60*60*24*7}; SameSite=Strict`;
+          setIsLoading(false);
+          return;
+        }
+
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
 
