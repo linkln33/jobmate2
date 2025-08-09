@@ -1,8 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import axios from 'axios';
+import useSWR from 'swr';
+import { useAuth } from '@/contexts/AuthContext';
 import { 
   AssistantContextValue, 
   AssistantContextState, 
@@ -40,25 +42,20 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
   const [state, setState] = useState<AssistantContextState>(initialState);
   const pathname = usePathname();
 
-  // Initialize assistant
+  // Auth-gated initialization (SWR handles fetching)
+  const { isAuthenticated } = useAuth();
   useEffect(() => {
-    const initializeAssistant = async () => {
-      try {
-        setState(prev => ({ ...prev, isLoading: true }));
-        await fetchPreferences();
-        setState(prev => ({ ...prev, isLoading: false }));
-      } catch (error) {
-        console.error('Error initializing assistant:', error);
-        setState(prev => ({ 
-          ...prev, 
-          isLoading: false, 
-          error: 'Failed to initialize assistant' 
-        }));
-      }
-    };
-
-    initializeAssistant();
-  }, []);
+    if (!isAuthenticated) {
+      // Reset assistant state for guests
+      setState(prev => ({
+        ...prev,
+        preferences: null,
+        suggestions: [],
+        error: null,
+        isLoading: false,
+      }));
+    }
+  }, [isAuthenticated]);
 
   // Update mode when path changes
   useEffect(() => {
@@ -68,18 +65,64 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
     }
   }, [pathname]);
 
-  // Fetch suggestions when mode changes
+  // SWR fetchers
+  const fetcher = (url: string) => axios.get(url).then(r => r.data);
+
+  // Preferences caching (authenticated + enabled only)
+  const shouldFetchPrefs = isAuthenticated && state.isEnabled;
+  const { data: prefsData, error: prefsError, isLoading: prefsLoading, mutate: mutatePrefs } = useSWR(
+    shouldFetchPrefs ? '/api/assistant/preferences' : null,
+    fetcher,
+    { revalidateOnFocus: false }
+  );
+
   useEffect(() => {
-    if (!state.isEnabled || !state.currentMode) return;
-    const handle = setTimeout(() => {
-      fetchSuggestions(state.currentMode, state.currentContext);
-    }, 400);
-    return () => clearTimeout(handle);
-  }, [state.currentMode, state.currentContext, state.isEnabled]);
+    if (prefsError) {
+      setState(prev => ({ ...prev, error: 'Failed to fetch assistant preferences' }));
+      return;
+    }
+    if (prefsData) {
+      setState(prev => ({
+        ...prev,
+        preferences: prefsData,
+        isEnabled: prefsData.isEnabled,
+        proactivityLevel: prefsData.proactivityLevel,
+      }));
+    }
+  }, [prefsData, prefsError]);
+
+  // Suggestions caching (keyed by mode/context)
+  const suggestionsKey = isAuthenticated && state.isEnabled && state.currentMode
+    ? `/api/assistant/suggestions?${new URLSearchParams({ mode: state.currentMode, context: state.currentContext || '' }).toString()}`
+    : null;
+  const { data: suggData, error: suggError, isLoading: suggLoading, mutate: mutateSuggestions } = useSWR(
+    suggestionsKey,
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 30000 }
+  );
+
+  useEffect(() => {
+    if (suggError) {
+      setState(prev => ({ ...prev, error: 'Failed to fetch assistant suggestions', suggestions: [] }));
+      return;
+    }
+    if (suggData && Array.isArray(suggData.suggestions)) {
+      setState(prev => ({ ...prev, suggestions: suggData.suggestions }));
+    }
+  }, [suggData, suggError]);
+
+  // Reflect loading from SWR
+  useEffect(() => {
+    setState(prev => ({ ...prev, isLoading: !!(prefsLoading || suggLoading) }));
+  }, [prefsLoading, suggLoading]);
 
   // Panel controls
   const openPanel = () => setState(prev => ({ ...prev, isPanelOpen: true }));
-  const closePanel = () => setState(prev => ({ ...prev, isPanelOpen: false }));
+  const closePanel = () => {
+    setState(prev => ({ ...prev, isPanelOpen: false }));
+    // Flush any pending interaction logs on close
+    void flushLogs();
+  };
   const togglePanel = () => setState(prev => ({ ...prev, isPanelOpen: !prev.isPanelOpen }));
 
   // Mode detection and control
@@ -131,6 +174,7 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
         await axios.put('/api/assistant/preferences', {
           isEnabled: newEnabledState
         });
+        await mutatePrefs();
       }
     } catch (error) {
       console.error('Error toggling assistant:', error);
@@ -150,6 +194,7 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
         await axios.put('/api/assistant/preferences', {
           proactivityLevel: level
         });
+        await mutatePrefs();
       }
     } catch (error) {
       console.error('Error setting proactivity level:', error);
@@ -175,6 +220,7 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
       
       // Log interaction
       await logInteraction('DISMISS_SUGGESTION', { suggestionId });
+      await mutateSuggestions();
     } catch (error) {
       console.error('Error dismissing suggestion:', error);
       setState(prev => ({ 
@@ -183,22 +229,14 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
       }));
       
       // Refetch suggestions to restore state
-      await fetchSuggestions(state.currentMode, state.currentContext);
+      await mutateSuggestions();
     }
   };
 
   // Data fetching
   const fetchPreferences = async () => {
     try {
-      const response = await axios.get('/api/assistant/preferences');
-      const preferences: AssistantPreference = response.data;
-      
-      setState(prev => ({
-        ...prev,
-        preferences,
-        isEnabled: preferences.isEnabled,
-        proactivityLevel: preferences.proactivityLevel as ProactivityLevel
-      }));
+      await mutatePrefs();
     } catch (error) {
       console.error('Error fetching preferences:', error);
       setState(prev => ({ 
@@ -210,25 +248,11 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
 
   const fetchSuggestions = async (mode?: AssistantMode, context?: string) => {
     try {
-      setState(prev => ({ ...prev, isLoading: true }));
-      
-      const params = new URLSearchParams();
-      if (mode) params.append('mode', mode);
-      if (context) params.append('context', context);
-      
-      const response = await axios.get(`/api/assistant/suggestions?${params.toString()}`);
-      const { suggestions } = response.data;
-      
-      setState(prev => ({
-        ...prev,
-        suggestions,
-        isLoading: false
-      }));
+      await mutateSuggestions();
     } catch (error) {
       console.error('Error fetching suggestions:', error);
       setState(prev => ({ 
-        ...prev, 
-        isLoading: false,
+        ...prev,
         error: 'Failed to fetch assistant suggestions',
         suggestions: []
       }));
@@ -236,20 +260,35 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
   };
 
   // Utility functions
-  const logInteraction = async (action: string, metadata: any = {}) => {
+  // Basic batching of interaction logs
+  const logQueueRef = useRef<any[]>([]);
+  const flushTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const FLUSH_INTERVAL = 5000;
+  const flushLogs = async () => {
+    if (!logQueueRef.current.length) return;
+    const batch = logQueueRef.current.splice(0, logQueueRef.current.length);
     try {
-      await axios.post('/api/assistant/memory', {
-        action,
-        mode: state.currentMode,
-        context: state.currentContext,
-        metadata: {
-          ...metadata,
-          path: pathname
-        }
-      });
+      await axios.post('/api/assistant/memory', { batch });
     } catch (error) {
-      console.error('Error logging interaction:', error);
+      console.error('Error logging interaction batch:', error);
     }
+  };
+  const scheduleFlush = () => {
+    if (flushTimerRef.current) return;
+    flushTimerRef.current = setTimeout(async () => {
+      flushTimerRef.current = null;
+      await flushLogs();
+    }, FLUSH_INTERVAL);
+  };
+  const logInteraction = async (action: string, metadata: any = {}) => {
+    logQueueRef.current.push({
+      action,
+      mode: state.currentMode,
+      context: state.currentContext,
+      metadata: { ...metadata, path: pathname },
+      ts: Date.now(),
+    });
+    scheduleFlush();
   };
 
   // Combine state and actions
