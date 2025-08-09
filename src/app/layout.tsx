@@ -2,26 +2,10 @@ import type { Metadata } from 'next';
 import '../styles/globals.css';
 import { inter, poppins, montserrat } from '@/lib/fonts';
 import { ClientLayout } from '@/components/layout/client-layout';
-import { cookies } from 'next/headers';
+import { getUserFromCookies } from '@/lib/server-auth';
 
 async function getInitialAuth() {
-  try {
-    const cookieStore = cookies();
-    const token = cookieStore.get('auth_token')?.value || null;
-    if (!token) return { user: null, token: null };
-    // Call internal API to fetch user on the server
-    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/me`, {
-      headers: { Authorization: `Bearer ${token}` },
-      // Ensure this runs on the server without caching stale auth
-      cache: 'no-store',
-      next: { revalidate: 0 },
-    });
-    if (!res.ok) return { user: null, token: null };
-    const user = await res.json();
-    return { user, token };
-  } catch (e) {
-    return { user: null, token: null };
-  }
+  return await getUserFromCookies();
 }
 
 export const viewport = {
