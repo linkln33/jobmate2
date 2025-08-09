@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useRef } from 'react';
 import { User } from '@/models/user';
 
 interface AuthContextType {
@@ -47,12 +47,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [socialLoginLoading, setSocialLoginLoading] = useState<boolean>(false);
 
   useEffect(() => {
+    const abortRef = { current: new AbortController() };
+
     const checkAuth = async () => {
-      setIsLoading(true);
       try {
         const storedToken = localStorage.getItem('token');
         const storedUser = localStorage.getItem('user');
-        
+
         console.log('Checking authentication state...');
         console.log('Stored token:', storedToken ? 'exists' : 'none');
 
@@ -65,25 +66,20 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
 
         // Ensure the auth cookie is set if we have a token in localStorage
-        // This fixes the issue where localStorage has token but cookie doesn't
         const cookies = document.cookie.split(';');
         const authCookie = cookies.find(cookie => cookie.trim().startsWith('auth_token='));
-        
-        if (!authCookie && storedToken) {
+        if (!authCookie) {
           console.log('Setting missing auth cookie from localStorage token');
           document.cookie = `auth_token=${storedToken}; path=/; max-age=${60*60*24*7}; SameSite=Strict`;
         }
 
-        // For demo purposes, we'll use the stored user data directly
-        // In a real app, you would validate the token with your backend
+        // Fast-path when user is present locally
         if (storedUser) {
           try {
             const userData = JSON.parse(storedUser);
-            console.log('User data found in localStorage:', userData);
             setUser(userData);
             setToken(storedToken);
             setIsAuthenticated(true);
-            console.log('User authenticated from localStorage');
             setIsLoading(false);
             return;
           } catch (e) {
@@ -91,39 +87,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         }
 
-        // Fallback to API call if no stored user data or parsing failed
+        // Debounce network probe slightly to avoid bursts on rapid mounts
+        setIsLoading(true);
+        await new Promise(res => setTimeout(res, 200));
+
         console.log('Fetching user data from API...');
         const response = await fetch('/api/auth/me', {
-          headers: {
-            Authorization: `Bearer ${storedToken}`,
-          },
+          headers: { Authorization: `Bearer ${storedToken}` },
+          signal: abortRef.current.signal,
         });
 
-        if (!response.ok) {
-          throw new Error('Invalid token');
-        }
+        if (!response.ok) throw new Error('Invalid token');
 
         const userData = await response.json();
-        console.log('User data fetched from API:', userData);
         setUser(userData);
         setToken(storedToken);
         setIsAuthenticated(true);
         localStorage.setItem('user', JSON.stringify(userData));
-      } catch (error) {
-        console.error('Auth check error:', error);
-        setUser(null);
-        setToken(null);
-        setIsAuthenticated(false);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Clear the auth cookie
-        document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+      } catch (error: any) {
+        if (error?.name === 'AbortError') {
+          console.log('Auth check aborted');
+        } else {
+          console.error('Auth check error:', error);
+          setUser(null);
+          setToken(null);
+          setIsAuthenticated(false);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          // Clear the auth cookie
+          document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     checkAuth();
+
+    return () => {
+      try { abortRef.current.abort(); } catch {}
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
