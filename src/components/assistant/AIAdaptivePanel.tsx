@@ -305,37 +305,36 @@ const AIAdaptivePanelContent: React.FC<AIAdaptivePanelProps> = () => {
     }
   }, [messages]);
   
-  // Track user activity and set idle state
+  // Track user activity and set idle state (only when panel is open)
   useEffect(() => {
+    if (!isPanelOpen) return;
     const idleTimeout = 30000; // 30 seconds
-    
+
     const handleActivity = () => {
       setIsIdle(false);
       setLastActivity(Date.now());
     };
-    
+
     const checkIdle = () => {
       if (Date.now() - lastActivity > idleTimeout) {
         setIsIdle(true);
       }
     };
-    
-    // Set up event listeners for user activity
+
     const events = ['mousemove', 'mousedown', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => {
       window.addEventListener(event, handleActivity);
     });
-    
-    // Check for idle state every 5 seconds
+
     const interval = setInterval(checkIdle, 5000);
-    
+
     return () => {
       events.forEach(event => {
         window.removeEventListener(event, handleActivity);
       });
       clearInterval(interval);
     };
-  }, [lastActivity]);
+  }, [isPanelOpen, lastActivity]);
 
   // Don't render if assistant is disabled
   if (!isEnabled) return null;

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { UnifiedDashboardLayout } from '@/components/layout/unified-dashboard-layout';
 import { StickyNavbar } from '@/components/ui/sticky-navbar';
 import { ModernFooter } from '@/components/ui/modern-footer';
@@ -10,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { HomepageMap } from '@/components/map/homepage-map';
+const HomepageMap = dynamic(() => import('@/components/map/homepage-map').then(m => m.HomepageMap), {
+  ssr: false,
+});
 import { Job } from '@/types/job';
 
 // Import all sections individually
@@ -30,40 +33,26 @@ export function UnifiedHomePageFinal() {
   const { isAuthenticated } = useAuth();
   
   // State for controlling the waitlist popup
-  const [showWaitlistPopup, setShowWaitlistPopup] = useState(true); // Set to true for immediate display
+  const [showWaitlistPopup, setShowWaitlistPopup] = useState(false);
   
   useEffect(() => {
-    // For testing: Show popup immediately without scroll
-    // Remove localStorage check temporarily
-    console.log('Waitlist popup should show immediately');
-    
-    // Comment out scroll logic for testing
-    /*
-    // Add scroll event listener
-    const handleScroll = () => {
-      // Calculate scroll percentage
-      const scrollTop = window.scrollY;
-      const scrollHeight = document.documentElement.scrollHeight;
-      const clientHeight = window.innerHeight;
-      const scrollPercentage = (scrollTop / (scrollHeight - clientHeight)) * 100;
-      
-      // Show popup when user scrolls past 60% of the page
-      if (scrollPercentage > 60 && !isAuthenticated) {
+    // Defer popup for guests only, show after short delay, and only once per day
+    if (isAuthenticated) return;
+    try {
+      const seenAt = localStorage.getItem('jobmate_waitlist_popup_seen');
+      const oneDay = 24 * 60 * 60 * 1000;
+      const shouldShow = !seenAt || (Date.now() - Date.parse(seenAt)) > oneDay;
+      if (!shouldShow) return;
+      const t = setTimeout(() => {
         setShowWaitlistPopup(true);
-        // Store that user has seen the popup
         localStorage.setItem('jobmate_waitlist_popup_seen', new Date().toISOString());
-        // Remove scroll listener after showing popup
-        window.removeEventListener('scroll', handleScroll);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-    */
-  }, []);
+      }, 8000);
+      return () => clearTimeout(t);
+    } catch {
+      const t = setTimeout(() => setShowWaitlistPopup(true), 8000);
+      return () => clearTimeout(t);
+    }
+  }, [isAuthenticated]);
   
   const closeWaitlistPopup = () => {
     setShowWaitlistPopup(false);

@@ -70,9 +70,11 @@ export const AssistantProvider: React.FC<AssistantProviderProps> = ({ children }
 
   // Fetch suggestions when mode changes
   useEffect(() => {
-    if (state.isEnabled && state.currentMode) {
+    if (!state.isEnabled || !state.currentMode) return;
+    const handle = setTimeout(() => {
       fetchSuggestions(state.currentMode, state.currentContext);
-    }
+    }, 400);
+    return () => clearTimeout(handle);
   }, [state.currentMode, state.currentContext, state.isEnabled]);
 
   // Panel controls
