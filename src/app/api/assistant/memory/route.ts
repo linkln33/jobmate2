@@ -223,10 +223,11 @@ export const POST = withAIRateLimit(async function POST(request: NextRequest) {
  * PATCH /api/assistant/memory/:id
  * Updates an existing memory log
  */
-export const PATCH = withAIRateLimit(async function PATCH(
-  request: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export const PATCH = withAIRateLimit(async function PATCH(request: NextRequest) {
+  // Extract the ID from the URL path
+  const url = new URL(request.url);
+  const pathParts = url.pathname.split('/');
+  const id = pathParts[pathParts.length - 1];
   try {
     // Get the authenticated user session
     const session = await getServerSession();

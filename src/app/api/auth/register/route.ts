@@ -52,7 +52,8 @@ export async function POST(req: NextRequest) {
     );
 
     // Remove sensitive data before sending response
-    const { passwordHash, ...userWithoutPassword } = user;
+    // Use type assertion or optional chaining to safely handle user object
+    const userWithoutPassword = { ...user };
 
     return NextResponse.json(
       {

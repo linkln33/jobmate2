@@ -45,3 +45,4 @@ next-env.d.ts
 
 # Netlify
 .netlify/
+.env*.local

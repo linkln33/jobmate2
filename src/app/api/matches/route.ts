@@ -127,29 +127,45 @@ export async function POST(req: NextRequest) {
     
     const userPreferences = preferenceDb.get(targetSpecialistId) || {};
     
+    // Convert specialist to the expected type
+    const specialistData = {
+      id: specialist.id,
+      user: {
+        firstName: specialist.firstName,
+        lastName: specialist.lastName
+      },
+      skills: specialist.userSkills?.map(userSkill => ({
+        id: userSkill.skills?.[0]?.id || userSkill.id,
+        name: userSkill.skills?.[0]?.name || ''
+      })) || [],
+      location: specialist.specialistProfiles?.[0]?.location,
+      hourlyRate: specialist.specialistProfiles?.[0]?.hourlyRate
+    };
+    
     // Calculate matches with scores
-    const matches = matchingService.calculateJobMatches(
-      specialist,
+    const matchesPromise = matchingService.calculateMatchesForSpecialist(
+      specialistData,
       jobListings || [],
-      userPreferences,
-      filters
+      userPreferences
     );
+    
+    // Await the promise to get the actual matches
+    const matches = await matchesPromise;
     
     // Apply pagination
     const page = pagination.page || 1;
     const limit = pagination.limit || 10;
     const startIndex = (page - 1) * limit;
-    const endIndex = page * limit;
+    const paginatedMatches = matches.slice(startIndex, startIndex + limit);
     
-    const paginatedMatches = matches.slice(startIndex, endIndex);
-    
+    // Return the matches with pagination metadata
     return NextResponse.json({
       matches: paginatedMatches,
       pagination: {
         page,
         limit,
         total: matches.length,
-        pages: Math.ceil(matches.length / limit)
+        totalPages: Math.ceil(matches.length / limit)
       }
     });
   } catch (error) {

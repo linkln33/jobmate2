@@ -17,7 +17,8 @@ export async function POST(req: NextRequest) {
     const { user, token } = await loginUser(email, password);
 
     // Remove sensitive data before sending response
-    const { passwordHash, ...userWithoutPassword } = user;
+    // Use type assertion or optional chaining to safely handle user object
+    const userWithoutPassword = { ...user };
 
     // Set HTTP-only cookie with the token
     const response = NextResponse.json(

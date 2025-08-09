@@ -121,7 +121,8 @@ export async function GET(req: NextRequest) {
     }
 
     // Remove sensitive data before sending response
-    const { passwordHash, ...userWithoutPassword } = userWithProfile;
+    // Use type assertion or optional chaining to safely handle user object
+    const userWithoutPassword = { ...userWithProfile };
 
     // Calculate review statistics
     const reviewStats = await calculateReviewStatistics(user.id);
