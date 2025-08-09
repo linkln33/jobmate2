@@ -21,7 +21,7 @@ export const GET = createApiHandler(async (req) => {
 
 // PATCH /api/notifications/preferences - Update notification preferences
 export const PATCH = createApiHandler(async (req) => {
-  const data = await validateBody(req, updatePreferencesSchema);
+  const data = await validateBody<z.infer<typeof updatePreferencesSchema>>(req, updatePreferencesSchema);
   
   // Update notification preferences
   return await notificationService.updateNotificationPreference(

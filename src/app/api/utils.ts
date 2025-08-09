@@ -9,7 +9,10 @@ import { cookies } from 'next/headers';
  * @returns Next.js API route handler
  */
 export function createApiHandler<T>(
-  handler: (req: NextRequest, context: { userId: string; supabase: any }) => Promise<T>,
+  handler: (
+    req: NextRequest,
+    context: { userId: string; supabase: any; params?: Record<string, string> }
+  ) => Promise<T>,
   options: {
     requireAuth?: boolean;
     requireAdmin?: boolean;
@@ -17,7 +20,10 @@ export function createApiHandler<T>(
 ) {
   const { requireAuth = true, requireAdmin = false } = options;
   
-  return async (req: NextRequest) => {
+  return async (
+    req: NextRequest,
+    routeContext?: { params?: Record<string, string> }
+  ) => {
     try {
       // Initialize Supabase client
       const supabase = await getSupabaseServerClient();
@@ -53,7 +59,8 @@ export function createApiHandler<T>(
       // Call the handler with authenticated context
       const result = await handler(req, { 
         userId: userId as string, 
-        supabase 
+        supabase,
+        params: routeContext?.params,
       });
       
       return NextResponse.json(result);

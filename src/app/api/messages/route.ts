@@ -30,7 +30,7 @@ export const GET = createApiHandler(async (req) => {
 export const POST = createApiHandler(async (req) => {
   // Try to parse as a new conversation first
   try {
-    const conversationData = await validateBody(req, createConversationSchema);
+    const conversationData = await validateBody<z.infer<typeof createConversationSchema>>(req, createConversationSchema);
     
     // Create a new conversation
     const conversation = await messageService.createConversation({
@@ -47,7 +47,7 @@ export const POST = createApiHandler(async (req) => {
     return conversation;
   } catch (error) {
     // If it's not a new conversation, try to parse as a new message
-    const messageData = await validateBody(req, sendMessageSchema);
+    const messageData = await validateBody<z.infer<typeof sendMessageSchema>>(req, sendMessageSchema);
     
     // Send a message to an existing conversation
     const message = await messageService.sendMessage(

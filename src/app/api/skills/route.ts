@@ -30,7 +30,7 @@ export const GET = createApiHandler(async (req) => {
 
 // POST /api/skills - Create a new skill (admin only)
 export const POST = createApiHandler(async (req) => {
-  const data = await validateBody(req, createSkillSchema);
+  const data = await validateBody<z.infer<typeof createSkillSchema>>(req, createSkillSchema);
   
   // Create a new skill (admin only)
   return await skillService.createSkill(data);

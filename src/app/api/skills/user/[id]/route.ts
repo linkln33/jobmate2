@@ -13,7 +13,7 @@ const updateUserSkillSchema = z.object({
 // PATCH /api/skills/user/[id] - Update a specific user skill
 export const PATCH = createApiHandler(async (req, { params }) => {
   const id = params?.id as string;
-  const data = await validateBody(req, updateUserSkillSchema);
+  const data = await validateBody<z.infer<typeof updateUserSkillSchema>>(req, updateUserSkillSchema);
   
   // Update the user skill
   return await skillService.updateUserSkill(id, {
